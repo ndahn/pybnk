@@ -79,7 +79,7 @@ def organize_wem_files(
 if __name__ == "__main__":
     sd_dir = Path("E:/SteamLibrary/steamapps/common/ELDEN RING/Game/sd")
     destination = Path(
-        "E:/Games/ER_Modding/Commissions/star0chris_voicemod/audio/varre/wems"
+        "E:/Games/ER_Modding/Commissions/voicemod/audio/varre/wems"
     )
     bnk_dir = Path("../test/vc301/").absolute()
     events = [
