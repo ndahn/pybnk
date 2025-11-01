@@ -1,14 +1,20 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 import re
 
 from pybnk.util import calc_hash
-from pybnk.hirc import get_body
+from pybnk.hirc import get_body, get_node_type
 
 if TYPE_CHECKING:
     from pybnk.soundbank import Soundbank
 
 
-def get_event_name(sound_type: str, event_id: int, event_type: str = "Play"):
+def get_events(bnk: "Soundbank") -> Generator[tuple[int, dict], None, None]:
+    for i, obj in enumerate(bnk.hirc):
+        if get_node_type(obj) == "Event":
+            yield (i, obj)
+
+
+def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> str:
     if sound_type not in "acfopsmvxbiyzegd":
         print(f"Warning: unexpected sound type {sound_type}")
 
