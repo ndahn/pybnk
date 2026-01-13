@@ -1,12 +1,12 @@
 {
-  "id": 111111111,
+  "id": -1,
   "object": {
     "Sound": {
       "bank_source_data": {
         "plugin": "WwisseCodecVorbis",
         "source_type": "BnkData",
         "media_information": {
-          "source_id": 222222222,
+          "source_id": -1,
           "in_memory_media_size": 0,
           "source_flags": 0
         },
@@ -20,7 +20,7 @@
         },
         "override_attachment_params": 0,
         "override_bus_id": 0,
-        "direct_parent_id": 999999999,
+        "direct_parent_id": -1,
         "unknown_flags": 0,
         "node_initial_params": {
           "prop_initial_values": {

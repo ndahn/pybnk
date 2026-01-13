@@ -18,22 +18,20 @@ class PlaylistMode(IntEnum):
     RANDOM = 0
 
 
-def read_template(template: str) -> dict:
+def new_from_template(template: str, **kwargs) -> Node:
     import pybnk
 
     if not template.endswith(".json"):
         template += ".json"
 
-    return json.loads(resources.read_text(pybnk, template))
+    template_txt = resources.read_text(pybnk, template)
+    template_dict = json.loads(template_txt)
+    node = Node(template_dict)
 
-
-def new_from_template(template: str, **kwargs) -> Node:
-    tmp = Node(read_template(template))
-    
     for path, value in kwargs.items():
-        tmp[path] = value
+        node[path] = value
 
-    return tmp
+    return node
 
 
 def create_sound(wem: Path, mode: SoundMode) -> Node:
@@ -61,8 +59,7 @@ def create_sound(wem: Path, mode: SoundMode) -> Node:
 def new_random_sequence_container(
     children: list[(dict | int) | tuple[dict | int, int]] = None,
     mode: PlaylistMode = PlaylistMode.RANDOM,
-    loop = 1,  # TODO
-    volume = -6.0,  # TODO
+    volume: float = -3.0,
 ) -> Node:
     items = []
     weights = []
@@ -92,13 +89,17 @@ def new_random_sequence_container(
                 for id, weight in zip(items, weights)
             ],
             "mode": playlist_mode,
+            "initial_values/node_base_params/node_initial_params/prop_initial_values/values": [
+                {
+                    "prop_type": "Volume",
+                    "value": volume,
+                }
+            ],
         },
     )
 
 
-def add_child_to_rsc(
-    bnk: Soundbank, rsc: Node | int, child: Node, weight: int = 50000
-):
+def add_child_to_rsc(bnk: Soundbank, rsc: Node | int, child: Node, weight: int = 50000):
     if isinstance(rsc, int):
         rsc = bnk[rsc]
 
@@ -130,3 +131,34 @@ def add_child_to_rsc(
             "weight": weight,
         }
     )
+
+
+def set_rsc_volume(
+    rsc: Node, volume: float, volume_type: str = "Volume", clean: bool = True
+) -> None:
+    path = (
+        "initial_values/node_base_params/node_initial_params/prop_initial_values/values"
+    )
+    properties = []
+    volume_prop = None
+
+    for prop in rsc[path]:
+        pt = prop["prop_type"]
+
+        if pt == volume_type:
+            volume_prop = prop
+
+        # Remove all other volume settings like GameAuxSendVolume
+        elif clean and "volume" in pt.lower():
+            continue
+
+        properties.append(prop)
+
+    if not volume_prop:
+        volume_prop = {
+            "prop_type": volume_type,
+            "value": volume,
+        }
+        properties.append(volume_prop)
+
+    rsc[path] = properties
