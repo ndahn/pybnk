@@ -2,14 +2,13 @@ from pathlib import Path
 import networkx as nx
 import shutil
 
-from pybnk import Soundbank, load_soundbank
-from pybnk.common.hirc import get_hierarchy
+from pybnk import Soundbank
 from pybnk.common.events import get_event_actions
 
 
 def collect_wems(bnk_dir: str, events: list[str]):
     """Find all WEM IDs associated with the specified events"""
-    bnk: Soundbank = load_soundbank(bnk_dir)
+    bnk: Soundbank = Soundbank.load(bnk_dir)
     wems: dict[str, list[str]] = {}
 
     for evt in events:
@@ -19,7 +18,7 @@ def collect_wems(bnk_dir: str, events: list[str]):
             continue
 
         for act in actions:
-            tree = get_hierarchy(bnk, act)
+            tree = bnk.get_hierarchy(act)
             sounds = nx.get_node_attributes(tree, "wem")
             wems.setdefault(evt, []).extend(sounds.values())
 

@@ -1,17 +1,10 @@
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 import re
 
 from .util import calc_hash
-from .attributes import get_body, get_node_type
 
 if TYPE_CHECKING:
-    from ..soundbank import Soundbank
-
-
-def get_events(bnk: "Soundbank") -> Generator[tuple[int, dict], None, None]:
-    for i, obj in enumerate(bnk.hirc):
-        if get_node_type(obj) == "Event":
-            yield (i, obj)
+    from pybnk.soundbank import Soundbank
 
 
 def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> str:
@@ -49,12 +42,12 @@ def get_event_actions(bnk: "Soundbank", event: str) -> list[int]:
     actions = []
 
     idx = get_event_idx(bnk, event)
-    event_obj = bnk.hirc[idx]
-    event_actions = get_body(event_obj)["actions"]
+    event_node = bnk.hirc[idx]
+    event_actions = event_node["actions"]
     
     for action_hash in event_actions:
         action = bnk.hirc[bnk.id2index[action_hash]]
-        target_id = get_body(action)["external_id"]
+        target_id = action["external_id"]
         if target_id in bnk.id2index:
             actions.append(target_id)
         else:

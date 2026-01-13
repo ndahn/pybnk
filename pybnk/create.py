@@ -1,4 +1,3 @@
-from typing import Any
 import os
 from importlib import resources
 import json
@@ -6,9 +5,7 @@ from pathlib import Path
 from logging import getLogger
 from enum import IntEnum
 
-from pybnk import Soundbank
-from pybnk.common.hirc import get_node_type, get_body, get_id, get_parent_id, new_id
-from pybnk.common.attributes import set_attribute, set_parent, set_id
+from pybnk import Soundbank, Node
 
 
 class SoundMode(IntEnum):
@@ -30,15 +27,16 @@ def read_template(template: str) -> dict:
     return json.loads(resources.read_text(pybnk, template))
 
 
-def new_from_template(template: str, **kwargs) -> dict:
-    tmp = read_template(template)
+def new_from_template(template: str, **kwargs) -> Node:
+    tmp = Node(read_template(template))
+    
     for path, value in kwargs.items():
-        set_attribute(tmp, path, value)
+        tmp[path] = value
 
     return tmp
 
 
-def create_sound(wem: Path, mode: SoundMode) -> dict:
+def create_sound(wem: Path, mode: SoundMode) -> Node:
     wem_id = int(wem.name.rsplit(".")[0])
     size = os.path.getsize(str(wem))
 
@@ -65,7 +63,7 @@ def new_random_sequence_container(
     mode: PlaylistMode = PlaylistMode.RANDOM,
     loop = 1,  # TODO
     volume = -6.0,  # TODO
-):
+) -> Node:
     items = []
     weights = []
 
@@ -99,36 +97,34 @@ def new_random_sequence_container(
 
 
 def add_child_to_rsc(
-    bnk: Soundbank, rsc: dict | int, child: dict, weight: int = 50000
+    bnk: Soundbank, rsc: Node | int, child: Node, weight: int = 50000
 ):
     if isinstance(rsc, int):
         rsc = bnk[rsc]
 
-    if get_node_type(rsc) != "RandomSequenceContainer":
+    if rsc.type != "RandomSequenceContainer":
         raise ValueError("Not a valid RandomSequenceContainer")
 
-    if get_id(child) < 0:
-        set_id(child, new_id(bnk))
+    if child.id < 0:
+        child.id = bnk.new_id()
 
-    child_id = get_id(child)
-    rsc_body = get_body(rsc)
-    children = rsc_body["children"]["items"]
+    child_id = child.id
+    children = rsc["children/items"]
 
     if child_id in children:
         getLogger.warning(f"Node {child_id} already part of RandomSequenceContainer")
         return
 
-    if get_parent_id(child) >= 0:
+    if child.parent >= 0:
         # TODO we could probably fix this
         getLogger.error(f"Node {child_id} already has a parent")
         return
 
     children.append(child_id)
-    set_parent(child, get_id(rsc))
+    child.parent = rsc.id
+    bnk.add_node(child)
 
-    # TODO add child to hirc
-
-    rsc_body["playlist"]["items"].append(
+    rsc["playlist/items"].append(
         {
             "play_id": child_id,
             "weight": weight,
