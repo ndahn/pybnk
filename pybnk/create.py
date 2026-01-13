@@ -34,7 +34,7 @@ def new_from_template(template: str, **kwargs) -> Node:
     return node
 
 
-def create_sound(wem: Path, mode: SoundMode) -> Node:
+def new_sound(wem: Path, mode: SoundMode) -> Node:
     wem_id = int(wem.name.rsplit(".")[0])
     size = os.path.getsize(str(wem))
 
@@ -77,7 +77,7 @@ def new_random_sequence_container(
     if mode == PlaylistMode.RANDOM:
         playlist_mode = "Random"
 
-    return new_from_template(
+    rsc = new_from_template(
         "RandomSequenceContainer",
         {
             "children/items": items,
@@ -89,14 +89,13 @@ def new_random_sequence_container(
                 for id, weight in zip(items, weights)
             ],
             "mode": playlist_mode,
-            "initial_values/node_base_params/node_initial_params/prop_initial_values/values": [
-                {
-                    "prop_type": "Volume",
-                    "value": volume,
-                }
-            ],
         },
     )
+
+    if volume is not None:
+        set_rsc_volume(rsc, volume)
+
+    return rsc
 
 
 def add_child_to_rsc(bnk: Soundbank, rsc: Node | int, child: Node, weight: int = 50000):
@@ -133,32 +132,51 @@ def add_child_to_rsc(bnk: Soundbank, rsc: Node | int, child: Node, weight: int =
     )
 
 
-def set_rsc_volume(
-    rsc: Node, volume: float, volume_type: str = "Volume", clean: bool = True
-) -> None:
+def set_rsc_property(rsc: Node, property: str, value: float):
     path = (
         "initial_values/node_base_params/node_initial_params/prop_initial_values/values"
     )
-    properties = []
-    volume_prop = None
+    properties = rsc[path]
 
-    for prop in rsc[path]:
+    for prop in properties:
         pt = prop["prop_type"]
-
-        if pt == volume_type:
-            volume_prop = prop
-
-        # Remove all other volume settings like GameAuxSendVolume
-        elif clean and "volume" in pt.lower():
-            continue
-
+        if pt == property:
+            prop["value"] = value
+            break
+    else:
+        prop = {
+            "prop_type": property,
+            "value": value,
+        }
         properties.append(prop)
 
-    if not volume_prop:
-        volume_prop = {
-            "prop_type": volume_type,
-            "value": volume,
-        }
-        properties.append(volume_prop)
 
-    rsc[path] = properties
+def set_rsc_range_property(rsc: Node, property: str, min_value: float, max_value: float):
+    path = (
+        "initial_values/node_base_params/node_initial_params/prop_range_modifiers/values"
+    )
+    properties = rsc[path]
+
+    for prop in properties:
+        pt = prop["prop_type"]
+        if pt == property:
+            prop["min"] = min_value
+            prop["max"] = max_value
+            break
+    else:
+        prop = {
+            "prop_type": property,
+            "min": min_value,
+            "max": max_value,
+        }
+        properties.append(prop)
+
+
+def set_rsc_volume(
+    rsc: Node, volume: float, volume_type: str = "Volume", clean: bool = True
+) -> None:
+    if clean:
+        path = "initial_values/node_base_params/node_initial_params/prop_initial_values/values"
+        rsc[path] = [p for p in rsc[path] if "volume" not in p["prop_type"].lower()]
+
+    set_rsc_property(rsc, volume_type, volume)

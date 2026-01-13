@@ -92,7 +92,7 @@ class Node:
             
             attr[parts[-1]] = val
         except KeyError as e:
-            raise KeyError(f"Path {path} not found in template {self}") from e
+            raise KeyError(f"Path '{path}' not found in node {self}") from e
 
     def __str__(self):
         return f"{self.type} ({self.id})"
