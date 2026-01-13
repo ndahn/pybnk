@@ -41,7 +41,7 @@ class Soundbank:
             else:
                 pass
 
-        return Soundbank(bnk_dir, bnk_json, bnk_id, hirc)
+        return cls(bnk_dir, bnk_json, bnk_id, hirc)
 
     def __init__(
         self,
@@ -59,9 +59,15 @@ class Soundbank:
         
         # A helper dict for mapping object IDs to HIRC indices
         self.id2index: dict[int, int] = {}
-        self._regenerate_id_lookup()
+        self._regenerate_index_table()
 
-    def _regenerate_id_lookup(self):
+    @property
+    def bnk(self) -> str:
+        return self.bnk_dir.name
+
+    def _regenerate_index_table(self):
+        self.id2index.clear()
+        
         for idx, node in enumerate(self.hirc):
             idsec = node.dict["id"]
             if "Hash" in idsec:
@@ -83,10 +89,6 @@ class Soundbank:
             if "HIRC" in sec["body"]:
                 sec["body"]["HIRC"]["objects"] = [n.dict for n in self.hirc]
                 break
-
-    def __getitem__(self, key: int) -> Node:
-        idx = self.id2index[key]
-        return self.hirc[idx]
 
     def new_id(self) -> int:
         while True:
@@ -124,7 +126,7 @@ class Soundbank:
 
         self.logger.info(f"Inserting new node {node} at {min_idx}")
         self.hirc.insert(min_idx, node)
-        self._regenerate_id_lookup()
+        self._regenerate_index_table()
 
     def get_events(self) -> Generator[tuple[int, Node], None, None]:
         for i, node in enumerate(self.hirc):
@@ -302,3 +304,13 @@ class Soundbank:
             issues.append(f"Expected nodes not found: {[required_ids.difference(verified_ids)]}")
 
         return issues
+
+    def __getitem__(self, key: int | str) -> Node:
+        if isinstance(key, str):
+            key = calc_hash(key)
+
+        idx = self.id2index[key]
+        return self.hirc[idx]
+
+    def __str__(self):
+        return f"Soundbank (id={self.id}, bnk={self.bnk})"

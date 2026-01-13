@@ -1,5 +1,7 @@
 from typing import Any, Iterator
 
+from pybnk.common.util import calc_hash, lookup_table
+
 
 _undefined = object()
 
@@ -13,14 +15,32 @@ class Node:
     def dict(self) -> dict:
         return self._attr
 
+    def lookup_name(self) -> str:
+        idsec = self._attr["id"]
+        s = idsec.get("String")
+        if not s:
+            s = lookup_table.get(self.id)
+            if s:
+                idsec["String"] = s
+        
+        return s
+
     @property
     def id(self) -> int:
         """Get the ID of a HIRC node (i.e. its hash)."""
-        return next(iter(self._attr["id"].values()))
+        idsec = self._attr["id"]
+        h = idsec.get("Hash")
+        if not h:
+            h = calc_hash(idsec["String"])
+            idsec["Hash"] = h
+        
+        return h
 
     @id.setter
     def id(self, id: int) -> None:
-        self._attr["id"] = id
+        idsec = self._attr["id"]
+        idsec["Hash"] = id
+        idsec.pop("String", None)
 
     @property
     def parent(self) -> int:
@@ -42,15 +62,15 @@ class Node:
         return self._attr["body"][self.type]
 
     def paths(self) -> Iterator[str]:
-        def delve(item: dict | list | Any, path: str):
+        def delve(item: dict, path: str):
             if path:
                 yield path
 
-            if isinstance(item, list):
-                for idx, value in enumerate(item):
-                    delve(value, path + f":{idx}")
+            # if isinstance(item, list):
+            #     for idx, value in enumerate(item):
+            #         delve(value, path + f":{idx}")
 
-            elif isinstance(item, dict):
+            if isinstance(item, dict):
                 for key, value in item.items():
                     delve(value, path + "/" + key)
         
