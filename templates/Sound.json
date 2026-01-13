@@ -1,0 +1,77 @@
+{
+  "id": 111111111,
+  "object": {
+    "Sound": {
+      "bank_source_data": {
+        "plugin": "WwisseCodecVorbis",
+        "source_type": "BnkData",
+        "media_information": {
+          "source_id": 222222222,
+          "in_memory_media_size": 0,
+          "source_flags": 0
+        },
+        "size": 0
+      },
+      "node_base_params": {
+        "node_initial_fx_parameters": {
+          "is_override_parent_fx": 0,
+          "fx_bypass_bits": 0,
+          "fx_chunks": []
+        },
+        "override_attachment_params": 0,
+        "override_bus_id": 0,
+        "direct_parent_id": 999999999,
+        "unknown_flags": 0,
+        "node_initial_params": {
+          "prop_initial_values": {
+            "values": []
+          },
+          "prop_range_modifiers": {
+            "values": []
+          }
+        },
+        "positioning_params": {
+          "override_parent": false,
+          "listener_relative_routing": false,
+          "speaker_panning_type": "DirectSpeakerAssignment",
+          "three_dimensional_position_type": "Emitter",
+          "three_dimensional_spatialization_mode": "None",
+          "enable_attenuation": false,
+          "hold_emitter_position_and_orientation": false,
+          "hold_listener_orientation": false,
+          "enable_diffraction": false,
+          "path_mode": "StepSequence",
+          "transition_time": 0,
+          "vertices": [],
+          "path_list_item_offsets": [],
+          "three_dimensional_automation_params": []
+        },
+        "aux_params": {
+          "unk": 0,
+          "override_user_aux_sends": false,
+          "has_aux": false,
+          "override_reflections_aux_bus": false,
+          "aux1": 0,
+          "aux2": 0,
+          "aux3": 0,
+          "aux4": 0,
+          "reflections_aux_bus": 0
+        },
+        "adv_settings_params": {
+          "flags1": 0,
+          "virtual_queue_behavior": "PlayFromElapsedTime",
+          "max_instance_count": 0,
+          "below_threshold_behavior": "ContinueToPlay",
+          "flags2": 0
+        },
+        "state_chunk": {
+          "state_property_info": [],
+          "state_group_chunks": []
+        },
+        "initial_rtpc": {
+          "rtpcs": []
+        }
+      }
+    }
+  }
+}

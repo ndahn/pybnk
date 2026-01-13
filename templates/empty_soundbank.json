@@ -1,0 +1,678 @@
+{
+  "sections": [
+    {
+      "magic": [
+        66,
+        75,
+        72,
+        68
+      ],
+      "size": 24,
+      "body": {
+        "BKHD": {
+          "version": 135,
+          "bank_id": 2041780586,
+          "language_fnv_hash": 393239870,
+          "wem_alignment": 16,
+          "project_id": 1906,
+          "padding": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "magic": [
+        72,
+        73,
+        82,
+        67
+      ],
+      "size": 844,
+      "body": {
+        "HIRC": {
+          "object_count": 4,
+          "objects": [
+            {
+              "body_type": 14,
+              "size": 195,
+              "id": {
+                "Hash": 633069523
+              },
+              "body": {
+                "Attenuation": {
+                  "is_cone_enabled": 0,
+                  "cone_params": {
+                    "inside_degrees": 0.0,
+                    "outside_degrees": 0.0,
+                    "outside_volume": 0.0,
+                    "low_pass": 0.0,
+                    "high_pass": 0.0
+                  },
+                  "curves_to_use": [
+                    0,
+                    1,
+                    0,
+                    2,
+                    -1,
+                    3,
+                    -1
+                  ],
+                  "curve_count": 4,
+                  "curves": [
+                    {
+                      "curve_scaling": "DB",
+                      "point_count": 4,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": -0.2920542,
+                          "interpolation": "Log3"
+                        },
+                        {
+                          "from": 80.0,
+                          "to": -0.9108749,
+                          "interpolation": "Log1"
+                        },
+                        {
+                          "from": 99.999,
+                          "to": -1.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 100.0,
+                          "to": -1.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "DB",
+                      "point_count": 3,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 0.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 99.999,
+                          "to": -1.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 100.0,
+                          "to": -1.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "None",
+                      "point_count": 3,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 0.0,
+                          "interpolation": "SCurve"
+                        },
+                        {
+                          "from": 80.0,
+                          "to": 35.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 100.0,
+                          "to": 35.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "None",
+                      "point_count": 4,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 100.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 9.92647,
+                          "to": 20.6375,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 80.02451,
+                          "to": 0.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 100.0,
+                          "to": 0.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    }
+                  ],
+                  "initial_rtpc": {
+                    "count": 0,
+                    "rtpcs": []
+                  }
+                }
+              }
+            },
+            {
+              "body_type": 14,
+              "size": 246,
+              "id": {
+                "Hash": 921882382
+              },
+              "body": {
+                "Attenuation": {
+                  "is_cone_enabled": 0,
+                  "cone_params": {
+                    "inside_degrees": 0.0,
+                    "outside_degrees": 0.0,
+                    "outside_volume": 0.0,
+                    "low_pass": 0.0,
+                    "high_pass": 0.0
+                  },
+                  "curves_to_use": [
+                    0,
+                    1,
+                    0,
+                    2,
+                    3,
+                    4,
+                    -1
+                  ],
+                  "curve_count": 5,
+                  "curves": [
+                    {
+                      "curve_scaling": "DB",
+                      "point_count": 4,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": -0.2920542,
+                          "interpolation": "Log3"
+                        },
+                        {
+                          "from": 30.31746,
+                          "to": -0.91262245,
+                          "interpolation": "Sine"
+                        },
+                        {
+                          "from": 49.999,
+                          "to": -1.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 50.0,
+                          "to": -1.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "DB",
+                      "point_count": 4,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 0.0,
+                          "interpolation": "Sine"
+                        },
+                        {
+                          "from": 29.9375,
+                          "to": -0.87557364,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 49.999,
+                          "to": -1.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 50.0,
+                          "to": -1.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "None",
+                      "point_count": 3,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 0.0,
+                          "interpolation": "SCurve"
+                        },
+                        {
+                          "from": 20.0,
+                          "to": 30.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 50.0,
+                          "to": 35.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "None",
+                      "point_count": 3,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 0.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 30.0,
+                          "to": 20.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 50.0,
+                          "to": 30.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    },
+                    {
+                      "curve_scaling": "None",
+                      "point_count": 4,
+                      "points": [
+                        {
+                          "from": 0.0,
+                          "to": 100.0,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 4.963235,
+                          "to": 20.6375,
+                          "interpolation": "Linear"
+                        },
+                        {
+                          "from": 40.012257,
+                          "to": 0.0,
+                          "interpolation": "Constant"
+                        },
+                        {
+                          "from": 50.0,
+                          "to": 0.0,
+                          "interpolation": "Linear"
+                        }
+                      ]
+                    }
+                  ],
+                  "initial_rtpc": {
+                    "count": 0,
+                    "rtpcs": []
+                  }
+                }
+              }
+            },
+            {
+              "body_type": 7,
+              "size": 137,
+              "id": {
+                "Hash": 163272407
+              },
+              "body": {
+                "ActorMixer": {
+                  "node_base_params": {
+                    "node_initial_fx_parameters": {
+                      "is_override_parent_fx": 0,
+                      "fx_chunk_count": 0,
+                      "fx_bypass_bits": 0,
+                      "fx_chunks": []
+                    },
+                    "override_attachment_params": 0,
+                    "override_bus_id": 0,
+                    "direct_parent_id": 152600961,
+                    "unknown_flags": 2,
+                    "node_initial_params": {
+                      "prop_initial_values": [
+                        {
+                          "PriorityDistanceOffset": -49.0
+                        },
+                        {
+                          "CenterPCT": 50.0
+                        },
+                        {
+                          "GameAuxSendVolume": -6.0
+                        },
+                        {
+                          "AttenuationID": 633069523
+                        }
+                      ],
+                      "prop_ranged_modifiers": {
+                        "count": 0,
+                        "entries": []
+                      }
+                    },
+                    "positioning_params": {
+                      "unk1": false,
+                      "three_dimensional_position_type": "Emitter",
+                      "speaker_panning_type": "DirectSpeakerAssignment",
+                      "listener_relative_routing": true,
+                      "override_parent": true,
+                      "unk2": false,
+                      "enable_diffraction": false,
+                      "hold_listener_orientation": false,
+                      "hold_emitter_position_and_orientation": false,
+                      "enable_attenuation": true,
+                      "three_dimensional_spatialization_mode": "PositionOnly",
+                      "path_mode": "StepSequence",
+                      "transition_time": 0,
+                      "vertex_count": 0,
+                      "vertices": [],
+                      "path_list_item_count": 0,
+                      "path_list_item_offsets": [],
+                      "three_dimensional_automation_params": []
+                    },
+                    "aux_params": {
+                      "unk1": false,
+                      "unk2": false,
+                      "unk3": false,
+                      "override_reflections_aux_bus": false,
+                      "has_aux": true,
+                      "override_user_aux_sends": true,
+                      "unk4": 2,
+                      "aux1": 713277698,
+                      "aux2": 0,
+                      "aux3": 0,
+                      "aux4": 0,
+                      "reflections_aux_bus": 0
+                    },
+                    "adv_settings_params": {
+                      "unk1": false,
+                      "unk2": false,
+                      "unk3": false,
+                      "is_virtual_voices_opt_override_parent": false,
+                      "ignore_parent_maximum_instances": false,
+                      "unk4": true,
+                      "use_virtual_behavior": false,
+                      "kill_newest": false,
+                      "virtual_queue_behavior": "Resume",
+                      "max_instance_count": 0,
+                      "below_threshold_behavior": "KillIfOneShotElseVirtual",
+                      "unk5": false,
+                      "unk6": false,
+                      "unk7": false,
+                      "unk8": false,
+                      "enable_envelope": false,
+                      "normalize_loudness": false,
+                      "override_analysis": false,
+                      "override_hdr_envelope": false
+                    },
+                    "state_chunk": {
+                      "state_property_count": 0,
+                      "state_property_info": [],
+                      "state_group_count": 0,
+                      "state_group_chunks": []
+                    },
+                    "initial_rtpc": {
+                      "count": 1,
+                      "rtpcs": [
+                        {
+                          "id": 1240670792,
+                          "rtpc_type": "GameParameter",
+                          "rtpc_accum": "Additive",
+                          "param_id": 39,
+                          "curve_id": 848754923,
+                          "curve_scaling": "DB",
+                          "graph_point_count": 4,
+                          "graph_points": [
+                            {
+                              "from": 0.0,
+                              "to": -1.0,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 29.77302,
+                              "to": -0.7658536,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 59.67957,
+                              "to": -0.23681645,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 100.0,
+                              "to": 0.0,
+                              "interpolation": "Linear"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "children": {
+                    "count": 0,
+                    "items": []
+                  }
+                }
+              }
+            },
+            {
+              "body_type": 7,
+              "size": 242,
+              "id": {
+                "Hash": 152600961
+              },
+              "body": {
+                "ActorMixer": {
+                  "node_base_params": {
+                    "node_initial_fx_parameters": {
+                      "is_override_parent_fx": 0,
+                      "fx_chunk_count": 0,
+                      "fx_bypass_bits": 0,
+                      "fx_chunks": []
+                    },
+                    "override_attachment_params": 0,
+                    "override_bus_id": 2299321487,
+                    "direct_parent_id": 0,
+                    "unknown_flags": 2,
+                    "node_initial_params": {
+                      "prop_initial_values": [
+                        {
+                          "PriorityDistanceOffset": -49.0
+                        },
+                        {
+                          "CenterPCT": 50.0
+                        },
+                        {
+                          "UserAuxSendVolume0": -96.0
+                        },
+                        {
+                          "GameAuxSendVolume": -6.0
+                        },
+                        {
+                          "AttenuationID": 921882382
+                        }
+                      ],
+                      "prop_ranged_modifiers": {
+                        "count": 0,
+                        "entries": []
+                      }
+                    },
+                    "positioning_params": {
+                      "unk1": false,
+                      "three_dimensional_position_type": "Emitter",
+                      "speaker_panning_type": "DirectSpeakerAssignment",
+                      "listener_relative_routing": true,
+                      "override_parent": true,
+                      "unk2": false,
+                      "enable_diffraction": false,
+                      "hold_listener_orientation": false,
+                      "hold_emitter_position_and_orientation": false,
+                      "enable_attenuation": true,
+                      "three_dimensional_spatialization_mode": "PositionOnly",
+                      "path_mode": "StepSequence",
+                      "transition_time": 0,
+                      "vertex_count": 0,
+                      "vertices": [],
+                      "path_list_item_count": 0,
+                      "path_list_item_offsets": [],
+                      "three_dimensional_automation_params": []
+                    },
+                    "aux_params": {
+                      "unk1": false,
+                      "unk2": false,
+                      "unk3": false,
+                      "override_reflections_aux_bus": false,
+                      "has_aux": false,
+                      "override_user_aux_sends": false,
+                      "unk4": 2,
+                      "aux1": 0,
+                      "aux2": 0,
+                      "aux3": 0,
+                      "aux4": 0,
+                      "reflections_aux_bus": 0
+                    },
+                    "adv_settings_params": {
+                      "unk1": false,
+                      "unk2": false,
+                      "unk3": false,
+                      "is_virtual_voices_opt_override_parent": false,
+                      "ignore_parent_maximum_instances": false,
+                      "unk4": true,
+                      "use_virtual_behavior": false,
+                      "kill_newest": false,
+                      "virtual_queue_behavior": "Resume",
+                      "max_instance_count": 60,
+                      "below_threshold_behavior": "KillIfOneShotElseVirtual",
+                      "unk5": false,
+                      "unk6": false,
+                      "unk7": false,
+                      "unk8": false,
+                      "enable_envelope": false,
+                      "normalize_loudness": false,
+                      "override_analysis": false,
+                      "override_hdr_envelope": false
+                    },
+                    "state_chunk": {
+                      "state_property_count": 0,
+                      "state_property_info": [],
+                      "state_group_count": 0,
+                      "state_group_chunks": []
+                    },
+                    "initial_rtpc": {
+                      "count": 3,
+                      "rtpcs": [
+                        {
+                          "id": 830115334,
+                          "rtpc_type": "GameParameter",
+                          "rtpc_accum": "Additive",
+                          "param_id": 43,
+                          "curve_id": 159065999,
+                          "curve_scaling": "DB",
+                          "graph_point_count": 3,
+                          "graph_points": [
+                            {
+                              "from": -90.0,
+                              "to": -0.49881276,
+                              "interpolation": "SineRecip"
+                            },
+                            {
+                              "from": 0.0,
+                              "to": 0.0,
+                              "interpolation": "Sine"
+                            },
+                            {
+                              "from": 90.0,
+                              "to": -0.49881276,
+                              "interpolation": "Linear"
+                            }
+                          ]
+                        },
+                        {
+                          "id": 1240670792,
+                          "rtpc_type": "GameParameter",
+                          "rtpc_accum": "Additive",
+                          "param_id": 56,
+                          "curve_id": 345446527,
+                          "curve_scaling": "None",
+                          "graph_point_count": 3,
+                          "graph_points": [
+                            {
+                              "from": 0.0,
+                              "to": 0.0,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 20.0,
+                              "to": 20.0,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 100.0,
+                              "to": 35.0,
+                              "interpolation": "Linear"
+                            }
+                          ]
+                        },
+                        {
+                          "id": 1437246667,
+                          "rtpc_type": "GameParameter",
+                          "rtpc_accum": "Additive",
+                          "param_id": 43,
+                          "curve_id": 106967899,
+                          "curve_scaling": "DB",
+                          "graph_point_count": 5,
+                          "graph_points": [
+                            {
+                              "from": -180.0,
+                              "to": -0.49881276,
+                              "interpolation": "Constant"
+                            },
+                            {
+                              "from": -90.0,
+                              "to": -0.49881276,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 0.0,
+                              "to": 0.0,
+                              "interpolation": "Linear"
+                            },
+                            {
+                              "from": 90.0,
+                              "to": -0.49881276,
+                              "interpolation": "Constant"
+                            },
+                            {
+                              "from": 180.0,
+                              "to": -0.49881276,
+                              "interpolation": "Linear"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "children": {
+                    "count": 1,
+                    "items": [
+                      163272407
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

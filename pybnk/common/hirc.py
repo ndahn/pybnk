@@ -1,30 +1,19 @@
 from typing import TYPE_CHECKING, Any
+from random import randrange
 from collections import deque
 import networkx as nx
+
+from .attributes import get_body, get_node_type, get_id, get_parent_id
 
 if TYPE_CHECKING:
     from pybnk.soundbank import Soundbank
 
 
-def get_id(node: dict) -> int:
-    """Get the ID of a HIRC node (i.e. its hash)."""
-    return next(iter(node["id"].values()))
-
-
-def get_node_type(node: dict) -> str:
-    """Get the type of a HIRC node (e.g. RandomSequenceContainer)."""
-    return next(iter(node["body"].keys()))
-
-
-def get_body(node: dict) -> dict:
-    """Return the body of a node where the relevant attributes are stored."""
-    return node["body"][get_node_type(node)]
-
-
-def get_parent_id(node: dict) -> int:
-    """Get the ID of a node's parent node."""
-    body = get_body(node)
-    return body["node_base_params"]["direct_parent_id"]
+def new_id(bnk: "Soundbank") -> int:
+    while True:
+        id = randrange(10000000, 100000000)
+        if id not in bnk.id2index:
+            return id
 
 
 def get_hierarchy(bnk: "Soundbank", entrypoint_id: int) -> nx.DiGraph:

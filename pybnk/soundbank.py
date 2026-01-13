@@ -3,8 +3,8 @@ from pathlib import Path
 from dataclasses import dataclass
 import json
 
-from pybnk.util import calc_hash
-from pybnk.hirc import get_id, get_body
+from pybnk.common.util import calc_hash
+from pybnk.common.attributes import get_id, get_body
 
 
 @dataclass
@@ -23,6 +23,9 @@ class Soundbank:
                 sec["body"]["HIRC"]["objects"] = self.hirc
                 break
 
+    def __getitem__(self, key: int) -> dict:
+        idx = self.id2index[key]
+        return self.hirc[idx]
 
 def load_soundbank(bnk_dir: str) -> Soundbank:
     """Load a soundbank and return a more manageable representation."""

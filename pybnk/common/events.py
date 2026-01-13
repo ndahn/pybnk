@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Generator
 import re
 
-from pybnk.util import calc_hash
-from pybnk.hirc import get_body, get_node_type
+from .util import calc_hash
+from .attributes import get_body, get_node_type
 
 if TYPE_CHECKING:
-    from pybnk.soundbank import Soundbank
+    from ..soundbank import Soundbank
 
 
 def get_events(bnk: "Soundbank") -> Generator[tuple[int, dict], None, None]:

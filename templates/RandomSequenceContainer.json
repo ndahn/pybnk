@@ -1,0 +1,109 @@
+{
+  "id": -1,
+  "object": {
+    "RandomSequenceContainer": {
+      "initial_values": {
+        "node_base_params": {
+          "node_initial_fx_parameters": {
+            "is_override_parent_fx": 0,
+            "fx_bypass_bits": 0,
+            "fx_chunks": []
+          },
+          "override_attachment_params": 0,
+          "override_bus_id": 0,
+          "direct_parent_id": -9,
+          "unknown_flags": 2,
+          "node_initial_params": {
+            "prop_initial_values": {
+              "values": [
+                {
+                  "prop_type": "Pitch",
+                  "value": 1200.0
+                },
+                {
+                  "prop_type": "HPF",
+                  "value": 20.0
+                },
+                {
+                  "prop_type": "PriorityDistanceOffset",
+                  "value": -49.0
+                },
+                {
+                  "prop_type": "GameAuxSendVolume",
+                  "value": -6.0
+                }
+              ]
+            },
+            "prop_range_modifiers": {
+              "values": [
+                {
+                  "prop_type": "Pitch",
+                  "min": -150.0,
+                  "max": 150.0
+                }
+              ]
+            }
+          },
+          "positioning_params": {
+            "override_parent": false,
+            "listener_relative_routing": false,
+            "speaker_panning_type": "DirectSpeakerAssignment",
+            "three_dimensional_position_type": "Emitter",
+            "three_dimensional_spatialization_mode": "None",
+            "enable_attenuation": false,
+            "hold_emitter_position_and_orientation": false,
+            "hold_listener_orientation": false,
+            "enable_diffraction": false,
+            "path_mode": "StepSequence",
+            "transition_time": 0,
+            "vertices": [],
+            "path_list_item_offsets": [],
+            "three_dimensional_automation_params": []
+          },
+          "aux_params": {
+            "unk": 2,
+            "override_user_aux_sends": false,
+            "has_aux": true,
+            "override_reflections_aux_bus": false,
+            "aux1": 3125543356,
+            "aux2": 3125543359,
+            "aux3": 3125543358,
+            "aux4": 3125543353,
+            "reflections_aux_bus": 0
+          },
+          "adv_settings_params": {
+            "flags1": 0,
+            "virtual_queue_behavior": "PlayFromElapsedTime",
+            "max_instance_count": 0,
+            "below_threshold_behavior": "KillIfOneShotElseVirtual",
+            "flags2": 0
+          },
+          "state_chunk": {
+            "state_property_info": [],
+            "state_group_chunks": []
+          },
+          "initial_rtpc": {
+            "rtpcs": []
+          }
+        },
+        "loop_count": 1,
+        "loop_mod_min": 0,
+        "loop_mod_max": 0,
+        "transition_time": 1000.0,
+        "transition_time_mod_min": 0.0,
+        "transition_time_mod_max": 0.0,
+        "avoid_repeat_count": 1,
+        "transition_mode": "Disabled",
+        "random_mode": "Normal",
+        "mode": "Random",
+        "flags": 18,
+        "children": {
+          "items": []
+        },
+        "playlist": {
+          "items": []
+        }
+      }
+    }
+  }
+}

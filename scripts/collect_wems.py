@@ -3,8 +3,8 @@ import networkx as nx
 import shutil
 
 from pybnk import Soundbank, load_soundbank
-from pybnk.hirc import get_hierarchy
-from pybnk.events import get_event_actions
+from pybnk.common.hirc import get_hierarchy
+from pybnk.common.events import get_event_actions
 
 
 def collect_wems(bnk_dir: str, events: list[str]):
