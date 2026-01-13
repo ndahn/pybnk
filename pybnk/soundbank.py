@@ -58,7 +58,7 @@ class Soundbank:
         self.logger = logging.getLogger()
         
         # A helper dict for mapping object IDs to HIRC indices
-        self.id2index: dict[int, int] = {}
+        self._id2index: dict[int, int] = {}
         self._regenerate_index_table()
 
     @property
@@ -66,19 +66,19 @@ class Soundbank:
         return self.bnk_dir.name
 
     def _regenerate_index_table(self):
-        self.id2index.clear()
-        
+        self._id2index.clear()
+
         for idx, node in enumerate(self.hirc):
             idsec = node.dict["id"]
             if "Hash" in idsec:
                 oid = idsec["Hash"]
-                self.id2index[oid] = idx
+                self._id2index[oid] = idx
             elif "String" in idsec:
                 eid = idsec["String"]
-                self.id2index[eid] = idx
+                self._id2index[eid] = idx
                 # Events are sometimes referred to by their hash, but it's not included in the json
                 oid = calc_hash(eid)
-                self.id2index[oid] = idx
+                self._id2index[oid] = idx
             else:
                 print(f"Don't know how to handle object with id {idsec}")
 
@@ -93,11 +93,11 @@ class Soundbank:
     def new_id(self) -> int:
         while True:
             id = randrange(10000000, 100000000)
-            if id not in self.id2index:
+            if id not in self._id2index:
                 return id
 
     def add_node(self, node: Node) -> int:
-        if node.id in self.id2index:
+        if node.id in self._id2index:
             raise ValueError(f"A node with ID {node.id} is already in the soundbank")
 
         if node.id <= 0:
@@ -110,14 +110,14 @@ class Soundbank:
         related = self.find_related_objects([node.id])
         parent_id = node.parent
         min_idx = 0
-        max_idx = self.id2index[parent_id]
+        max_idx = self._id2index[parent_id]
 
         for oid in related:
             # Must be defined before its parent
             if oid == parent_id:
                 continue
 
-            oid_idx = self.id2index.get(oid)
+            oid_idx = self._id2index.get(oid)
             if oid_idx is not None:
                 min_idx = max(oid_idx + 1, min_idx)
 
@@ -145,7 +145,7 @@ class Soundbank:
             if node_id in g:
                 continue
 
-            idx = self.id2index[node_id]
+            idx = self._id2index[node_id]
             node = self.hirc[idx]
             node_type = node.type
             node_params = node.body
@@ -175,7 +175,7 @@ class Soundbank:
         upchain = deque()
 
         # Parents are sometimes located in other soundbanks, too
-        while parent_id != 0 and parent_id in self.id2index:
+        while parent_id != 0 and parent_id in self._id2index:
             # No early exit, we want to recover the entire upwards chain. We'll handle the 
             # parts we actually need later
 
@@ -194,7 +194,7 @@ class Soundbank:
                 
             # Children before parents
             upchain.append(parent_id)
-            parent = self.hirc[self.id2index[parent_id]]
+            parent = self.hirc[self._id2index[parent_id]]
             parent_id = parent.id
 
         return upchain
@@ -217,7 +217,7 @@ class Soundbank:
                     delve(val, key, new_ids)
 
             elif isinstance(item, int):
-                if item in self.id2index and item not in object_ids:
+                if item in self._id2index and item not in object_ids:
                     new_ids.add(item)
 
         for oid in object_ids:
@@ -225,7 +225,7 @@ class Soundbank:
 
             while todo:
                 node_id = todo.pop()
-                node = self.hirc[self.id2index[node_id]]
+                node = self.hirc[self._id2index[node_id]]
 
                 new_ids = set()
                 delve(node.body, "body", new_ids)
@@ -309,7 +309,7 @@ class Soundbank:
         if isinstance(key, str):
             key = calc_hash(key)
 
-        idx = self.id2index[key]
+        idx = self._id2index[key]
         return self.hirc[idx]
 
     def __str__(self):

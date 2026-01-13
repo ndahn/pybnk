@@ -24,13 +24,13 @@ def get_event_idx(bnk: "Soundbank", event: str) -> int:
     if not re.match(r"\w+_\w\d{9}", event):
         print(f"Warning: event {event} does not match the expected pattern")
 
-    idx = bnk.id2index.get(event, None)
+    idx = bnk._id2index.get(event, None)
         
     if idx is not None:
         return idx
     
     play_evt_hash = calc_hash(event)
-    idx = bnk.id2index.get(play_evt_hash)
+    idx = bnk._id2index.get(play_evt_hash)
     
     if idx is not None:
         return idx
@@ -46,9 +46,9 @@ def get_event_actions(bnk: "Soundbank", event: str) -> list[int]:
     event_actions = event_node["actions"]
     
     for action_hash in event_actions:
-        action = bnk.hirc[bnk.id2index[action_hash]]
+        action = bnk.hirc[bnk._id2index[action_hash]]
         target_id = action["external_id"]
-        if target_id in bnk.id2index:
+        if target_id in bnk._id2index:
             actions.append(target_id)
         else:
             print(f"Warning: action {action_hash} of event {event} has external ID outside the current soundbank")
