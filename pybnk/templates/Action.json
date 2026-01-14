@@ -1,0 +1,12 @@
+{
+  "id": -1,
+  "object": {
+    "Action": {
+      "action_type": "Play",
+      "initial_values": {
+        "external_id": -1,
+        "data": [0, 0, 0]
+      }
+    }
+  }
+}

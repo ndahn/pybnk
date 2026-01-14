@@ -49,6 +49,8 @@ class Node:
 
     @parent.setter
     def parent(self, parent: int) -> None:
+        if self.parent > 0 and parent > 0:
+            print(f"Warning: node {self} is being assigned new parent {parent}")
         self["node_base_params/direct_parent_id"] = parent
 
     @property

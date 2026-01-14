@@ -96,17 +96,7 @@ class Soundbank:
             if id not in self._id2index:
                 return id
 
-    def add_node(self, node: Node) -> int:
-        if node.id in self._id2index:
-            raise ValueError(f"A node with ID {node.id} is already in the soundbank")
-
-        if node.id <= 0:
-            raise ValueError(f"Invalid ID {node.id}")
-
-        if node.parent <= 0:
-            raise ValueError(f"Invalid parent ID {node.parent}")
-
-        # Find out where to insert the node
+    def _get_valid_insert_range(self, node: Node) -> tuple[int, int]:
         related = self.find_related_objects([node.id])
         parent_id = node.parent
         min_idx = 0
@@ -120,13 +110,54 @@ class Soundbank:
             oid_idx = self._id2index.get(oid)
             if oid_idx is not None:
                 min_idx = max(oid_idx + 1, min_idx)
+        
+            if min_idx >= max_idx:
+                raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
 
-        if min_idx >= max_idx:
-            raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
+        return (min_idx, max_idx)
 
-        self.logger.info(f"Inserting new node {node} at {min_idx}")
-        self.hirc.insert(min_idx, node)
+    def add_nodes(self, nodes: list[Node]) -> int:
+        min_idx = 0
+        max_idx = len(self.hirc)
+
+        for node in nodes:
+            if node.id in self._id2index:
+                raise ValueError(f"A node with ID {node.id} is already in the soundbank")
+
+            if node.id <= 0:
+                raise ValueError(f"Invalid ID {node.id}")
+
+            if node.parent <= 0:
+                raise ValueError(f"Invalid parent ID {node.parent}")
+
+            # Find out where to insert the node
+            nmin, nmax = self._get_valid_insert_range(node)
+            min_idx = max(nmin, min_idx)
+            max_idx = min(nmax, max_idx)
+
+            if min_idx >= max_idx:
+                raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
+
+        # NOTE not resolving the correct order of nodes, up to the caller for now
+        for i, node in enumerate(nodes):
+            self.logger.info(f"Inserting new node {node} at {min_idx + i}")
+            self.hirc.insert(min_idx + i, node)
+
         self._regenerate_index_table()
+        return min_idx
+
+    def add_event(self, event: Node, actions: list[Node]) -> int:
+        # Events appear towards the end of the soundbank
+        first_event = self.query_one({"type": "Event"})
+        idx = self._id2index[first_event.id]
+
+        print(f"Inserting new event {event} with {len(actions)} actions at {idx}")
+        self.hirc.insert(idx, event)
+        for act in reversed(actions):
+            self.hirc.insert(idx, act)
+        
+        self._regenerate_index_table
+        return idx
 
     def get_events(self) -> Generator[tuple[int, Node], None, None]:
         for i, node in enumerate(self.hirc):
