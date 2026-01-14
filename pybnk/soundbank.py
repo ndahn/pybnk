@@ -199,6 +199,29 @@ class Soundbank:
 
         return upchain
 
+    def query(self, conditions: dict[str, Any]) -> Generator[Node, None, None]:
+        for node in self.hirc:
+            for path, val in conditions.items():
+                if path == "type":
+                    if node.type != val:
+                        break
+                elif path in ("id", "hash"):
+                    if node.id != val:
+                        break
+                elif node[path] != val:
+                    break
+            else:
+                # Node matched all conditions
+                yield node
+
+    def query_one(self, conditions: dict[str, Any], default: Any = None) -> Node:
+        return next(self.query(conditions), default)
+
+    def find_nodes_by_type(self, node_type: str) -> Generator[Node, None, None]:
+        for node in self.hirc:
+            if node.type == node_type:
+                yield node
+
     def find_related_objects(self, object_ids: list[int]) -> set[int]:
         """Collect any values of attributes that look like they could be a reference to another object, e.g. a bus."""
         extras = []
