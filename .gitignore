@@ -1,4 +1,5 @@
 test/
+tmp/
 *.pdb
 
 # Byte-compiled / optimized / DLL files

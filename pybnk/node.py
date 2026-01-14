@@ -1,4 +1,5 @@
 from typing import Any, Iterator
+import copy
 
 from pybnk.common.util import calc_hash, lookup_table
 
@@ -14,6 +15,17 @@ class Node:
     @property
     def dict(self) -> dict:
         return self._attr
+
+    def copy(self, new_id: int = None, parent: int = None) -> "Node":
+        attr = copy.deepcopy(self._attr)
+        n = Node(attr)
+
+        if new_id is not None:
+            n.id = new_id
+        if parent is not None:
+            n.parent = parent
+
+        return n
 
     def lookup_name(self) -> str:
         idsec = self._attr["id"]
@@ -48,9 +60,13 @@ class Node:
         return self["node_base_params/direct_parent_id"]
 
     @parent.setter
-    def parent(self, parent: int) -> None:
+    def parent(self, parent: "Node | int") -> None:
+        if isinstance(parent, Node):
+            parent = parent.id
+        
         if self.parent > 0 and parent > 0:
             print(f"Warning: node {self} is being assigned new parent {parent}")
+        
         self["node_base_params/direct_parent_id"] = parent
 
     @property
@@ -93,6 +109,16 @@ class Node:
             return True
         except KeyError:
             return False
+
+    def __contains__(self, path: Any) -> bool:
+        if not isinstance(path, str):
+            return False
+
+        for p in self.paths:
+            if p == path:
+                return True
+
+        return False
 
     def __getitem__(self, path: str) -> Any:
         if not path:

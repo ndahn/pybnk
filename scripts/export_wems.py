@@ -1,7 +1,6 @@
 from pathlib import Path
 import networkx as nx
 import shutil
-import os
 
 from pybnk import Soundbank
 from pybnk.common.events import get_event_actions
@@ -70,37 +69,6 @@ def export_wems(
         event: str = wem2evt[wem_id]
         wwise_id = event.split("_", maxsplit=1)[-1]
         shutil.copy(path, str(destination / f"{wwise_id}_{path.stem}.wem"))
-
-
-def import_wems(bnk: Soundbank, wem_dir: Path) -> None:
-    for path, _, files in wem_dir.walk():
-        for wem in files:
-            if not wem.endswith(".wem"):
-                continue
-
-            if "_" in wem:
-                _, wem_id = Path(wem).stem.split("_")
-                wem_id = int(wem_id)
-            else:
-                wem_id = int(Path(wem).stem)
-
-            target_path = bnk.bnk_dir / f"{wem_id}.wem"
-            if not target_path.is_file():
-                print(f"Warning: soundbank did not contain wem {wem_id}")
-
-            shutil.copy(path / wem, target_path)
-
-            sound_nodes = list(bnk.query({
-                "type": "Sound",
-                "bank_source_data/media_information/source_id": wem_id,
-            }))
-
-            if not sound_nodes:
-                print(f"Warning: no sounds in soundbank are referencing wem {wem_id}")
-            else:
-                wem_size = os.path.getsize(str(target_path))
-                for node in sound_nodes:
-                    node["bank_source_data/media_information/in_memory_media_size"] = wem_size
 
 
 if __name__ == "__main__":

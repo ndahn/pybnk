@@ -96,31 +96,32 @@ class Soundbank:
             if id not in self._id2index:
                 return id
 
-    def _get_valid_insert_range(self, node: Node) -> tuple[int, int]:
-        related = self.find_related_objects([node.id])
-        parent_id = node.parent
-        min_idx = 0
-        max_idx = self._id2index[parent_id]
-
-        for oid in related:
-            # Must be defined before its parent
-            if oid == parent_id:
-                continue
-
-            oid_idx = self._id2index.get(oid)
-            if oid_idx is not None:
-                min_idx = max(oid_idx + 1, min_idx)
-        
-            if min_idx >= max_idx:
-                raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
-
-        return (min_idx, max_idx)
-
-    def add_nodes(self, nodes: list[Node]) -> int:
+    def get_insertion_index(self, nodes: list[Node]) -> tuple[int, int]:
         min_idx = 0
         max_idx = len(self.hirc)
-
+        
         for node in nodes:
+            try:
+                parent = node.parent
+                max_idx = min(max_idx, self._id2index[parent])
+            except KeyError:
+                pass
+
+            if "children" in node:
+                children: list = node["children/items"]
+                for child in children:
+                    min_idx = max(min_idx, self._id2index[child])
+            
+        if min_idx > max_idx:
+            raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
+
+        return min_idx
+
+    def add_nodes(self, nodes: list[Node]) -> int:
+        idx = self.get_insertion_index(nodes)
+
+        # NOTE not resolving the correct order of nodes, up to the caller for now
+        for i, node in enumerate(nodes):
             if node.id in self._id2index:
                 raise ValueError(f"A node with ID {node.id} is already in the soundbank")
 
@@ -130,21 +131,11 @@ class Soundbank:
             if node.parent <= 0:
                 raise ValueError(f"Invalid parent ID {node.parent}")
 
-            # Find out where to insert the node
-            nmin, nmax = self._get_valid_insert_range(node)
-            min_idx = max(nmin, min_idx)
-            max_idx = min(nmax, max_idx)
-
-            if min_idx >= max_idx:
-                raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
-
-        # NOTE not resolving the correct order of nodes, up to the caller for now
-        for i, node in enumerate(nodes):
-            self.logger.info(f"Inserting new node {node} at {min_idx + i}")
-            self.hirc.insert(min_idx + i, node)
+            self.logger.info(f"Inserting new node {node} at {idx + i}")
+            self.hirc.insert(idx + i, node)
 
         self._regenerate_index_table()
-        return min_idx
+        return idx
 
     def add_event(self, event: Node, actions: list[Node]) -> int:
         # Events appear towards the end of the soundbank
@@ -199,11 +190,10 @@ class Soundbank:
 
         return g
 
-    def get_parent_chain(self, entrypoint: Node) -> deque:
+    def get_parent_chain(self, entrypoint: Node) -> list[int]:
         """Go up in the HIRC from the specified entrypoint and collect all node IDs along the way until we reach the top."""
         parent_id = entrypoint.parent
-
-        upchain = deque()
+        upchain = []
 
         # Parents are sometimes located in other soundbanks, too
         while parent_id != 0 and parent_id in self._id2index:
@@ -358,6 +348,14 @@ class Soundbank:
             issues.append(f"Expected nodes not found: {[required_ids.difference(verified_ids)]}")
 
         return issues
+
+    def __contains__(self, key: Any) -> Node:
+        if isinstance(key, Node):
+            key = key.id
+        elif isinstance(key, str):
+            key = calc_hash(key)
+
+        return key in self._id2index
 
     def __getitem__(self, key: int | str) -> Node:
         if isinstance(key, str):
