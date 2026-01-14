@@ -1,8 +1,13 @@
+from typing import Any, TYPE_CHECKING
 from pathlib import Path
 from importlib import resources
 import subprocess
 import shutil
+import networkx as nx
 from tkinter import filedialog
+
+if TYPE_CHECKING:
+    from pybnk import Soundbank
 
 
 _rewwise_exe: Path = None
@@ -40,6 +45,37 @@ def repack_soundbank(bnk_dir: Path) -> Path:
     # TODO rename the backup and new soundbank
 
     return bnk_dir.parent / bnk_dir.stem + ".bnk"
+
+
+def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
+    visited = set()
+
+    def delve(nid: Any, prefix: str):
+        if nid in visited:
+            return
+
+        visited.add(nid)
+        children = list(graph.successors(nid))
+        
+        for i, child in enumerate(children):
+            is_last = i == len(children) - 1
+            branch = "└──" if is_last else "├──"
+            print(f"{prefix}{branch} {child}")
+            
+            new_prefix = prefix + ("    " if is_last else "│   ")
+            delve(graph, child, new_prefix, visited)
+
+    # Find root node
+    roots = [n for n in graph.nodes() if graph.in_degree(n) == 0]
+    if not roots:
+        print("Warning: Could not determine root node")
+        return
+
+    root = roots[0]
+    if len(roots) > 1:
+        print(f"Warning: Multiple roots found, using {root}")
+    
+    delve(root, "", None)
 
 
 def calc_hash(input: str) -> int:
