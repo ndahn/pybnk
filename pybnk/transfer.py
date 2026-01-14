@@ -3,7 +3,7 @@ from pprint import pprint
 from pybnk import Soundbank, Node, calc_hash
 from pybnk.modify import add_children
 from pybnk.wem import import_wems
-from pybnk.common.util import print_hierarchy
+from pybnk.util import print_hierarchy
 
 
 def copy_structure(

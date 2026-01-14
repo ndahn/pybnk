@@ -8,7 +8,7 @@ import shutil
 
 from pybnk import Soundbank, Node
 from pybnk.modify import set_rsc_volume
-from pybnk.common.util import calc_hash
+from pybnk.util import calc_hash
 
 
 class SoundMode(IntEnum):

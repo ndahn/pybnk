@@ -6,7 +6,7 @@ import logging
 import json
 import networkx as nx
 
-from pybnk.common.util import calc_hash
+from pybnk.util import calc_hash
 from pybnk.node import Node
 
 

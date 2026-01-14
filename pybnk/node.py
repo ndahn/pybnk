@@ -1,7 +1,7 @@
 from typing import Any, Iterator
 import copy
 
-from pybnk.common.util import calc_hash, lookup_table
+from pybnk.util import calc_hash, lookup_table
 
 
 _undefined = object()

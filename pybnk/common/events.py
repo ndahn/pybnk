@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 import re
 
-from .util import calc_hash
+from ..util import calc_hash
 
 if TYPE_CHECKING:
     from pybnk.soundbank import Soundbank
