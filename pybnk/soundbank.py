@@ -63,19 +63,6 @@ class Soundbank:
         self._id2index: dict[int, int] = {}
         self._regenerate_index_table()
 
-    @property
-    def name(self) -> str:
-        return self.bnk_dir.name
-
-    def wems(self) -> list[int]:
-        wems = []
-        
-        for sound in self.query({"type": "Sound"}):
-            wid = sound["bank_source_data/media_information/source_id"]
-            wems.append(wid)
-
-        return wems
-
     def _regenerate_index_table(self):
         self._id2index.clear()
 
@@ -93,7 +80,29 @@ class Soundbank:
             else:
                 print(f"Don't know how to handle object with id {idsec}")
 
+    @property
+    def name(self) -> str:
+        return self.bnk_dir.name
+
+    def wems(self) -> list[int]:
+        wems = []
+        for sound in self.query({"type": "Sound"}):
+            wid = sound["bank_source_data/media_information/source_id"]
+            wems.append(wid)
+
+        return wems
+
+    def update_json(self) -> None:
+        """Update this soundbank's json with its current HIRC."""
+        sections = self.json["sections"]
+        for sec in sections:
+            if "HIRC" in sec["body"]:
+                sec["body"]["HIRC"]["objects"] = [n.dict for n in self.hirc]
+                break
+
     def copy(self, name: str, new_bnk_id: int = None) -> "Soundbank":
+        self.update_json()
+        
         bnk = Soundbank(
             self.bnk_dir.parent / name,
             copy.deepcopy(self.json),
@@ -126,14 +135,6 @@ class Soundbank:
 
         with path.open("w") as f:
             json.dump(self.json, f, indent=2)
-
-    def update_json(self) -> None:
-        """Update this soundbank's json with its current HIRC."""
-        sections = self.json["sections"]
-        for sec in sections:
-            if "HIRC" in sec["body"]:
-                sec["body"]["HIRC"]["objects"] = [n.dict for n in self.hirc]
-                break
 
     def new_id(self) -> int:
         while True:
