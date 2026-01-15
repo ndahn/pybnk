@@ -4,6 +4,8 @@ from random import randrange
 from collections import deque
 import logging
 import json
+import copy
+import shutil
 import networkx as nx
 
 from pybnk.util import calc_hash
@@ -18,7 +20,7 @@ class Soundbank:
         bnk_dir: Path = Path(bnk_dir)
         if not bnk_dir.is_absolute():
             bnk_dir = Path(__file__).resolve().parent / bnk_dir
-        
+
         bnk_dir = bnk_dir.resolve()
 
         json_path = bnk_dir / "soundbank.json"
@@ -56,14 +58,23 @@ class Soundbank:
         self.hirc = hirc
 
         self.logger = logging.getLogger()
-        
+
         # A helper dict for mapping object IDs to HIRC indices
         self._id2index: dict[int, int] = {}
         self._regenerate_index_table()
 
     @property
-    def bnk(self) -> str:
+    def name(self) -> str:
         return self.bnk_dir.name
+
+    def wems(self) -> list[int]:
+        wems = []
+        
+        for sound in self.query({"type": "Sound"}):
+            wid = sound["bank_source_data/media_information/source_id"]
+            wems.append(wid)
+
+        return wems
 
     def _regenerate_index_table(self):
         self._id2index.clear()
@@ -82,6 +93,40 @@ class Soundbank:
             else:
                 print(f"Don't know how to handle object with id {idsec}")
 
+    def copy(self, name: str, new_bnk_id: int = None) -> "Soundbank":
+        bnk = Soundbank(
+            self.bnk_dir.parent / name,
+            copy.deepcopy(self.json),
+            self.id,
+            [n.copy() for n in self.hirc],
+        )
+
+        if new_bnk_id is not None:
+            bnk.id = new_bnk_id
+            for action in bnk.query({"type": "Action"}):
+                bid = action.get("params/bank_id", None)
+                if bid == self.id:
+                    action["params/bank_id"] = new_bnk_id
+
+        return bnk
+
+    def save(self, path: Path = None, backup: bool = True) -> None:
+        self.update_json()
+
+        if not path:
+            path = self.bnk_dir
+
+        if path.name != "soundbank.json":
+            if not path.is_dir():
+                raise ValueError(f"Not a directory: {path}")
+            path = path / "soundbank.json"
+
+        if backup and path.is_file():
+            shutil.copy(path, str(path) + ".bak")
+
+        with path.open("w") as f:
+            json.dump(self.json, f, indent=2)
+
     def update_json(self) -> None:
         """Update this soundbank's json with its current HIRC."""
         sections = self.json["sections"]
@@ -99,7 +144,7 @@ class Soundbank:
     def get_insertion_index(self, nodes: list[Node]) -> tuple[int, int]:
         min_idx = 0
         max_idx = len(self.hirc)
-        
+
         for node in nodes:
             try:
                 parent = node.parent
@@ -111,7 +156,7 @@ class Soundbank:
                 children: list = node["children/items"]
                 for child in children:
                     min_idx = max(min_idx, self._id2index[child])
-            
+
         if min_idx > max_idx:
             raise ValueError(f"Invalid index constraints: {min_idx} >= {max_idx}")
 
@@ -123,7 +168,9 @@ class Soundbank:
         # NOTE not resolving the correct order of nodes, up to the caller for now
         for i, node in enumerate(nodes):
             if node.id in self._id2index:
-                raise ValueError(f"A node with ID {node.id} is already in the soundbank")
+                raise ValueError(
+                    f"A node with ID {node.id} is already in the soundbank"
+                )
 
             if node.id <= 0:
                 raise ValueError(f"Invalid ID {node.id}")
@@ -146,14 +193,9 @@ class Soundbank:
         self.hirc.insert(idx, event)
         for act in reversed(actions):
             self.hirc.insert(idx, act)
-        
+
         self._regenerate_index_table
         return idx
-
-    def get_events(self) -> Generator[tuple[int, Node], None, None]:
-        for i, node in enumerate(self.hirc):
-            if node.type == "Event":
-                yield (i, node)
 
     def get_hierarchy(self, entrypoint: Node) -> nx.DiGraph:
         """Collects all descendant nodes from the specified entrypoint in a graph."""
@@ -197,7 +239,7 @@ class Soundbank:
 
         # Parents are sometimes located in other soundbanks, too
         while parent_id != 0 and parent_id in self._id2index:
-            # No early exit, we want to recover the entire upwards chain. We'll handle the 
+            # No early exit, we want to recover the entire upwards chain. We'll handle the
             # parts we actually need later
 
             # Check for loops. No clue if that ever happens, but better be safe than sorry
@@ -208,11 +250,13 @@ class Soundbank:
                     debug_obj_id = debug_obj.id
                     debug_parent = debug_obj.parent
                     print(f"{debug_obj_id} -> {debug_parent}")
-                
+
                 print(f"{debug_parent} -> {parent_id}")
 
-                raise ValueError(f"Parent chain for node {entrypoint} contains a loop at node {parent_id}")
-                
+                raise ValueError(
+                    f"Parent chain for node {entrypoint} contains a loop at node {parent_id}"
+                )
+
             # Children before parents
             upchain.append(parent_id)
             parent = self.hirc[self._id2index[parent_id]]
@@ -251,7 +295,7 @@ class Soundbank:
         def delve(item: Any, field: str, new_ids: set):
             if field in ["source_id", "direct_parent_id", "children"]:
                 return
-            
+
             if isinstance(item, list):
                 for i, subnode in enumerate(item):
                     delve(subnode, f"{field}[{i}]", new_ids)
@@ -276,7 +320,7 @@ class Soundbank:
 
                 for id in new_ids.difference(extras):
                     todo.append(id)
-                    # Will contain the highest parents in the beginning (to the left) and deeper 
+                    # Will contain the highest parents in the beginning (to the left) and deeper
                     # children towards the end (right)
                     extras.append(id)
 
@@ -308,8 +352,10 @@ class Soundbank:
                 elif path.endswith("bank_id"):
                     if item != self.id:
                         # Not sure if this can be an issue
-                        issues.append(f"{node_id}:reference to external soundbank {item}")
-                
+                        issues.append(
+                            f"{node_id}:reference to external soundbank {item}"
+                        )
+
                 elif path.endswith("id/Hash"):
                     if item in discovered_ids:
                         issues.append(f"{node_id}: has duplicates")
@@ -317,13 +363,15 @@ class Soundbank:
                 elif path.endswith("id/String"):
                     if calc_hash(item) in discovered_ids:
                         issues.append(f"{node_id}: has duplicates")
-                
+
                 elif path.endswith("direct_parent_id"):
                     if item in discovered_ids:
                         issues.append(f"{node_id}: is defined after its parent {item}")
 
                 elif item not in discovered_ids:
-                    issues.append(f"{node_id}: {path}: reference {item} does not exist (probably okay?)")
+                    issues.append(
+                        f"{node_id}: {path}: reference {item} does not exist (probably okay?)"
+                    )
 
         for node in self.hirc:
             node_id = node.id
@@ -345,7 +393,9 @@ class Soundbank:
             verified_ids.add(node_id)
 
         if required_ids and len(verified_ids) < len(required_ids):
-            issues.append(f"Expected nodes not found: {[required_ids.difference(verified_ids)]}")
+            issues.append(
+                f"Expected nodes not found: {[required_ids.difference(verified_ids)]}"
+            )
 
         return issues
 
@@ -365,4 +415,4 @@ class Soundbank:
         return self.hirc[idx]
 
     def __str__(self):
-        return f"Soundbank (id={self.id}, bnk={self.bnk})"
+        return f"Soundbank (id={self.id}, bnk={self.name})"
