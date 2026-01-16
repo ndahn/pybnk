@@ -1,3 +1,4 @@
+import logging
 from pprint import pprint
 
 from pybnk import Soundbank, Node, calc_hash
@@ -56,7 +57,7 @@ def copy_structure(
             upchain = src_bnk.get_parent_chain(entrypoint)
 
             if not quiet:
-                print("\nThe parent chain consists of the following nodes:")
+                logging.info("\nThe parent chain consists of the following nodes:")
                 for up_id in reversed(upchain):
                     print(f" ⤷ {up_id} ({src_bnk[up_id].type})")
 
@@ -80,7 +81,7 @@ def copy_structure(
             extras = src_bnk.find_related_objects(action_tree.nodes)
 
             if extras and not quiet:
-                print("\nThe following extra items were collected:")
+                logging.info("\nThe following extra items were collected:")
                 for nid in extras:
                     print(f" - {nid} ({src_bnk[nid].type})")
                 print()
@@ -95,17 +96,17 @@ def copy_structure(
                 dst_bnk.add_nodes(src_bnk[oid].copy())
 
     if not quiet:
-        print("All hierarchies transferred")
-        print("\nFound the following WEMs:")
+        logging.info("All hierarchies transferred")
+        logging.info("\nFound the following WEMs:")
         pprint(wems)
 
-    print("\nVerifying soundbank...")
+    logging.info("\nVerifying soundbank...")
     issues = dst_bnk.verify()
     if issues:
         for issue in issues:
-            print(f" - {issue}")
+            logging.warning(f" - {issue}")
     else:
-        print(" - seems surprisingly fine :o")
+        logging.info(" - seems surprisingly fine :o")
 
     wem_paths = []
     for wem in wems:
@@ -113,6 +114,6 @@ def copy_structure(
         if wp.is_file():
             wem_paths.append(wp)
         else:
-            print(f"WEM {wem} not found in source soundbank, probably streamed?")
+            logging.warning(f"WEM {wem} not found in source soundbank, probably streamed?")
 
     import_wems(dst_bnk, wem_paths)

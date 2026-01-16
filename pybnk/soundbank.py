@@ -57,8 +57,6 @@ class Soundbank:
         self.id = id
         self.hirc = hirc
 
-        self.logger = logging.getLogger()
-
         # A helper dict for mapping object IDs to HIRC indices
         self._id2index: dict[int, int] = {}
         self._regenerate_index_table()
@@ -78,7 +76,7 @@ class Soundbank:
                 oid = calc_hash(eid)
                 self._id2index[oid] = idx
             else:
-                print(f"Don't know how to handle object with id {idsec}")
+                logging.error(f"Don't know how to handle object with id {idsec}")
 
     @property
     def name(self) -> str:
@@ -190,7 +188,7 @@ class Soundbank:
         first_event = self.query_one({"type": "Event"})
         idx = self._id2index[first_event.id]
 
-        print(f"Inserting new event {event} with {len(actions)} actions at {idx}")
+        logging.info(f"Inserting new event {event} with {len(actions)} actions at {idx}")
         self.hirc.insert(idx, event)
         for act in reversed(actions):
             self.hirc.insert(idx, act)
@@ -246,6 +244,7 @@ class Soundbank:
             # Check for loops. No clue if that ever happens, but better be safe than sorry
             if parent_id in upchain:
                 # Print the loop
+                logging.error("Reference loop detected!")
                 for idx in upchain:
                     debug_obj: Node = self.hirc[idx]
                     debug_obj_id = debug_obj.id

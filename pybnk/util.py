@@ -1,45 +1,33 @@
 from typing import Any, TYPE_CHECKING
 from pathlib import Path
 from importlib import resources
+import logging
 import subprocess
 import shutil
 import networkx as nx
-from tkinter import filedialog
+
+from .external import get_rewwise
 
 if TYPE_CHECKING:
     from pybnk import Soundbank
 
 
-_rewwise_exe: Path = None
-
-
-def get_rewwise_path() -> str:
-    global _rewwise_exe
-
-    if not _rewwise_exe or not _rewwise_exe.is_file():
-        _rewwise_exe = filedialog.askopenfilename(
-            defaultextension="exe", filetypes=[("bnk2json", "exe")]
-        )
-
-    return _rewwise_exe
-
-
 def unpack_soundbank(bnk_path: Path) -> Path:
-    rewwise_exe = get_rewwise_path()
+    rewwise_exe = get_rewwise()
 
-    print(f"Unpacking soundbank {bnk_path.name}")
+    logging.info(f"Unpacking soundbank {bnk_path.name}")
     subprocess.check_call([rewwise_exe, str(bnk_path)])
 
     return bnk_path.parent / bnk_path.stem / "soundbank.json"
 
 
 def repack_soundbank(bnk_dir: Path) -> Path:
-    rewwise_exe = get_rewwise_path()
+    rewwise_exe = get_rewwise()
 
     if bnk_dir.name == "sounbank.json":
         bnk_dir = bnk_dir.parent
 
-    print(f"Repacking soundbank {bnk_dir.stem}")
+    logging.info(f"Repacking soundbank {bnk_dir.stem}")
     subprocess.check_call([rewwise_exe, str(bnk_dir)])
 
     # Rename the backup and new soundbank to make things a little easier for the user
@@ -72,12 +60,12 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
     # Find root node
     roots = [n for n in graph.nodes() if graph.in_degree(n) == 0]
     if not roots:
-        print("Warning: Could not determine root node")
+        logging.warning("Could not determine root node")
         return
 
     root = roots[0]
     if len(roots) > 1:
-        print(f"Warning: Multiple roots found, using {root}")
+        logging.warning(f"Multiple roots found, using {root}")
     
     delve(root, "", None)
 

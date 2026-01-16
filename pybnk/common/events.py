@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 import re
+import logging
 
 from ..util import calc_hash
 
@@ -9,10 +10,10 @@ if TYPE_CHECKING:
 
 def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> str:
     if sound_type not in "acfopsmvxbiyzegd":
-        print(f"Warning: unexpected sound type {sound_type}")
+        logging.warning(f"unexpected sound type {sound_type}")
 
     if not 0 < event_id < 1_000_000_000:
-        print(f"Warning: event ID {event_id} outside expected range")
+        logging.warning(f"event ID {event_id} outside expected range")
 
     if not event_type:
         raise ValueError("No event type given")
@@ -22,7 +23,7 @@ def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> 
 
 def get_event_idx(bnk: "Soundbank", event: str) -> int:
     if not re.match(r"\w+_\w\d{9}", event):
-        print(f"Warning: event {event} does not match the expected pattern")
+        logging.warning(f"event {event} does not match the expected pattern")
 
     idx = bnk._id2index.get(event, None)
         
@@ -51,6 +52,6 @@ def get_event_actions(bnk: "Soundbank", event: str) -> list[int]:
         if target_id in bnk._id2index:
             actions.append(target_id)
         else:
-            print(f"Warning: action {action_hash} of event {event} has external ID outside the current soundbank")
+            logging.warning(f"action {action_hash} of event {event} has external ID outside the current soundbank")
 
     return actions

@@ -2,6 +2,7 @@ from typing import Any
 import os
 from importlib import resources
 import json
+import logging
 from pathlib import Path
 from enum import IntEnum
 import shutil
@@ -57,6 +58,10 @@ def new_sound(
         source_type = "Streaming"
     elif mode == SoundMode.PREFETCH:
         source_type = "Prefetch"
+
+    # TODO source duration (in ms)
+    # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
+    # https://discord.com/channels/529802828278005773/1252503668515934249
 
     return new_from_template(
         bnk.new_id(),
@@ -165,22 +170,7 @@ def create_simple_sound(
     volume: float = -3.0,
     rsc_attr: dict[str, Any] = None,
 ) -> Node:
-    sounds = []
-    for wem in wems:
-        try:
-            int(wem.stem)
-        except ValueError:
-            while True:
-                wem_id = bnk.new_id()
-                new_path = wem.parent / f"{wem_id}.wem"
-                if not new_path.is_file():
-                    shutil.copy(wem, new_path)
-                    print(f"Copied WEM {wem.name} to {new_path.name}")
-                    wem = new_path
-                    break
-
-        sounds.append(new_sound(bnk, wem))
-
+    sounds = [new_sound(bnk, w) for w in wems]
     rsc = new_random_sequence_container(bnk, sounds, volume=volume, attr=rsc_attr)
     rsc.parent = actor_mixer.id
 
