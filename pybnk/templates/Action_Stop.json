@@ -1,0 +1,31 @@
+{
+  "body_type": 3,
+  "size": 16,
+  "id": {
+    "Hash": -1
+  },
+  "body": {
+    "Action": {
+      "action_type": 259,
+      "external_id": -1,
+      "is_bus": 0,
+      "prop_bundle": [],
+      "ranged_modifiers": {
+        "count": 0,
+        "entries": []
+      },
+      "params": {
+        "StopEO": {
+          "stop": {
+            "flags1": 4,
+            "flags2": 6
+          },
+          "except": {
+            "count": 0,
+            "exceptions": []
+          }
+        }
+      }
+    }
+  }
+}

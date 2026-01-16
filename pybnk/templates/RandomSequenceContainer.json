@@ -1,96 +1,113 @@
 {
-  "id": -1,
-  "object": {
+  "body_type": 5,
+  "size": 145,
+  "id": {
+    "Hash": -1
+  },
+  "body": {
     "RandomSequenceContainer": {
-      "initial_values": {
-        "node_base_params": {
-          "node_initial_fx_parameters": {
-            "is_override_parent_fx": 0,
-            "fx_bypass_bits": 0,
-            "fx_chunks": []
-          },
-          "override_attachment_params": 0,
-          "override_bus_id": 0,
-          "direct_parent_id": -1,
-          "unknown_flags": 0,
-          "node_initial_params": {
-            "prop_initial_values": {
-              "values": [
-                {
-                  "prop_type": "Volume",
-                  "value": -3.0
-                }
-              ]
-            },
-            "prop_range_modifiers": {
-              "values": [
-                {
-                  "prop_type": "Pitch",
-                  "min": -101.0,
-                  "max": 101.0
-                }
-              ]
-            }
-          },
-          "positioning_params": {
-            "override_parent": false,
-            "listener_relative_routing": false,
-            "speaker_panning_type": "DirectSpeakerAssignment",
-            "three_dimensional_position_type": "Emitter",
-            "three_dimensional_spatialization_mode": "None",
-            "enable_attenuation": false,
-            "hold_emitter_position_and_orientation": false,
-            "hold_listener_orientation": false,
-            "enable_diffraction": false,
-            "path_mode": "StepSequence",
-            "transition_time": 0,
-            "vertices": [],
-            "path_list_item_offsets": [],
-            "three_dimensional_automation_params": []
-          },
-          "aux_params": {
-            "unk": 0,
-            "override_user_aux_sends": false,
-            "has_aux": false,
-            "override_reflections_aux_bus": false,
-            "aux1": 0,
-            "aux2": 0,
-            "aux3": 0,
-            "aux4": 0,
-            "reflections_aux_bus": 0
-          },
-          "adv_settings_params": {
-            "flags1": 0,
-            "virtual_queue_behavior": "PlayFromElapsedTime",
-            "max_instance_count": 0,
-            "below_threshold_behavior": "ContinueToPlay",
-            "flags2": 0
-          },
-          "state_chunk": {
-            "state_property_info": [],
-            "state_group_chunks": []
-          },
-          "initial_rtpc": {
-            "rtpcs": []
+      "node_base_params": {
+        "node_initial_fx_parameters": {
+          "is_override_parent_fx": 0,
+          "fx_chunk_count": 0,
+          "fx_bypass_bits": 0,
+          "fx_chunks": []
+        },
+        "override_attachment_params": 0,
+        "override_bus_id": 0,
+        "direct_parent_id": -1,
+        "unknown_flags": 2,
+        "node_initial_params": {
+          "prop_initial_values": [],
+          "prop_ranged_modifiers": {
+            "count": 0,
+            "entries": []
           }
         },
-        "loop_count": 1,
-        "loop_mod_min": 0,
-        "loop_mod_max": 0,
-        "transition_time": 1000.0,
-        "transition_time_mod_min": 0.0,
-        "transition_time_mod_max": 0.0,
-        "avoid_repeat_count": 3,
-        "transition_mode": "Disabled",
-        "random_mode": "Normal",
-        "mode": "Random",
-        "flags": 18,
-        "children": {
-          "items": []
+        "positioning_params": {
+          "unk1": false,
+          "three_dimensional_position_type": "Emitter",
+          "speaker_panning_type": "DirectSpeakerAssignment",
+          "listener_relative_routing": false,
+          "override_parent": false,
+          "unk2": false,
+          "enable_diffraction": false,
+          "hold_listener_orientation": false,
+          "hold_emitter_position_and_orientation": false,
+          "enable_attenuation": false,
+          "three_dimensional_spatialization_mode": "None",
+          "path_mode": "StepSequence",
+          "transition_time": 0,
+          "vertex_count": 0,
+          "vertices": [],
+          "path_list_item_count": 0,
+          "path_list_item_offsets": [],
+          "three_dimensional_automation_params": []
         },
-        "playlist": {
-          "items": []
+        "aux_params": {
+          "unk1": false,
+          "unk2": false,
+          "unk3": false,
+          "override_reflections_aux_bus": false,
+          "has_aux": true,
+          "override_user_aux_sends": false,
+          "unk4": 2,
+          "aux1": 3125543356,
+          "aux2": 3125543359,
+          "aux3": 3125543358,
+          "aux4": 3125543353,
+          "reflections_aux_bus": 0
+        },
+        "adv_settings_params": {
+          "unk1": false,
+          "unk2": false,
+          "unk3": false,
+          "is_virtual_voices_opt_override_parent": false,
+          "ignore_parent_maximum_instances": false,
+          "unk4": true,
+          "use_virtual_behavior": true,
+          "kill_newest": false,
+          "virtual_queue_behavior": "Resume",
+          "max_instance_count": 5,
+          "below_threshold_behavior": "KillIfOneShotElseVirtual",
+          "unk5": false,
+          "unk6": false,
+          "unk7": false,
+          "unk8": false,
+          "enable_envelope": false,
+          "normalize_loudness": false,
+          "override_analysis": false,
+          "override_hdr_envelope": false
+        },
+        "state_chunk": {
+          "state_property_count": 0,
+          "state_property_info": [],
+          "state_group_count": 0,
+          "state_group_chunks": []
+        },
+        "initial_rtpc": {
+          "count": 0,
+          "rtpcs": []
         }
+      },
+      "loop_count": 1,
+      "loop_mod_min": 0,
+      "loop_mod_max": 0,
+      "transition_time": 1000.0,
+      "transition_time_mod_min": 0.0,
+      "transition_time_mod_max": 0.0,
+      "avoid_repeat_count": 1,
+      "transition_mode": 0,
+      "random_mode": 0,
+      "mode": 0,
+      "flags": 18,
+      "children": {
+        "count": 0,
+        "items": []
+      },
+      "playlist": {
+        "count": 0,
+        "items": []
       }
     }
   }

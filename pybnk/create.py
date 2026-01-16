@@ -7,12 +7,12 @@ from enum import IntEnum
 import shutil
 
 from pybnk import Soundbank, Node
-from pybnk.modify import set_rsc_volume
+from pybnk.modify import set_rsc_volume, add_children
 from pybnk.util import calc_hash
 
 
 class SoundMode(IntEnum):
-    REGULAR = 0
+    EMBEDDED = 0
     STREAMING = 1
     PREFETCH = 2
 
@@ -22,7 +22,7 @@ class PlaylistMode(IntEnum):
 
 
 def new_from_template(
-    nid: int, template: str, attributes: dict[str, Any] = None
+    nid: int, template: str, attr: dict[str, Any] = None
 ) -> Node:
     import pybnk
 
@@ -34,44 +34,53 @@ def new_from_template(
     node = Node(template_dict)
     node.id = nid
 
-    if attributes:
-        for path, value in attributes.items():
+    if attr:
+        for path, value in attr.items():
             node[path] = value
 
     return node
 
 
-def new_sound(nid: int, wem: Path, mode: SoundMode = SoundMode.REGULAR) -> Node:
+def new_sound(
+    bnk: Soundbank,
+    wem: Path,
+    mode: SoundMode = SoundMode.EMBEDDED,
+    attr: dict[str, Any] = None,
+) -> Node:
     wem_id = int(wem.name.rsplit(".")[0])
     size = os.path.getsize(str(wem))
 
     # TODO correct streaming mode name, see what else is needed
-    if mode == SoundMode.REGULAR:
-        source_type = "BnkData"
+    if mode == SoundMode.EMBEDDED:
+        source_type = "Embedded"
     elif mode == SoundMode.STREAMING:
         source_type = "Streaming"
     elif mode == SoundMode.PREFETCH:
         source_type = "Prefetch"
 
     return new_from_template(
-        nid,
+        bnk.new_id(),
         "Sound",
         {
+            "bank_source_data/source_type": source_type,
             "bank_source_data/media_information/source_id": wem_id,
             "bank_source_data/media_information/in_memory_media_size": size,
-            "bank_source_data/source_type": source_type,
-        },
+        }
+        | (attr or {}),
     )
 
 
 def new_random_sequence_container(
-    nid: int,
+    bnk: Soundbank,
     children: list[Node | tuple[Node, int]] = None,
     mode: PlaylistMode = PlaylistMode.RANDOM,
     volume: float = -3.0,
+    attr: dict[str, Any] = None,
 ) -> Node:
     items = []
     weights = []
+
+    rsc_id = bnk.new_id()
 
     if children:
         for child in children:
@@ -83,13 +92,13 @@ def new_random_sequence_container(
             items.append(child)
             weights.append(weight)
 
-            child.parent = nid
+            child.parent = rsc_id
 
     if mode == PlaylistMode.RANDOM:
         playlist_mode = "Random"
 
     rsc = new_from_template(
-        nid,
+        rsc_id,
         "RandomSequenceContainer",
         {
             "children/items": items,
@@ -101,7 +110,8 @@ def new_random_sequence_container(
                 for cid, weight in zip(items, weights)
             ],
             "mode": playlist_mode,
-        },
+        }
+        | (attr or {}),
     )
 
     if volume is not None:
@@ -110,21 +120,41 @@ def new_random_sequence_container(
     return rsc
 
 
+def new_actor_mixer(
+    bnk: Soundbank, children: list[Node], attr: dict[str, Any] = None
+) -> Node:
+    am = new_from_template(bnk.new_id(), "ActorMixer", attr)
+    add_children(am, *children)
+    return am
+
+
 def new_event(
-    nid: int, name: str, node: Node | int, action_type: str = "Play"
-) -> tuple[Node, Node]:
+    bnk: Soundbank,
+    name: str,
+    node: Node | int,
+    play_attr: dict[str, Any] = None,
+    stop_attr: dict[str, Any] = None,
+) -> tuple[Node, tuple[Node, Node]]:
     if isinstance(node, Node):
         node = node.id
 
-    action = new_from_template(
-        "Action", {"action_type": action_type, "initial_values/external_id": node}
+    play_action = new_from_template(
+        bnk.new_id(),
+        "Action_Play",
+        {"external_id": node, "params/Play/bank_id": bnk.id} | (play_attr or {}),
     )
-    action.id = nid
+    stop_action = new_from_template(
+        bnk.new_id(),
+        "Action_Stop",
+        {"external_id": node} | (stop_attr or {}),
+    )
 
-    event = new_from_template("Event", {"actions": [action.id]})
+    event = new_from_template(
+        bnk.new_id(), "Event", {"actions": [play_action.id, stop_action.id]}
+    )
     event.id = calc_hash(name)
 
-    return (event, action)
+    return (event, (play_action, stop_action))
 
 
 def create_simple_sound(
@@ -133,6 +163,7 @@ def create_simple_sound(
     wems: list[Path],
     actor_mixer: Node,
     volume: float = -3.0,
+    rsc_attr: dict[str, Any] = None,
 ) -> Node:
     sounds = []
     for wem in wems:
@@ -148,19 +179,18 @@ def create_simple_sound(
                     wem = new_path
                     break
 
-        sounds.append(new_sound(bnk.new_id(), wem))
+        sounds.append(new_sound(bnk, wem))
 
-    rsc = new_random_sequence_container(bnk.new_id(), sounds, volume=volume)
+    rsc = new_random_sequence_container(bnk, sounds, volume=volume, attr=rsc_attr)
     rsc.parent = actor_mixer.id
 
     play_event, play_action = new_event(
-        bnk.new_id(), f"Play_{wwise_name}", rsc.id, action_type="Play"
+        bnk, f"Play_{wwise_name}", rsc.id, action_type="Play"
     )
     stop_event, stop_action = new_event(
-        bnk.new_id(), f"Stop_{wwise_name}", rsc.id, action_type="Stop"
+        bnk, f"Stop_{wwise_name}", rsc.id, action_type="Stop"
     )
 
     bnk.add_nodes(sounds + [rsc])
     bnk.add_event(play_event, [play_action])
     bnk.add_event(stop_event, [stop_action])
-

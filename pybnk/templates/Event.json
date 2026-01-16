@@ -1,7 +1,12 @@
 {
-  "id": -1,
-  "object": {
+  "body_type": 4,
+  "size": 9,
+  "id": {
+    "Hash": -1
+  },
+  "body": {
     "Event": {
+      "action_count": 0,
       "actions": []
     }
   }

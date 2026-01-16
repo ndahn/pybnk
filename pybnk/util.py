@@ -42,7 +42,11 @@ def repack_soundbank(bnk_dir: Path) -> Path:
     print(f"Repacking soundbank {bnk_dir.stem}")
     subprocess.check_call([rewwise_exe, str(bnk_dir)])
 
-    # TODO rename the backup and new soundbank
+    # Rename the backup and new soundbank to make things a little easier for the user
+    old_file = bnk_dir.parent / bnk_dir.stem + ".bnk"
+    new_file = bnk_dir.parent / bnk_dir.stem + ".created.bnk"
+    shutil.move(old_file, str(old_file) + ".bak")
+    shutil.move(new_file, old_file)
 
     return bnk_dir.parent / bnk_dir.stem + ".bnk"
 
