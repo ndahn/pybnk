@@ -193,7 +193,7 @@ class Soundbank:
         for act in reversed(actions):
             self.hirc.insert(idx, act)
 
-        self._regenerate_index_table
+        self._regenerate_index_table()
         return idx
 
     def get_hierarchy(self, entrypoint: Node) -> nx.DiGraph:

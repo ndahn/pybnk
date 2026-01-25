@@ -7,6 +7,26 @@ from pybnk.wem import import_wems
 from pybnk.util import print_hierarchy
 
 
+def copy_event(
+    event: Node,
+    src_bnk: Soundbank,
+    dst_bnk: Soundbank,
+) -> Node:
+    event = event.copy()
+    actions = [src_bnk[aid].copy() for aid in event["actions"]]
+
+    # Some actions make references to other soundbanks
+    for a in actions:
+        # Look for e.g. params/Play/bank_id
+        for params in a.get("params", {}).values():
+            action_bank_id = params.get("bank_id", None)
+            if action_bank_id == src_bnk.id:
+                params["bank_id"] = dst_bnk.id
+
+    dst_bnk.add_event(event, actions)
+    return event
+
+
 def copy_structure(
     src_bnk: Soundbank,
     dst_bnk: Soundbank,
@@ -15,34 +35,23 @@ def copy_structure(
 ) -> None:
     wems = []
 
-    def fix_soundbank_references(actions: list[Node]) -> None:
-        # Some actions make references to other soundbanks or even their own
-        for a in actions:
-            bank_id = a.get("params/bank_id", None)
-            if bank_id == src_bnk.id:
-                a["params/bank_id"] = dst_bnk.id
-
     for wwise_src, wwise_dst in wwise_map.items():
         # Play event
         play_evt_name = f"Play_{wwise_src}"
         play_evt = src_bnk[play_evt_name].copy()
         play_evt.id = calc_hash(f"Play_{wwise_dst}")
-        play_actions = [src_bnk[a].copy() for a in play_evt["actions"]]
-        fix_soundbank_references(play_actions)
-        dst_bnk.add_event(play_evt, play_actions)
+        play_evt = copy_event(play_evt, src_bnk, dst_bnk)
 
         # Stop event
         stop_evt_name = f"Stop_{wwise_src}"
         stop_evt = src_bnk[stop_evt_name].copy()
         stop_evt.id = calc_hash(f"Stop_{wwise_dst}")
-        stop_actions = [src_bnk[a].copy() for a in stop_evt["actions"]]
-        fix_soundbank_references(stop_actions)
-        dst_bnk.add_event(stop_evt, stop_actions)
+        stop_evt = copy_event(stop_evt, src_bnk, dst_bnk)
 
         # Collect the structures attached to each action
         for action_id in play_evt["actions"]:
             action = src_bnk[action_id]
-            action_bnk_id = action["params/bank_id"]
+            action_bnk_id = action["params/Play/bank_id"]
 
             # NOTE action_bnk_id will already be translated from src_bnk to dst_bnk
             if action_bnk_id != dst_bnk.id:
