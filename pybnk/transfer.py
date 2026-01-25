@@ -42,6 +42,15 @@ def copy_structure(
         # Collect the structures attached to each action
         for action_id in play_evt["actions"]:
             action = src_bnk[action_id]
+            action_bnk_id = action["params/bank_id"]
+
+            # NOTE action_bnk_id will already be translated from src_bnk to dst_bnk
+            if action_bnk_id != dst_bnk.id:
+                print(
+                    f"Action {action_id} of event {play_evt} references node in external soundbank {action_bnk_id}"
+                )
+                continue
+
             entrypoint = src_bnk[action["external_id"]]
 
             # Collect the hierarchy responsible for playing the sound(s)
@@ -114,6 +123,8 @@ def copy_structure(
         if wp.is_file():
             wem_paths.append(wp)
         else:
-            logging.warning(f"WEM {wem} not found in source soundbank, probably streamed?")
+            logging.warning(
+                f"WEM {wem} not found in source soundbank, probably streamed?"
+            )
 
     import_wems(dst_bnk, wem_paths)
