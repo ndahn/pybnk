@@ -4,6 +4,7 @@ from pathlib import Path
 import logging
 import shutil
 import subprocess
+# NOTE need to manually install audioop-lts
 from pydub import AudioSegment, silence
 
 from pybnk import Soundbank

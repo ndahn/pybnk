@@ -28,7 +28,7 @@ class Node:
 
         return n
 
-    def lookup_name(self) -> str:
+    def lookup_name(self, default: str = None) -> str:
         idsec = self._attr["id"]
         s = idsec.get("String")
         if not s:
@@ -36,6 +36,9 @@ class Node:
             if s:
                 idsec["String"] = s
         
+        if s is None:
+            return default
+            
         return s
 
     @property

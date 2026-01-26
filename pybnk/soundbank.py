@@ -14,16 +14,17 @@ from pybnk.node import Node
 
 class Soundbank:
     @classmethod
-    def load(cls, bnk_dir: str) -> "Soundbank":
+    def load(cls, bnk_path: str) -> "Soundbank":
         """Load a soundbank and return a more manageable representation."""
         # Resolve the path to the unpacked soundbank
-        bnk_dir: Path = Path(bnk_dir)
-        if not bnk_dir.is_absolute():
-            bnk_dir = Path(__file__).resolve().parent / bnk_dir
-
-        bnk_dir = bnk_dir.resolve()
-
-        json_path = bnk_dir / "soundbank.json"
+        bnk_path: Path = Path(bnk_path).absolute().resolve()
+        if bnk_path.name == "soundbank.json":
+            json_path = bnk_path
+            bnk_path = bnk_path.parent
+        else:
+            json_path = bnk_path / "soundbank.json"
+            bnk_path = bnk_path
+        
         with json_path.open() as f:
             bnk_json: dict = json.load(f)
 
@@ -43,7 +44,7 @@ class Soundbank:
             else:
                 pass
 
-        return cls(bnk_dir, bnk_json, bnk_id, hirc)
+        return cls(bnk_path, bnk_json, bnk_id, hirc)
 
     def __init__(
         self,
@@ -282,10 +283,14 @@ class Soundbank:
     def query_one(self, conditions: dict[str, Any], default: Any = None) -> Node:
         return next(self.query(conditions), default)
 
-    def find_nodes_by_type(self, node_type: str) -> Generator[Node, None, None]:
-        for node in self.hirc:
-            if node.type == node_type:
-                yield node
+    def find_events(self, event_type: str = "Play") -> Generator[Node, None, None]:
+        events = list(self.query({"type": "Event"}))
+        for evt in events:
+            for aid in evt["actions"]:
+                action = self[aid]
+                if event_type in action.get("params", {}):
+                    yield evt
+                    break
 
     def find_related_objects(self, object_ids: list[int]) -> set[int]:
         """Collect any values of attributes that look like they could be a reference to another object, e.g. a bus."""
