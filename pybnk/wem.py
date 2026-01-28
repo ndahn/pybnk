@@ -1,13 +1,13 @@
 from typing import Literal
 import os
 from pathlib import Path
-import logging
 import shutil
 import subprocess
 # NOTE need to manually install audioop-lts
 from pydub import AudioSegment, silence
 
 from pybnk import Soundbank
+from pybnk.util import logger
 from pybnk.external import get_wwise, get_vgmstream_cli
 
 
@@ -110,7 +110,7 @@ def wav2wem(
     source_lines = []
     for wav in waves:
         if not wav.is_file():
-            logging.error(f"FileNotFound: {wav}")
+            logger.error(f"FileNotFound: {wav}")
             continue
 
         # NOTE as long as all paths are absolute this should be fine
@@ -175,7 +175,7 @@ def wem2wav(wems: Path | list[Path], out_dir: Path = None) -> None:
     try:
         for wem in wems:
             if not wem.is_file():
-                logging.error(f"FileNotFound: {wem}")
+                logger.error(f"FileNotFound: {wem}")
                 continue
 
             subprocess.check_call(
@@ -187,7 +187,7 @@ def wem2wav(wems: Path | list[Path], out_dir: Path = None) -> None:
                 ]
             )
     except subprocess.CalledProcessError as e:
-        logging.error(
+        logger.error(
             "Conversion failed! Make sure you have the required libraries installed!\n"
             " -> https://github.com/vgmstream/vgmstream/blob/master/doc/USAGE.md"
         )

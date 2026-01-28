@@ -1,6 +1,5 @@
-import logging
-
 from pybnk import Soundbank, Node
+from pybnk.util import logger
 
 
 def add_children(node: Node, *children: Node) -> None:
@@ -29,12 +28,12 @@ def add_child_to_rsc(bnk: Soundbank, rsc: Node | int, child: Node, weight: int =
     children = rsc["children/items"]
 
     if child.id in children:
-        logging.warning(f"Node {child.id} already part of RandomSequenceContainer")
+        logger.warning(f"Node {child.id} already part of RandomSequenceContainer")
         return
 
     if child.parent >= 0:
         # TODO we could probably fix this
-        logging.warning(f"Node {child.id} already has a parent")
+        logger.warning(f"Node {child.id} already has a parent")
         return
 
     add_children(rsc, child)

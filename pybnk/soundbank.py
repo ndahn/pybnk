@@ -2,13 +2,12 @@ from typing import Any, Generator
 from pathlib import Path
 from random import randrange
 from collections import deque
-import logging
 import json
 import copy
 import shutil
 import networkx as nx
 
-from pybnk.util import calc_hash
+from pybnk.util import calc_hash, logger
 from pybnk.node import Node
 
 
@@ -77,7 +76,7 @@ class Soundbank:
                 oid = calc_hash(eid)
                 self._id2index[oid] = idx
             else:
-                logging.error(f"Don't know how to handle object with id {idsec}")
+                logger.error(f"Don't know how to handle object with id {idsec}")
 
     @property
     def name(self) -> str:
@@ -178,7 +177,7 @@ class Soundbank:
             if node.parent <= 0:
                 raise ValueError(f"Invalid parent ID {node.parent}")
 
-            logging.info(f"Inserting new node {node} at {idx + i}")
+            logger.info(f"Inserting new node {node} at {idx + i}")
             self.hirc.insert(idx + i, node)
 
         self._regenerate_index_table()
@@ -191,7 +190,7 @@ class Soundbank:
 
         # TODO set event actions
 
-        logging.info(f"Inserting new event {event} with {len(actions)} actions at {idx}")
+        logger.info(f"Inserting new event {event} with {len(actions)} actions at {idx}")
         self.hirc.insert(idx, event)
         for act in reversed(actions):
             self.hirc.insert(idx, act)
@@ -247,7 +246,7 @@ class Soundbank:
             # Check for loops. No clue if that ever happens, but better be safe than sorry
             if parent_id in upchain:
                 # Print the loop
-                logging.error(f"Reference loop detected: {upchain}")
+                logger.error(f"Reference loop detected: {upchain}")
                 for pid in upchain:
                     debug_obj: Node = self[pid]
                     debug_parent = debug_obj.parent

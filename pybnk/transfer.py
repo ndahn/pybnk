@@ -1,10 +1,9 @@
-import logging
 from pprint import pprint
 
 from pybnk import Soundbank, Node, calc_hash
 from pybnk.modify import add_children
 from pybnk.wem import import_wems
-from pybnk.util import print_hierarchy
+from pybnk.util import print_hierarchy, logger
 
 
 def copy_event(
@@ -68,16 +67,17 @@ def copy_structure(
             if not quiet:
                 print_hierarchy(src_bnk, action_tree)
 
-            wems.extend([d[1] for d in action_tree.nodes.data("wem") if d[1]])
+            wems.extend(((nid, wem) for nid, wem in action_tree.nodes.data("wem") if wem))
             dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
 
             # Go upwards through the parents chain and see what needs to be transferred
             upchain = src_bnk.get_parent_chain(entrypoint)
 
             if not quiet:
-                logging.info("\nThe parent chain consists of the following nodes:")
+                logger.info("\nThe parent chain consists of the following nodes:")
                 for up_id in reversed(upchain):
                     print(f" ⤷ {up_id} ({src_bnk[up_id].type})")
+                print()
 
             up_child = entrypoint
             for up_id in upchain:
@@ -99,7 +99,7 @@ def copy_structure(
             extras = src_bnk.find_related_objects(action_tree.nodes)
 
             if extras and not quiet:
-                logging.info("\nThe following extra items were collected:")
+                logger.info("\nThe following extra items were collected:")
                 for nid in extras:
                     print(f" - {nid} ({src_bnk[nid].type})")
                 print()
@@ -113,27 +113,36 @@ def copy_structure(
 
                 dst_bnk.add_nodes(src_bnk[oid].copy())
 
-    if not quiet:
-        logging.info("All hierarchies transferred")
-        logging.info("\nFound the following WEMs:")
-        pprint(wems)
-
-    logging.info("\nVerifying soundbank...")
+    # Verify
+    logger.info("\nVerifying soundbank...")
     issues = dst_bnk.verify()
     if issues:
         for issue in issues:
-            logging.warning(f" - {issue}")
+            logger.warning(f" - {issue}")
     else:
-        logging.info(" - seems surprisingly fine :o")
+        logger.info(" - seems surprisingly fine :o\n")
 
+    # Copy WEMs
+    if not quiet:
+        logger.info("Discovered the following WEMs:")
+        pprint(wems)
+
+    logger.info("Copying wems...")
     wem_paths = []
-    for wem in wems:
+    for nid, wem in wems:
         wp = src_bnk.bnk_dir / f"{wem}.wem"
         if wp.is_file():
             wem_paths.append(wp)
         else:
-            logging.warning(
-                f"WEM {wem} not found in source soundbank, probably streamed?"
+            sound = src_bnk[nid]
+            plugin = sound["bank_source_data/plugin"]
+            stype = sound["bank_source_data/source_type"]
+            logger.warning(
+                f"WEM {wem} ({plugin}, {stype}) not found in source soundbank, skipped"
             )
 
     import_wems(dst_bnk, wem_paths)
+    
+    # Yay!
+    print()
+    logger.info("Done. Yay!")

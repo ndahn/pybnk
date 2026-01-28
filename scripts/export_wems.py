@@ -1,9 +1,9 @@
 from pathlib import Path
-import logging
 import shutil
 import networkx as nx
 
 from pybnk import Soundbank
+from pybnk.util import logger
 from pybnk.common.events import get_event_actions
 
 
@@ -37,11 +37,11 @@ def export_wems(
 
     for key, wem_files in wems.items():
         if len(wem_files) > 1:
-            logging.warning(f"event {key} has multiple wem files: {wem_files}")
+            logger.warning(f"event {key} has multiple wem files: {wem_files}")
 
         for wf in wem_files:
             if wf in wem2evt:
-                logging.warning(
+                logger.warning(
                     f"wem {wf} is already associated with event {wem2evt[wf]}"
                 )
                 continue
@@ -56,7 +56,7 @@ def export_wems(
             file_map[wem_id] = path
 
     if len(file_map) < len(wem2evt):
-        logging.warning(
+        logger.warning(
             f"{len(wem2evt) - len(file_map)}/{len(wem2evt)} wems are missing:\n{[set(wem2evt.keys()).difference(file_map.keys())]}"
         )
 
@@ -65,7 +65,7 @@ def export_wems(
     if not destination.exists():
         destination.mkdir(parents=True)
 
-    logging.info(f"Gathering {len(file_map)} WEMs into {destination}")
+    logger.info(f"Gathering {len(file_map)} WEMs into {destination}")
     for wem_id, path in file_map.items():
         event: str = wem2evt[wem_id]
         wwise_id = event.split("_", maxsplit=1)[-1]
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     ]
 
     wems = collect_wems(bnk_dir, events)
-    logging.info(
+    logger.info(
         f"Collected {sum(len(x) for x in wems.values())} wems for {len(events)} events"
     )
 

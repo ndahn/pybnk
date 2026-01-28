@@ -12,10 +12,15 @@ if TYPE_CHECKING:
     from pybnk import Soundbank
 
 
+logger = logging.getLogger("pybnk")
+logger.setLevel(logging.INFO)
+logger.addHandler(logging.StreamHandler())
+
+
 def unpack_soundbank(bnk_path: Path) -> Path:
     rewwise_exe = get_rewwise()
 
-    logging.info(f"Unpacking soundbank {bnk_path.name}")
+    logger.info(f"Unpacking soundbank {bnk_path.name}")
     subprocess.check_call([rewwise_exe, str(bnk_path)])
 
     return bnk_path.parent / bnk_path.stem / "soundbank.json"
@@ -27,7 +32,7 @@ def repack_soundbank(bnk_dir: Path) -> Path:
     if bnk_dir.name == "sounbank.json":
         bnk_dir = bnk_dir.parent
 
-    logging.info(f"Repacking soundbank {bnk_dir.stem}")
+    logger.info(f"Repacking soundbank {bnk_dir.stem}")
     subprocess.check_call([rewwise_exe, str(bnk_dir)])
 
     # Rename the backup and new soundbank to make things a little easier for the user
@@ -60,12 +65,12 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
     # Find root node
     roots = [n for n in graph.nodes() if graph.in_degree(n) == 0]
     if not roots:
-        logging.warning("Could not determine root node")
+        logger.warning("Could not determine root node")
         return
 
     root = roots[0]
     if len(roots) > 1:
-        logging.warning(f"Multiple roots found, using {root}")
+        logger.warning(f"Multiple roots found, using {root}")
     
     delve(root, "")
 

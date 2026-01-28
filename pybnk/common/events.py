@@ -1,19 +1,19 @@
 from typing import TYPE_CHECKING
 import re
-import logging
 
-from ..util import calc_hash
+from pybnk.util import calc_hash, logger
 
 if TYPE_CHECKING:
     from pybnk.soundbank import Soundbank
 
 
+
 def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> str:
     if sound_type not in "acfopsmvxbiyzegd":
-        logging.warning(f"unexpected sound type {sound_type}")
+        logger.warning(f"unexpected sound type {sound_type}")
 
     if not 0 < event_id < 1_000_000_000:
-        logging.warning(f"event ID {event_id} outside expected range")
+        logger.warning(f"event ID {event_id} outside expected range")
 
     if not event_type:
         raise ValueError("No event type given")
@@ -23,7 +23,7 @@ def get_event_name(sound_type: str, event_id: int, event_type: str = "Play") -> 
 
 def get_event_idx(bnk: "Soundbank", event: str) -> int:
     if not re.match(r"\w+_\w\d{9}", event):
-        logging.warning(f"event {event} does not match the expected pattern")
+        logger.warning(f"event {event} does not match the expected pattern")
 
     idx = bnk._id2index.get(event, None)
         
@@ -52,6 +52,6 @@ def get_event_actions(bnk: "Soundbank", event: str) -> list[int]:
         if target_id in bnk._id2index:
             actions.append(target_id)
         else:
-            logging.warning(f"action {action_hash} of event {event} has external ID outside the current soundbank")
+            logger.warning(f"action {action_hash} of event {event} has external ID outside the current soundbank")
 
     return actions

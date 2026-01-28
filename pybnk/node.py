@@ -1,8 +1,7 @@
 from typing import Any, Iterator
 import copy
-import logging
 
-from pybnk.util import calc_hash, lookup_table
+from pybnk.util import calc_hash, lookup_table, logger
 
 
 _undefined = object()
@@ -68,8 +67,8 @@ class Node:
         if isinstance(parent, Node):
             parent = parent.id
         
-        if self.parent > 0 and parent > 0:
-            logging.warning(f"Node {self} is being assigned new parent {parent}")
+        if self.parent > 0 and parent > 0 and parent != self.parent:
+            logger.warning(f"Node {self} is being assigned new parent {parent}")
         
         self["node_base_params/direct_parent_id"] = parent
 
