@@ -4,7 +4,7 @@ from pybnk import Soundbank, Node
 
 
 def add_children(node: Node, *children: Node) -> None:
-    items = node["children"]
+    items = node["children/items"]
 
     for child in children:
         if child.id in items:

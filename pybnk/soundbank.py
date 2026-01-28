@@ -178,7 +178,7 @@ class Soundbank:
             if node.parent <= 0:
                 raise ValueError(f"Invalid parent ID {node.parent}")
 
-            self.logger.info(f"Inserting new node {node} at {idx + i}")
+            logging.info(f"Inserting new node {node} at {idx + i}")
             self.hirc.insert(idx + i, node)
 
         self._regenerate_index_table()
@@ -247,12 +247,11 @@ class Soundbank:
             # Check for loops. No clue if that ever happens, but better be safe than sorry
             if parent_id in upchain:
                 # Print the loop
-                logging.error("Reference loop detected!")
-                for idx in upchain:
-                    debug_obj: Node = self.hirc[idx]
-                    debug_obj_id = debug_obj.id
+                logging.error(f"Reference loop detected: {upchain}")
+                for pid in upchain:
+                    debug_obj: Node = self[pid]
                     debug_parent = debug_obj.parent
-                    print(f"{debug_obj_id} -> {debug_parent}")
+                    print(f"{pid} -> {debug_parent}")
 
                 print(f"{debug_parent} -> {parent_id}")
 
@@ -262,8 +261,7 @@ class Soundbank:
 
             # Children before parents
             upchain.append(parent_id)
-            parent = self.hirc[self._id2index[parent_id]]
-            parent_id = parent.id
+            parent_id = self[parent_id].parent
 
         return upchain
 
