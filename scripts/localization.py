@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class BaseTranslations:
+class Localization:
     language = "English"
     title = "ERSoundbankHelper"
     select_source_tooltip = "Select the soundbank your sounds are coming from"
@@ -49,7 +49,12 @@ class BaseTranslations:
 
 
 @dataclass
-class Chinese(BaseException):
+class English(Localization):
+    pass
+
+
+@dataclass
+class Chinese(Localization):
     language = "Chinese"
     title = "艾尔登法环音效迁移助手"
     select_source_tooltip = "选择您要从中提取音效的 soundbank"

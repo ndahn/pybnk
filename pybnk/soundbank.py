@@ -14,7 +14,7 @@ from pybnk.node import Node
 
 class Soundbank:
     @classmethod
-    def load(cls, bnk_path: str) -> "Soundbank":
+    def load(cls, bnk_path: Path | str) -> "Soundbank":
         """Load a soundbank and return a more manageable representation."""
         # Resolve the path to the unpacked soundbank
         bnk_path: Path = Path(bnk_path).absolute().resolve()

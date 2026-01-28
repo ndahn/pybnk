@@ -7,7 +7,7 @@ import threading
 
 from pybnk import Soundbank, calc_hash
 from pybnk.transfer import copy_structure
-from scripts.localization import BaseTranslations, Chinese
+from scripts.localization import Localization, English, Chinese
 
 
 class ToolTip:
@@ -270,7 +270,7 @@ class SoundbankHelperGui(tk.Tk):
         super().__init__()
 
         # --- I18N and Widget Storage ---
-        self.lang = BaseTranslations()  # Default language
+        self.lang: Localization = English()  # Default language
         self.widgets = {}  # Store components that need text updates
         self.tooltips = []  # Store all ToolTip instances
 
@@ -438,7 +438,7 @@ class SoundbankHelperGui(tk.Tk):
     def _change_language(self, event=None):
         selected_language = self.lang_combo.get()
         if selected_language == "English":
-            self.lang = BaseTranslations()
+            self.lang = English()
         elif selected_language == "中文":
             self.lang = Chinese()
         else:
