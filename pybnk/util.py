@@ -55,7 +55,7 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
             print(f"{prefix}{branch} {child}")
             
             new_prefix = prefix + ("    " if is_last else "│   ")
-            delve(graph, child, new_prefix, visited)
+            delve(child, new_prefix)
 
     # Find root node
     roots = [n for n in graph.nodes() if graph.in_degree(n) == 0]
@@ -67,7 +67,7 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
     if len(roots) > 1:
         logging.warning(f"Multiple roots found, using {root}")
     
-    delve(root, "", None)
+    delve(root, "")
 
 
 def calc_hash(input: str) -> int:

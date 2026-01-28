@@ -50,7 +50,7 @@ def copy_structure(
 
         # Collect the structures attached to each action
         for action_id in play_evt["actions"]:
-            action = src_bnk[action_id]
+            action = dst_bnk[action_id]  # already copied to dst
             action_bnk_id = action["params/Play/bank_id"]
 
             # NOTE action_bnk_id will already be translated from src_bnk to dst_bnk
@@ -68,7 +68,7 @@ def copy_structure(
             if not quiet:
                 print_hierarchy(src_bnk, action_tree)
 
-            wems.extend([d for d in action_tree.nodes.data("wem").values() if d])
+            wems.extend([d[1] for d in action_tree.nodes.data("wem") if d[1]])
             dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
 
             # Go upwards through the parents chain and see what needs to be transferred

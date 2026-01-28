@@ -96,7 +96,7 @@ class Node:
                 for key, value in item.items():
                     delve(value, path + "/" + key)
         
-        delve(self.body, "")
+        yield from delve(self.body, "")
 
     def get(self, path: str, default: Any = _undefined) -> Any:
         try:
@@ -118,7 +118,7 @@ class Node:
         if not isinstance(path, str):
             return False
 
-        for p in self.paths:
+        for p in self.paths():
             if p == path:
                 return True
 

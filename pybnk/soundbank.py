@@ -189,6 +189,8 @@ class Soundbank:
         first_event = self.query_one({"type": "Event"})
         idx = self._id2index[first_event.id]
 
+        # TODO set event actions
+
         logging.info(f"Inserting new event {event} with {len(actions)} actions at {idx}")
         self.hirc.insert(idx, event)
         for act in reversed(actions):

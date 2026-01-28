@@ -14,7 +14,7 @@ class ToolTip:
     def __init__(self, widget, text_key: str, lang):
         self.widget = widget
         self.text_key = text_key
-        self.lang = lang
+        self.lang: Localization = lang
         self.tooltip = None
         self.widget.bind("<Enter>", self.show)
         self.widget.bind("<Leave>", self.hide)
@@ -186,7 +186,7 @@ class IdSelectionDialog(tk.Toplevel):
             label_row, text="ℹ", foreground="blue", cursor="hand2"
         )
         help_left.pack(side=tk.LEFT)
-        ToolTip(help_left, "select_ids_tooltip", self)
+        ToolTip(help_left, "select_ids_tooltip", self.lang)
 
         label = ttk.Label(label_row, text=self.lang["available_ids_label"])
         label.pack(anchor=tk.W, pady=(0, 5))
@@ -226,7 +226,18 @@ class IdSelectionDialog(tk.Toplevel):
             try:
                 soundbank: Soundbank = Soundbank.load(self.src_bank_path)
                 play_events = soundbank.find_events("Play")
-                play_event_names = [evt.lookup_name(evt.id) for evt in play_events]
+
+                play_event_names = []
+                for evt in play_events:
+                    name = evt.lookup_name()
+                    if name:
+                        if name.startswith("Play_"):
+                            name = name[5:]
+                    else:
+                        name = str(evt.id)
+
+                    play_event_names.append(name)
+                
                 play_event_names.sort()
 
                 # Update UI in main thread
@@ -263,6 +274,8 @@ class IdSelectionDialog(tk.Toplevel):
             
             self.parent.src_wwise_ids.insert(tk.END, f"{src_id}\n")
             self.parent.dst_wwise_ids.insert(tk.END, f"{dst_id}\n")
+
+        self.destroy()
 
 
 class SoundbankHelperGui(tk.Tk):
@@ -303,7 +316,7 @@ class SoundbankHelperGui(tk.Tk):
         # File 1 with help icon in front
         help1 = ttk.Label(file_frame, text="ℹ", foreground="blue", cursor="hand2")
         help1.grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.tooltips.append(ToolTip(help1, "select_source_tooltip", self))
+        self.tooltips.append(ToolTip(help1, "select_source_tooltip", self.lang))
 
         self.widgets["source_soundbank_label"] = ttk.Label(file_frame)
         self.widgets["source_soundbank_label"].grid(
@@ -324,7 +337,7 @@ class SoundbankHelperGui(tk.Tk):
 
         help2 = ttk.Label(file_frame, text="ℹ", foreground="blue", cursor="hand2")
         help2.grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.tooltips.append(ToolTip(help2, "select_dest_tooltip", self))
+        self.tooltips.append(ToolTip(help2, "select_dest_tooltip", self.lang))
 
         self.widgets["dest_soundbank_label"] = ttk.Label(file_frame)
         self.widgets["dest_soundbank_label"].grid(
@@ -359,7 +372,7 @@ class SoundbankHelperGui(tk.Tk):
             left_label_row, text="ℹ", foreground="blue", cursor="hand2"
         )
         help_left.pack(side=tk.LEFT)
-        self.tooltips.append(ToolTip(help_left, "source_ids_tooltip", self))
+        self.tooltips.append(ToolTip(help_left, "source_ids_tooltip", self.lang))
         self.widgets["source_ids_label"] = ttk.Label(left_label_row)
         self.widgets["source_ids_label"].pack(side=tk.LEFT, padx=(5, 0))
 
@@ -385,7 +398,7 @@ class SoundbankHelperGui(tk.Tk):
             right_label_row, text="ℹ", foreground="blue", cursor="hand2"
         )
         help_right.pack(side=tk.LEFT)
-        self.tooltips.append(ToolTip(help_right, "dest_ids_tooltip", self))
+        self.tooltips.append(ToolTip(help_right, "dest_ids_tooltip", self.lang))
         self.widgets["dest_ids_label"] = ttk.Label(right_label_row)
         self.widgets["dest_ids_label"].pack(side=tk.LEFT, padx=(5, 0))
 
