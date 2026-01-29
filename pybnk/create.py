@@ -30,7 +30,7 @@ def new_from_template(
     if not template.endswith(".json"):
         template += ".json"
 
-    template_txt = resources.read_text(pybnk, template)
+    template_txt = resources.read_text(pybnk, "resources/templates/" + template)
     template_dict = json.loads(template_txt)
     node = Node(template_dict)
     node.id = nid

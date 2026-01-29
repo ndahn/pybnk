@@ -38,7 +38,7 @@ class Localization:
     all_files = "All files"
     open_id_dialog_button = "Select IDs..."
     select_source_first = "Select a source soundbank first"
-    select_ids_tooltip = "This will only show events for which the hashes are mapped by rewwise. You may still enter events manually for any not listed here."
+    select_ids_tooltip = "This will only show events for which the hashes are known. You may still enter events manually even if they are not listed here."
     select_ids_dialog_title = "Select IDs"
     available_ids_label = "Available Source IDs:"
     add_selected_button = "Add Selected >>"

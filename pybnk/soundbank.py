@@ -413,7 +413,10 @@ class Soundbank:
 
     def __getitem__(self, key: int | str) -> Node:
         if isinstance(key, str):
-            key = calc_hash(key)
+            if key.startswith("#"):
+                key = int(key[1:])
+            else:
+                key = calc_hash(key)
 
         idx = self._id2index[key]
         return self.hirc[idx]

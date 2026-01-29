@@ -5,9 +5,11 @@ from pathlib import Path
 import traceback
 import threading
 
-from pybnk import Soundbank, calc_hash
+from pybnk import Soundbank
 from pybnk.transfer import copy_structure
-from scripts.localization import Localization, English, Chinese
+from pybnk.gui.localization import Localization, English, Chinese
+from pybnk.gui.calc_hash_dialog import CalcHashDialog
+from pybnk.gui.id_selection_dialog import IdSelectionDialog
 
 
 class ToolTip:
@@ -91,188 +93,7 @@ class LoadingDialog(tk.Toplevel):
         self.destroy()
 
 
-class HashCalculatorDialog(tk.Toplevel):
-    """Dialog for calculating hash of input string"""
-
-    def __init__(self, parent, lang):
-        super().__init__(parent)
-
-        self.parent = parent
-        self.lang = lang
-
-        self.title("Hash Calculator")
-        self.geometry("400x150")
-        self.transient(parent)  # Set to be on top of parent
-
-        # Create UI
-        self._create_widgets()
-
-    def _create_widgets(self) -> None:
-        # Main frame
-        main_frame = ttk.Frame(self, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Input label and entry
-        input_label = ttk.Label(main_frame, text="Input String:")
-        input_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
-
-        self.input_entry = ttk.Entry(main_frame, width=50)
-        self.input_entry.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 15))
-
-        # Bind to calculate hash on every change
-        self.input_entry.bind("<KeyRelease>", self._calculate_hash)
-
-        # Output label and entry
-        output_label = ttk.Label(main_frame, text="Hash (FNV-1 32-bit):")
-        output_label.grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
-
-        self.output_entry = ttk.Entry(main_frame, width=50, state="readonly")
-        self.output_entry.grid(row=3, column=0, sticky=(tk.W, tk.E))
-
-        # Configure column weight for resizing
-        main_frame.columnconfigure(0, weight=1)
-
-    def _calculate_hash(self, event=None) -> None:
-        """Calculate FNV-1 hash of input string and display in output field"""
-        input_text = self.input_entry.get()
-
-        if not input_text:
-            # Clear output if input is empty
-            self.output_entry.config(state="normal")
-            self.output_entry.delete(0, tk.END)
-            self.output_entry.config(state="readonly")
-            return
-
-        # Calculate FNV-1 32-bit hash
-        hash_value = calc_hash(input_text)
-
-        # Display hash in output field
-        self.output_entry.config(state="normal")
-        self.output_entry.delete(0, tk.END)
-        self.output_entry.insert(0, str(hash_value))
-        self.output_entry.config(state="readonly")
-
-
-class IdSelectionDialog(tk.Toplevel):
-    """Dialog for selecting IDs from soundbank and adding them to main window text boxes"""
-
-    def __init__(self, parent, src_bank_path: str, lang):
-        super().__init__(parent)
-
-        self.parent = parent
-        self.src_bank_path = src_bank_path
-        self.lang = lang
-
-        self.title(self.lang["select_ids_dialog_title"])
-        self.geometry("400x500")
-        self.transient(parent)  # Set to be on top of parent
-
-        # Create UI
-        self._create_widgets()
-
-        # Load IDs
-        self._populate_id_list()
-
-    def _create_widgets(self) -> None:
-        # Main frame
-        main_frame = ttk.Frame(self, padding="10")
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Label
-        label_row = tk.Frame(main_frame)
-        label_row.pack(anchor=tk.W)
-
-        help_left = ttk.Label(label_row, text="ℹ", foreground="blue", cursor="hand2")
-        help_left.pack(side=tk.LEFT)
-        ToolTip(help_left, "select_ids_tooltip", self.lang)
-
-        label = ttk.Label(label_row, text=self.lang["available_ids_label"])
-        label.pack(anchor=tk.W, pady=(0, 5))
-
-        # Listbox with scrollbar
-        list_container = tk.Frame(main_frame)
-        list_container.pack(fill=tk.BOTH, expand=True)
-
-        scrollbar = ttk.Scrollbar(list_container)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.id_listbox = tk.Listbox(
-            list_container, selectmode=tk.EXTENDED, yscrollcommand=scrollbar.set
-        )
-        self.id_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.config(command=self.id_listbox.yview)
-
-        # Buttons frame
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(10, 0))
-
-        add_button = ttk.Button(
-            button_frame,
-            text=self.lang["add_selected_button"],
-            command=self._add_selected_ids,
-        )
-        add_button.pack(side=tk.LEFT, padx=(0, 5))
-
-    def _populate_id_list(self) -> None:
-        """Load soundbank and populate ID list"""
-        self.id_listbox.delete(0, tk.END)
-        self.id_listbox.insert(tk.END, self.lang["loading_ids"])
-
-        def load_in_thread():
-            try:
-                soundbank: Soundbank = Soundbank.load(self.src_bank_path)
-                play_events = soundbank.find_events("Play")
-
-                play_event_names = []
-                for evt in play_events:
-                    name = evt.lookup_name()
-                    if name:
-                        if name.startswith("Play_"):
-                            name = name[5:]
-                    else:
-                        name = str(evt.id)
-
-                    play_event_names.append(name)
-
-                play_event_names.sort()
-
-                # Update UI in main thread
-                self.after(0, self._update_listbox, play_event_names)
-            except Exception as e:
-                self.after(
-                    0,
-                    lambda exc=e: messagebox.showerror(self.lang["error"], str(exc)),
-                )
-                self.after(0, self.id_listbox.delete, 0, tk.END)
-
-        threading.Thread(target=load_in_thread, daemon=True).start()
-
-    def _update_listbox(self, ids: list) -> None:
-        """Helper function to update Listbox in main thread"""
-        self.id_listbox.delete(0, tk.END)
-        for sound_id in ids:
-            self.id_listbox.insert(tk.END, sound_id)
-
-    def _add_selected_ids(self) -> None:
-        """Add selected IDs to main window text boxes"""
-        selected_indices = self.id_listbox.curselection()
-
-        for i in selected_indices:
-            src_id = self.id_listbox.get(i)
-
-            # Auto-generate destination ID (simple replacement of 'c' with 's')
-            if src_id.startswith("c"):
-                dst_id = "s" + src_id[1:]
-            else:
-                dst_id = src_id  # Keep original if doesn't start with 'c'
-
-            self.parent.src_wwise_ids.insert(tk.END, f"{src_id}\n")
-            self.parent.dst_wwise_ids.insert(tk.END, f"{dst_id}\n")
-
-        self.destroy()
-
-
-class SoundbankHelperGui(tk.Tk):
+class TransferSoundsDialog(tk.Tk):
     def __init__(self):
         super().__init__()
 
@@ -524,11 +345,12 @@ class SoundbankHelperGui(tk.Tk):
             )
             return
 
-        IdSelectionDialog(self, self.src_bank_path, self.lang)
+        bnk = Soundbank.load(self.src_bank_path)
+        IdSelectionDialog(self, bnk, self.lang)
 
     def _open_hash_calculator_dialog(self) -> None:
         """Open hash calculator dialog"""
-        HashCalculatorDialog(self, self.lang)
+        CalcHashDialog(self, self.lang)
 
     def _exec_transfer(self) -> None:
         try:
@@ -601,5 +423,5 @@ class SoundbankHelperGui(tk.Tk):
 
 
 if __name__ == "__main__":
-    app = SoundbankHelperGui()
+    app = TransferSoundsDialog()
     app.mainloop()

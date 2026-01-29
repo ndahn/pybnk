@@ -93,6 +93,19 @@ def calc_hash(input: str) -> int:
     return result
 
 
+def get_event_name(sound_type: str, event_id: int, event_type: str = None) -> str:
+    if sound_type not in "acfopsmvxbiyzegd":
+        logger.warning(f"unexpected sound type {sound_type}")
+
+    if not 0 < event_id < 1_000_000_000:
+        logger.warning(f"event ID {event_id} outside expected range")
+
+    if not event_type:
+        return f"{sound_type}{event_id:010d}"
+
+    return f"{event_type}_{sound_type}{event_id:010d}"
+
+
 def get_lookup_table() -> dict[int, str]:
     import pybnk
 

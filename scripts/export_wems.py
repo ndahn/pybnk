@@ -4,24 +4,23 @@ import networkx as nx
 
 from pybnk import Soundbank
 from pybnk.util import logger
-from pybnk.common.events import get_event_actions
 
 
-def collect_wems(bnk_dir: Path, events: list[str]):
+def collect_wems(bnk: Soundbank, event_names: list[str]):
     """Find all WEM IDs associated with the specified events"""
-    bnk: Soundbank = Soundbank.load(str(bnk_dir))
     wems: dict[str, list[str]] = {}
 
-    for evt in events:
+    for evt_name in event_names:
         try:
-            actions = get_event_actions(bnk, evt)
+            evt = bnk[evt_name]
+            actions = [bnk[aid] for aid in evt["actions"]]
         except Exception:
             continue
 
         for act in actions:
             tree = bnk.get_hierarchy(act)
             sounds = nx.get_node_attributes(tree, "wem")
-            wems.setdefault(evt, []).extend(sounds.values())
+            wems.setdefault(evt_name, []).extend(sounds.values())
 
     return wems
 
@@ -231,7 +230,8 @@ if __name__ == "__main__":
         "Play_v301054180",
     ]
 
-    wems = collect_wems(bnk_dir, events)
+    bnk = Soundbank.load(bnk_dir)
+    wems = collect_wems(bnk, events)
     logger.info(
         f"Collected {sum(len(x) for x in wems.values())} wems for {len(events)} events"
     )
