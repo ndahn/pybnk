@@ -40,6 +40,13 @@ def select_dest_bank(sender: str, app_data: Any, user_data: Any) -> None:
 
 def open_id_lookup_dialog(callback: Callable[[list[str]], None]) -> None:
     lang = get_language()
+    selected = set()
+
+    def on_item_select(sender: str, state: bool, evt: str) -> None:
+        if state:
+            selected.add(evt)
+        else:
+            selected.discard(evt)
 
     def load_play_events():
         try:
@@ -60,13 +67,15 @@ def open_id_lookup_dialog(callback: Callable[[list[str]], None]) -> None:
                 #    name = f"#{evt.id}"
 
             play_event_names.sort()
-            dpg.set_value("wwise_ids_list", play_event_names)
+            
+            dpg.delete_item("id_listbox", children_only=True)
+            for evt in play_event_names:
+                dpg.add_selectable(label=evt, parent="id_listbox", user_data=evt, callback=on_item_select)
         except Exception as e:
             raise e
 
-    def add_selected():
-        # TODO
-        pass
+    def apply():
+        callback(list(sorted(selected)))
         dpg.delete_item(window)
 
     with dpg.window(
@@ -76,13 +85,13 @@ def open_id_lookup_dialog(callback: Callable[[list[str]], None]) -> None:
         on_close=dpg.delete_item,
     ) as window:
         dpg.add_text(tag="available_ids_label")
-        dpg.add_listbox(tag="wwise_ids_list")
+        dpg.add_child_window(tag="id_listbox", width=70, height=300, border=False)
 
         dpg.add_spacer(height=5)
         dpg.add_text(tag="select_ids_tooltip", color=(0, 55, 255, 255))
         dpg.add_button(
             tag="add_selected_button",
-            callback=add_selected,
+            callback=apply,
         )
 
     change_language(window, lang)
@@ -171,6 +180,11 @@ def setup_content() -> str:
         # Update all UI elements with new language
         change_language("main_window", lang_instance)
 
+    def on_ids_selected(ids: list[str]) -> None:
+        print(ids)
+        # TODO
+        pass
+
     lang = English()
 
     with dpg.window(tag="main_window", autosize=True) as main_window:
@@ -243,7 +257,7 @@ def setup_content() -> str:
         with dpg.group(horizontal=True):
             dpg.add_button(
                 tag="open_id_dialog_button",
-                callback=open_id_lookup_dialog,
+                callback=lambda s, a, u: open_id_lookup_dialog(on_ids_selected),
             )
             dpg.add_button(
                 tag="open_hash_dialog_button",
