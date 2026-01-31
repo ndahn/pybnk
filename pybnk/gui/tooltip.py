@@ -4,10 +4,10 @@ from pybnk.gui.localization import Localization
 
 
 class ToolTip:
-    def __init__(self, widget, text_key: str, lang):
+    def __init__(self, widget, text_key: str, lang: Localization):
         self.widget = widget
         self.text_key = text_key
-        self.lang: Localization = lang
+        self.lang  = lang
         self.tooltip = None
         self.widget.bind("<Enter>", self.show)
         self.widget.bind("<Leave>", self.hide)

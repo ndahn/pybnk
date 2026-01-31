@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, messagebox
 from pathlib import Path
 import traceback
 import threading
@@ -12,6 +12,7 @@ from pybnk.gui.calc_hash_dialog import CalcHashDialog
 from pybnk.gui.id_selection_dialog import IdSelectionDialog
 from pybnk.gui.loading_dialog import LoadingDialog
 from pybnk.gui.tooltip import ToolTip
+from pybnk.gui.file_dialog import open_file_dialog
 
 
 class TransferSoundsDialog(tk.Tk):
@@ -54,8 +55,8 @@ class TransferSoundsDialog(tk.Tk):
         help1.grid(row=0, column=0, sticky=tk.W, pady=5)
         self.tooltips.append(ToolTip(help1, "select_source_tooltip", self.lang))
 
-        self.widgets["source_soundbank_label"] = ttk.Label(file_frame)
-        self.widgets["source_soundbank_label"].grid(
+        self.widgets["source_bank_label"] = ttk.Label(file_frame)
+        self.widgets["source_bank_label"].grid(
             row=0, column=1, sticky=tk.W, padx=(5, 10), pady=5
         )
 
@@ -75,8 +76,8 @@ class TransferSoundsDialog(tk.Tk):
         help2.grid(row=1, column=0, sticky=tk.W, pady=5)
         self.tooltips.append(ToolTip(help2, "select_dest_tooltip", self.lang))
 
-        self.widgets["dest_soundbank_label"] = ttk.Label(file_frame)
-        self.widgets["dest_soundbank_label"].grid(
+        self.widgets["dest_bank_label"] = ttk.Label(file_frame)
+        self.widgets["dest_bank_label"].grid(
             row=1, column=1, sticky=tk.W, padx=(5, 10), pady=5
         )
 
@@ -204,19 +205,13 @@ class TransferSoundsDialog(tk.Tk):
     def _update_ui_text(self):
         self.title(self.lang["title"])
         # Update all components stored in self.widgets dictionary
-        self.widgets["source_soundbank_label"].config(
-            text=self.lang["source_soundbank_label"]
-        )
+        self.widgets["source_bank_label"].config(text=self.lang["source_bank_label"])
         self.widgets["browse_src_button"].config(text=self.lang["browse"])
-        self.widgets["dest_soundbank_label"].config(
-            text=self.lang["dest_soundbank_label"]
-        )
+        self.widgets["dest_bank_label"].config(text=self.lang["dest_bank_label"])
         self.widgets["browse_dst_button"].config(text=self.lang["browse"])
         self.widgets["source_ids_label"].config(text=self.lang["source_ids_label"])
         self.widgets["dest_ids_label"].config(text=self.lang["dest_ids_label"])
-        self.widgets["write_to_dest_check"].config(
-            text=self.lang["write_to_dest"]
-        )
+        self.widgets["write_to_dest_check"].config(text=self.lang["write_to_dest"])
         self.widgets["transfer_button"].config(text=self.lang["transfer_button"])
         self.widgets["open_id_dialog_button"].config(
             text=self.lang["open_id_dialog_button"]
@@ -233,12 +228,13 @@ class TransferSoundsDialog(tk.Tk):
             tooltip.update_text()
 
     def _browse_src_bank(self) -> None:
-        path = filedialog.askopenfilename(
+        path = open_file_dialog(
             title=self.lang["select_source_json"],
-            filetypes=[
-                (self.lang["json_files"], "soundbank.json"),
-                (self.lang["all_files"], "*.*"),
-            ],
+            filetypes={
+                self.lang["soundbank_files"]: "soundbank.json",
+                self.lang["json_files"]: "*.json",
+                self.lang["all_files"]: "*.*",
+            },
         )
         if path:
             print(f"Selected source soundbank: {path}")
@@ -246,12 +242,13 @@ class TransferSoundsDialog(tk.Tk):
             self.src_bank_label.config(text=Path(path).parent.name, foreground="black")
 
     def _browse_dst_bank(self) -> None:
-        path = filedialog.askopenfilename(
+        path = open_file_dialog(
             title=self.lang["select_dest_json"],
-            filetypes=[
-                (self.lang["json_files"], "soundbank.json"),
-                (self.lang["all_files"], "*.*"),
-            ],
+            filetypes={
+                self.lang["soundbank_files"]: "soundbank.json",
+                self.lang["json_files"]: "*.json",
+                self.lang["all_files"]: "*.*",
+            },
         )
         if path:
             print(f"Selected destination soundbank: {path}")
@@ -308,7 +305,11 @@ class TransferSoundsDialog(tk.Tk):
             }
 
             enable_write = self.enable_write_var.get()
-            loading = LoadingDialog(self, self.lang["transferring_sounds"])
+            loading = LoadingDialog(
+                self,
+                self.lang["transferring_sounds"],
+                self.lang["loading_dialog_title"],
+            )
 
             # Execute core logic in background thread
             def do_the_work():

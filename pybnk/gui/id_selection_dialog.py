@@ -17,7 +17,7 @@ class IdSelectionDialog(tk.Toplevel):
         self.soundbank = bnk
         self.lang = lang
 
-        self.title(self.lang["select_ids_dialog_title"])
+        self.title(self.lang["select_ids_window"])
         self.geometry("400x500")
         self.transient(parent)  # Set to be on top of parent
 

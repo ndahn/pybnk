@@ -3,10 +3,10 @@ from tkinter import ttk
 
 
 class LoadingDialog(tk.Toplevel):
-    def __init__(self, parent, message: str = "Processing..."):
+    def __init__(self, parent, message: str = "Processing...", title="Please Wait"):
         super().__init__(parent)
 
-        self.title("Please Wait")
+        self.title(title)
         self.transient(parent)  # Set to be on top of parent
         self.grab_set()  # Block interaction with parent
 

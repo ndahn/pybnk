@@ -15,7 +15,7 @@ class CalcHashDialog(tk.Toplevel):
         self.parent = parent
         self.lang = lang
 
-        self.title("Hash Calculator")
+        self.title(lang["calc_hash_window"])
         self.geometry("400x150")
         self.transient(parent)  # Set to be on top of parent
 
@@ -28,7 +28,7 @@ class CalcHashDialog(tk.Toplevel):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Input label and entry
-        input_label = ttk.Label(main_frame, text="Input String:")
+        input_label = ttk.Label(main_frame, text=self.lang["calc_hash_input"])
         input_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 5))
 
         self.input_entry = ttk.Entry(main_frame, width=50)
@@ -38,7 +38,7 @@ class CalcHashDialog(tk.Toplevel):
         self.input_entry.bind("<KeyRelease>", self._calculate_hash)
 
         # Output label and entry
-        output_label = ttk.Label(main_frame, text="Hash (FNV-1 32-bit):")
+        output_label = ttk.Label(main_frame, text=self.lang["calc_hash_output"])
         output_label.grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
 
         self.output_entry = ttk.Entry(main_frame, width=50, state="readonly")

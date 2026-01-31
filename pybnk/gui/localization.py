@@ -49,9 +49,9 @@ class Localization:
     loading_ids: str = "Loading IDs..."
     
     # File dialog
-    openfile_source_bank: str = "Select source soundbank.json"
-    openfile_dest_bank: str = "Select destination soundbank.json"
-    soundbank: str = "Soundbank files"
+    openfile_source_bank: str = "Select source soundbank"
+    openfile_dest_bank: str = "Select destination soundbank"
+    soundbank_files: str = "Soundbank files"
     json_files: str = "JSON files"
     all_files: str = "All files"
     
