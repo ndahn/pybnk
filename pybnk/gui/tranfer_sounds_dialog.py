@@ -10,87 +10,8 @@ from pybnk.transfer import copy_structure
 from pybnk.gui.localization import Localization, English, Chinese
 from pybnk.gui.calc_hash_dialog import CalcHashDialog
 from pybnk.gui.id_selection_dialog import IdSelectionDialog
-
-
-class ToolTip:
-    def __init__(self, widget, text_key: str, lang):
-        self.widget = widget
-        self.text_key = text_key
-        self.lang: Localization = lang
-        self.tooltip = None
-        self.widget.bind("<Enter>", self.show)
-        self.widget.bind("<Leave>", self.hide)
-
-    def show(self, event=None) -> None:
-        x, y, _, _ = self.widget.bbox("insert")
-        x += self.widget.winfo_rootx() + 25
-        y += self.widget.winfo_rooty() + 25
-
-        self.tooltip = tk.Toplevel(self.widget)
-        self.tooltip.wm_overrideredirect(True)
-        self.tooltip.wm_geometry(f"+{x}+{y}")
-
-        # Get text using translation function
-        text = self.lang[self.text_key]
-        label = tk.Label(
-            self.tooltip,
-            text=text,
-            background="#ffffe0",
-            relief="solid",
-            borderwidth=1,
-            padx=5,
-            pady=3,
-            wraplength=300,
-            justify="left",
-        )
-        label.pack()
-
-    def hide(self, event=None) -> None:
-        if self.tooltip:
-            self.tooltip.destroy()
-            self.tooltip = None
-
-    # Method for updating tooltip text when language changes
-    def update_text(self):
-        # The text is fetched dynamically in show(), so no action is needed here
-        # unless we want to pre-fetch it. For simplicity, we'll let it be.
-        pass
-
-
-class LoadingDialog(tk.Toplevel):
-    def __init__(self, parent, message: str = "Processing..."):
-        super().__init__(parent)
-
-        self.title("Please Wait")
-        self.transient(parent)  # Set to be on top of parent
-        self.grab_set()  # Block interaction with parent
-
-        # Remove window decorations for a cleaner look
-        self.overrideredirect(True)
-        self.geometry("300x100")
-
-        frame = tk.Frame(self, relief="solid", borderwidth=2, bg="white")
-        frame.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
-
-        # Message
-        tk.Label(frame, text=message, bg="white", font=("TkDefaultFont", 10)).pack(
-            pady=20
-        )
-
-        # Progress bar
-        self.progress = ttk.Progressbar(frame, mode="indeterminate", length=250)
-        self.progress.pack(pady=10)
-        self.progress.start(10)
-
-        # Center on parent
-        self.update_idletasks()
-        x = parent.winfo_x() + (parent.winfo_width() // 2) - (self.winfo_width() // 2)
-        y = parent.winfo_y() + (parent.winfo_height() // 2) - (self.winfo_height() // 2)
-        self.geometry(f"+{x}+{y}")
-
-    def close(self):
-        self.progress.stop()
-        self.destroy()
+from pybnk.gui.loading_dialog import LoadingDialog
+from pybnk.gui.tooltip import ToolTip
 
 
 class TransferSoundsDialog(tk.Tk):
