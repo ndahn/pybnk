@@ -7,7 +7,7 @@ import shutil
 import networkx as nx
 
 from .external import get_rewwise
-from .enums import event_types
+from .enums import SoundType
 
 if TYPE_CHECKING:
     from pybnk import Soundbank
@@ -54,12 +54,12 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
 
         visited.add(nid)
         children = list(graph.successors(nid))
-        
+
         for i, child in enumerate(children):
             is_last = i == len(children) - 1
             branch = "└──" if is_last else "├──"
             print(f"{prefix}{branch} {child}")
-            
+
             new_prefix = prefix + ("    " if is_last else "│   ")
             delve(child, new_prefix)
 
@@ -72,7 +72,7 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
     root = roots[0]
     if len(roots) > 1:
         logger.warning(f"Multiple roots found, using {root}")
-    
+
     delve(root, "")
 
 
@@ -94,10 +94,7 @@ def calc_hash(input: str) -> int:
     return result
 
 
-def get_event_name(sound_type: str, event_id: int, event_type: str = None) -> str:
-    if sound_type not in event_types:
-        raise ValueError(f"Invalid sound type {event_type} (must be one of {event_types})")
-
+def get_event_name(sound_type: SoundType, event_id: int, event_type: str = None) -> str:
     if not 0 < event_id < 1_000_000_000:
         raise ValueError(f"event ID {event_id} outside expected range")
 
@@ -107,11 +104,16 @@ def get_event_name(sound_type: str, event_id: int, event_type: str = None) -> st
     return f"{event_type}_{sound_type}{event_id:010d}"
 
 
-def get_lookup_table() -> dict[int, str]:
+def load_lookup_table(path: Path = None) -> dict[int, str]:
     import pybnk
 
-    keys = resources.read_text(pybnk, "resources/wwise_ids.txt")
+    if not path:
+        path = "resources/wwise_ids.txt"
+        keys = resources.read_text(pybnk, path)
+    else:
+        keys = [x.strip() for x in path.read_text().splitlines()]
+
     return {calc_hash(k): k for k in keys if not k.startswith("#")}
 
 
-lookup_table = get_lookup_table()
+lookup_table = load_lookup_table()

@@ -8,6 +8,7 @@ from enum import IntEnum
 from pybnk import Soundbank, Node
 from pybnk.modify import set_rsc_volume, add_children
 from pybnk.util import calc_hash, get_event_name
+from pybnk.enums import SoundType
 
 
 class SoundMode(IntEnum):
@@ -162,7 +163,7 @@ def new_event(
 
 def create_simple_sound(
     bnk: Soundbank,
-    sound_type: str,
+    sound_type: SoundType,
     wwise_id: int,
     wems: list[Path] | Path,
     actor_mixer: Node,
