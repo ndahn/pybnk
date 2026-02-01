@@ -2,14 +2,12 @@ from typing import Any
 import os
 from importlib import resources
 import json
-import logging
 from pathlib import Path
 from enum import IntEnum
-import shutil
 
 from pybnk import Soundbank, Node
 from pybnk.modify import set_rsc_volume, add_children
-from pybnk.util import calc_hash
+from pybnk.util import calc_hash, get_event_name
 
 
 class SoundMode(IntEnum):
@@ -164,12 +162,18 @@ def new_event(
 
 def create_simple_sound(
     bnk: Soundbank,
-    wwise_name: str,
-    wems: list[Path],
+    sound_type: str,
+    wwise_id: int,
+    wems: list[Path] | Path,
     actor_mixer: Node,
     volume: float = -3.0,
     rsc_attr: dict[str, Any] = None,
 ) -> Node:
+    wwise_name = get_event_name(sound_type, wwise_id)
+
+    if isinstance(wems, Path):
+        wems = [wems]
+
     sounds = [new_sound(bnk, w) for w in wems]
     rsc = new_random_sequence_container(bnk, sounds, volume=volume, attr=rsc_attr)
     rsc.parent = actor_mixer.id

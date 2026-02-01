@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+
 # NOTE need to manually install audioop-lts
 from pydub import AudioSegment, silence
 
@@ -50,10 +51,10 @@ def set_volume(wav: Path, volume: float, *, out_file: Path = None) -> Path:
 def create_prefetch_snippet(
     wav: Path, length: float = 1.0, *, out_file: Path = None
 ) -> Path:
-    audio: AudioSegment = AudioSegment.from_file(wav)
+    audio: AudioSegment = AudioSegment.from_file(str(wav))
     audio = audio[: length * 1000]
     audio.export(str(out_file or wav), format="wav")
-    return out_file
+    return Path(out_file or wav)
 
 
 def trim_silence(
@@ -64,7 +65,7 @@ def trim_silence(
     start_end_tolerance: float = 0.5,
     out_file: Path = None,
 ) -> Path:
-    audio: AudioSegment = AudioSegment.from_file(wav)
+    audio: AudioSegment = AudioSegment.from_file(str(wav))
 
     if not threshold:
         threshold = audio.dBFS
@@ -87,18 +88,15 @@ def trim_silence(
 
     audio = audio[start:end]
     audio.export(str(out_file or wav), format="wav")
-    return out_file
+    return Path(out_file or wav)
 
 
 def wav2wem(
-    waves: Path | list[Path],
+    waves: list[Path] | Path,
     out_dir: Path = None,
     conversion: Literal["PCM", "Vorbis Quality High"] = "Vorbis Quality High",
-) -> None:
+) -> Path:
     wwise = get_wwise()
-
-    if isinstance(waves, str):
-        waves = Path(waves)
 
     if isinstance(waves, Path):
         waves = [waves]
@@ -125,7 +123,7 @@ def wav2wem(
         f"""\
 <?xml version="1.0" encoding="UTF-8"?>
 <ExternalSourcesList SchemaVersion="1" Root="{wav_dir}">
-	{'\n'.join(source_lines)}
+	{"\n".join(source_lines)}
 </ExternalSourcesList>
 """
     )
@@ -158,12 +156,11 @@ def wav2wem(
     shutil.rmtree(wwise_out_dir)
     wsources_path.unlink()
 
+    return Path(out_dir)
 
-def wem2wav(wems: Path | list[Path], out_dir: Path = None) -> None:
+
+def wem2wav(wems: list[Path] | Path, out_dir: Path = None,) -> None:
     vgmstream = get_vgmstream_cli()
-
-    if isinstance(wems, str):
-        wems = Path(wems)
 
     if isinstance(wems, Path):
         wems = [wems]

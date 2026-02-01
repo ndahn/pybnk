@@ -1,4 +1,5 @@
 test/
+/test.py
 tmp/
 *.pdb
 

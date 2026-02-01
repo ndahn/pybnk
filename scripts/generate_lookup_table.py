@@ -4,8 +4,8 @@ from pybnk.util import calc_hash
 
 
 def generate_lookup_table(input: Path, output: Path) -> None:
-    with output.open("w") as fout:
-        with input.open() as fin:
+    with Path(output).open("w") as fout:
+        with Path(input).open() as fin:
             while True:
                 line = fin.readline()
                 if not line:

@@ -7,6 +7,7 @@ import shutil
 import networkx as nx
 
 from .external import get_rewwise
+from .enums import event_types
 
 if TYPE_CHECKING:
     from pybnk import Soundbank
@@ -94,11 +95,11 @@ def calc_hash(input: str) -> int:
 
 
 def get_event_name(sound_type: str, event_id: int, event_type: str = None) -> str:
-    if sound_type not in "acfopsmvxbiyzegd":
-        logger.warning(f"unexpected sound type {sound_type}")
+    if sound_type not in event_types:
+        raise ValueError(f"Invalid sound type {event_type} (must be one of {event_types})")
 
     if not 0 < event_id < 1_000_000_000:
-        logger.warning(f"event ID {event_id} outside expected range")
+        raise ValueError(f"event ID {event_id} outside expected range")
 
     if not event_type:
         return f"{sound_type}{event_id:010d}"

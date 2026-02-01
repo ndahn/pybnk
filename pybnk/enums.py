@@ -1,3 +1,5 @@
+event_types = "acfopsmvxbiyzegd"
+
 # TODO incomplete, check cs_main and cs_smain
 enums = {
     "Action": {
