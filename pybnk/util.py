@@ -6,8 +6,8 @@ import subprocess
 import shutil
 import networkx as nx
 
-from .external import get_rewwise
-from .enums import SoundType
+from pybnk.external import get_rewwise
+from pybnk.enums import SoundType
 
 if TYPE_CHECKING:
     from pybnk import Soundbank
