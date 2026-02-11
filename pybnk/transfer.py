@@ -146,3 +146,63 @@ def copy_structure(
     # Yay!
     print()
     logger.info("Done. Yay!")
+
+
+def extract_structure(bnk: Soundbank, wwise_ids: list[str], quiet: bool = True) -> list[Node]:
+    nodes = []
+
+    for wwise_src in wwise_ids:
+        # Play event
+        play_evt_name = f"Play_{wwise_src}"
+        play_evt = bnk[play_evt_name]
+        nodes.append(play_evt)
+        nodes.extend(bnk[aid] for aid in play_evt["actions"])
+
+        # Stop event
+        stop_evt_name = f"Stop_{wwise_src}"
+        stop_evt = bnk[stop_evt_name].copy()
+        nodes.append(stop_evt)
+        nodes.extend(bnk[aid] for aid in stop_evt["actions"])
+
+        # Collect the structures attached to each action
+        for action_id in play_evt["actions"]:
+            action = bnk[action_id]  # already copied to dst
+            action_bnk_id = action["params/Play/bank_id"]
+
+            # Check if the action is referencing a different soundbank
+            if action_bnk_id != bnk.id:
+                print(
+                    f"Action {action_id} of event {play_evt} references node in external soundbank {action_bnk_id}"
+                )
+                continue
+
+            entrypoint = bnk[action["external_id"]]
+
+            # Collect the hierarchy responsible for playing the sound(s)
+            action_tree = bnk.get_hierarchy(entrypoint)
+            nodes.extend(bnk[n] for n in action_tree.nodes)
+
+            if not quiet:
+                print_hierarchy(bnk, action_tree)
+
+            # Go upwards through the parents chain and see what needs to be transferred
+            upchain = bnk.get_parent_chain(entrypoint)
+            nodes.extend((bnk[uid] for uid in upchain))
+
+            if not quiet:
+                logger.info("\nThe parent chain consists of the following nodes:")
+                for up_id in reversed(upchain):
+                    print(f" ⤷ {up_id} ({bnk[up_id].type})")
+                print()
+
+            # Collect additional referenced items
+            extras = bnk.find_related_objects(action_tree.nodes)
+            nodes.extend(bnk[eid] for eid in extras if eid in bnk)
+
+            if extras and not quiet:
+                logger.info("\nThe following extra items were collected:")
+                for nid in extras:
+                    print(f" - {nid} ({bnk[nid].type})")
+                print()
+
+    return nodes
