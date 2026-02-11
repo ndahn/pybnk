@@ -60,7 +60,8 @@ class Node:
     @property
     def parent(self) -> int:
         """Get the ID of a node's parent node."""
-        return self["node_base_params/direct_parent_id"]
+        # NOTE: some nodes like buses don't have a direct_parent_id
+        return self.get("node_base_params/direct_parent_id", None)
 
     @parent.setter
     def parent(self, parent: "Node | int") -> None:

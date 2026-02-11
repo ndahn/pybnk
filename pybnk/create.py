@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 import os
 from importlib import resources
 import json
@@ -9,12 +9,6 @@ from pybnk import Soundbank, Node
 from pybnk.modify import set_rsc_volume, add_children
 from pybnk.util import calc_hash, get_event_name
 from pybnk.enums import SoundType
-
-
-class SoundMode(IntEnum):
-    EMBEDDED = 0
-    STREAMING = 1
-    PREFETCH = 2
 
 
 class PlaylistMode(IntEnum):
@@ -41,22 +35,30 @@ def new_from_template(
     return node
 
 
+def create_empty_soundbank(path: Path | str, name: str) -> "Soundbank":
+    import pybnk
+
+    if not path.is_dir():
+        raise ValueError(f"{path} is not a directory")
+
+    bnk = json.loads(resources.read_text(pybnk, "resources/empty_soundbank.json"))
+    name_hash = calc_hash(name)
+    bnk["sections"][0]["body"]["BKHD"]["bank_id"] = name_hash
+
+    bnk_path = Path(path) / name / "soundbank.json"
+    json.dump(bnk, bnk_path.open("w"))
+
+    return Soundbank.load(bnk_path)
+
+
 def new_sound(
     bnk: Soundbank,
     wem: Path,
-    mode: SoundMode = SoundMode.EMBEDDED,
+    mode: Literal["Embedded", "PrefetchStreaming"] = "Embedded",
     attr: dict[str, Any] = None,
 ) -> Node:
     wem_id = int(wem.name.rsplit(".")[0])
     size = os.path.getsize(str(wem))
-
-    # TODO correct streaming mode name, see what else is needed
-    if mode == SoundMode.EMBEDDED:
-        source_type = "Embedded"
-    elif mode == SoundMode.STREAMING:
-        source_type = "Streaming"
-    elif mode == SoundMode.PREFETCH:
-        source_type = "Prefetch"
 
     # TODO source duration (in ms)
     # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
@@ -66,7 +68,7 @@ def new_sound(
         bnk.new_id(),
         "Sound",
         {
-            "bank_source_data/source_type": source_type,
+            "bank_source_data/source_type": mode,
             "bank_source_data/media_information/source_id": wem_id,
             "bank_source_data/media_information/in_memory_media_size": size,
         }

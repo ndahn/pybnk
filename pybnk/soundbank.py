@@ -239,7 +239,7 @@ class Soundbank:
         upchain = []
 
         # Parents are sometimes located in other soundbanks, too
-        while parent_id != 0 and parent_id in self._id2index:
+        while parent_id in self._id2index:
             # No early exit, we want to recover the entire upwards chain. We'll handle the
             # parts we actually need later
 
