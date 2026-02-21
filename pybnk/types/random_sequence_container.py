@@ -3,10 +3,42 @@ from .wwise_node import WwiseNode
 
 
 class RandomSequenceContainer(WwiseNode):
-    """Plays its children either randomly or in sequence. 
-    
+    """Plays its children either randomly or in sequence.
+
     Supports looping, transition timing, and avoiding recent repeats. Used for variations (footsteps, gunshots, voice lines).
     """
+
+    @classmethod
+    def new(
+        cls, nid: int, mode: int = 0, loop_count: int = 1, parent_id: int = 0
+    ) -> "RandomSequenceContainer":
+        """Create a new RandomSequenceContainer node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        mode : int, default=0
+            Playback mode (0 = Random, 1 = Sequence).
+        loop_count : int, default=1
+            Number of loops (0 = infinite).
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        RandomSequenceContainer
+            New RandomSequenceContainer instance.
+        """
+        node = cls.from_template(nid, "RandomSequenceContainer")
+
+        container = cls(node.dict)
+        container.mode = mode
+        container.loop_count = loop_count
+        if parent_id != 0:
+            container.parent = parent_id
+
+        return container
 
     @property
     def loop_count(self) -> int:

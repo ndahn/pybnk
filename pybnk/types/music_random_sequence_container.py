@@ -1,11 +1,48 @@
+from pybnk.node import Node
 from .wwise_node import WwiseNode
 
 
 class MusicRandomSequenceContainer(WwiseNode):
-    """ Interactive music playlist that randomly or sequentially plays music segments. 
-    
+    """Interactive music playlist that randomly or sequentially plays music segments.
+
     Includes transition rules for smooth musical transitions and weighted selection for segments.
     """
+
+    @classmethod
+    def new(
+        cls,
+        nid: int,
+        tempo: float = 120.0,
+        time_signature: tuple[int, int] = (4, 4),
+        parent_id: int = 0,
+    ) -> "MusicRandomSequenceContainer":
+        """Create a new MusicRandomSequenceContainer node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        tempo : float, default=120.0
+            Tempo in BPM.
+        time_signature : tuple[int, int], default=(4, 4)
+            Time signature (beat_count, beat_value).
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        MusicRandomSequenceContainer
+            New MusicRandomSequenceContainer instance.
+        """
+        node = cls.from_template(nid, "MusicRandomSequenceContainer")
+
+        container = cls(node.dict)
+        container.tempo = tempo
+        container.time_signature = time_signature
+        if parent_id != 0:
+            container.parent = parent_id
+
+        return container
 
     @property
     def tempo(self) -> float:
@@ -121,7 +158,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     def add_playlist_item(
         self,
-        segment_id: int,
+        segment_id: int | Node,
         playlist_item_id: int,
         weight: int = 50000,
         avoid_repeat: int = 0,
@@ -130,7 +167,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
         Parameters
         ----------
-        segment_id : int
+        segment_id : int | Node
             Segment node ID.
         playlist_item_id : int
             Unique playlist item ID.
@@ -139,6 +176,9 @@ class MusicRandomSequenceContainer(WwiseNode):
         avoid_repeat : int, default=0
             Number of recent items to avoid repeating.
         """
+        if isinstance(segment_id, Node):
+            segment_id = segment_id.id
+
         item = {
             "segment_id": segment_id,
             "playlist_item_id": playlist_item_id,
@@ -152,10 +192,11 @@ class MusicRandomSequenceContainer(WwiseNode):
             "use_weight": 0,
             "shuffle": 0,
         }
+        
         self["playlist_items"].append(item)
         self["playlist_item_count"] = len(self["playlist_items"])
 
-    def remove_playlist_item(self, playlist_item_id: int) -> bool:
+    def remove_playlist_item(self, playlist_item_id: int | Node) -> bool:
         """Remove a playlist item by its ID.
 
         Parameters
@@ -168,12 +209,16 @@ class MusicRandomSequenceContainer(WwiseNode):
         bool
             True if item was removed, False if not found.
         """
+        if isinstance(playlist_item_id, Node):
+            playlist_item_id = playlist_item_id.id
+        
         items = self["playlist_items"]
         for i, item in enumerate(items):
             if item["playlist_item_id"] == playlist_item_id:
                 items.pop(i)
                 self["playlist_item_count"] = len(items)
                 return True
+        
         return False
 
     def clear_playlist(self) -> None:

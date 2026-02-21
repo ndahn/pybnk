@@ -1,3 +1,4 @@
+from typing import Literal, TypeAlias
 from enum import StrEnum
 
 
@@ -18,3 +19,9 @@ class SoundType(StrEnum):
     FOOT_EFFECT = "e"
     GEOMETRY_ASSET = "g"
     DYNAMIC_DIALOG = "d"
+
+
+RtcpType: TypeAlias = Literal["GameParameter"]
+AccumulationType: TypeAlias = Literal["Additive"]
+ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
+CurveType: TypeAlias = Literal["Linear", "SCurve", "Log1", "Log3", "Sine", "Constant"]

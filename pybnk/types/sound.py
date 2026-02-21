@@ -2,10 +2,50 @@ from .wwise_node import WwiseNode
 
 
 class Sound(WwiseNode):
-    """The fundamental playable audio object. 
-    
+    """The fundamental playable audio object.
+
     Contains a single audio file (embedded or streamed) with codec settings and 3D positioning parameters.
     """
+
+    @classmethod
+    def new(
+        cls,
+        nid: int,
+        source_id: int,
+        plugin: str = "VORBIS",
+        source_type: str = "Embedded",
+        parent_id: int = 0,
+    ) -> "Sound":
+        """Create a new Sound node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        source_id : int
+            Media source ID.
+        plugin : str, default="VORBIS"
+            Codec plugin ('VORBIS', 'PCM', etc.).
+        source_type : str, default="Embedded"
+            Source type ('Embedded' or 'Streamed').
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        Sound
+            New Sound instance.
+        """
+        node = cls.from_template(nid, "Sound")
+
+        sound = cls(node.dict)
+        sound.source_id = source_id
+        sound.plugin = plugin
+        sound.source_type = source_type
+        if parent_id != 0:
+            sound.parent = parent_id
+
+        return sound
 
     @property
     def source_id(self) -> int:

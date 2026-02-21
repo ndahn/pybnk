@@ -2,10 +2,51 @@ from .wwise_node import WwiseNode
 
 
 class MusicTrack(WwiseNode):
-    """An individual audio track within a music segment. 
-    
+    """An individual audio track within a music segment.
+
     Contains the actual audio sources and defines when/how they play within the segment timeline.
     """
+
+    @classmethod
+    def new(
+        cls,
+        nid: int,
+        source_id: int = None,
+        plugin: str = "VORBIS",
+        source_type: str = "Streaming",
+        parent_id: int = 0,
+    ) -> "MusicTrack":
+        """Create a new MusicTrack node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        source_id : int
+            Media source ID.
+        plugin : str, default="VORBIS"
+            Codec plugin ('VORBIS', 'PCM', etc.).
+        source_type : str, default="Streaming"
+            Source type ('Streaming' or 'Embedded').
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        MusicTrack
+            New MusicTrack instance.
+        """
+        node = cls.from_template(nid, "MusicTrack")
+
+        track = cls(node.dict)
+        if source_id is not None:
+            track.add_source(plugin, source_type, source_id)
+            track.add_playlist_item(source_id)
+
+        if parent_id != 0:
+            track.parent = parent_id
+
+        return track
 
     @property
     def track_type(self) -> int:

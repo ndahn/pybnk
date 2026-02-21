@@ -68,17 +68,8 @@
         },
         "recovery_time": 1000,
         "max_duck_volume": -96.0,
-        "duck_count": 1,
-        "ducks": [
-          {
-            "bus_id": 1788190166,
-            "duck_volume": -200.0,
-            "fade_out_time": 3000,
-            "fade_in_time": 500,
-            "fade_curve": "SCurve",
-            "target_prop": "BusVolume"
-          }
-        ],
+        "duck_count": 0,
+        "ducks": [],
         "bus_initial_fx_params": {
           "fx_count": 0,
           "fx_bypass": 0,
@@ -88,72 +79,8 @@
         },
         "override_attachment_params": 0,
         "initial_rtpc": {
-          "count": 3,
-          "rtpcs": [
-            {
-              "id": 560139250,
-              "rtpc_type": "GameParameter",
-              "rtpc_accum": "Additive",
-              "param_id": 5,
-              "curve_id": 588902222,
-              "curve_scaling": "DB",
-              "graph_point_count": 2,
-              "graph_points": [
-                {
-                  "from": 0.0,
-                  "to": -1.0,
-                  "interpolation": "Linear"
-                },
-                {
-                  "from": 1.0,
-                  "to": 0.0,
-                  "interpolation": "Linear"
-                }
-              ]
-            },
-            {
-              "id": 3362400191,
-              "rtpc_type": "GameParameter",
-              "rtpc_accum": "Additive",
-              "param_id": 0,
-              "curve_id": 57096618,
-              "curve_scaling": "DB",
-              "graph_point_count": 2,
-              "graph_points": [
-                {
-                  "from": 0.0,
-                  "to": -1.0,
-                  "interpolation": "Linear"
-                },
-                {
-                  "from": 1.0,
-                  "to": 0.0,
-                  "interpolation": "Linear"
-                }
-              ]
-            },
-            {
-              "id": 2918011349,
-              "rtpc_type": "GameParameter",
-              "rtpc_accum": "Additive",
-              "param_id": 5,
-              "curve_id": 540907454,
-              "curve_scaling": "DB",
-              "graph_point_count": 2,
-              "graph_points": [
-                {
-                  "from": 0.0,
-                  "to": -1.0,
-                  "interpolation": "Linear"
-                },
-                {
-                  "from": 1.0,
-                  "to": 0.0,
-                  "interpolation": "Linear"
-                }
-              ]
-            }
-          ]
+          "count": 0,
+          "rtpcs": []
         },
         "state_chunk": {
           "state_property_count": 0,

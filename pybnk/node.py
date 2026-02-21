@@ -1,4 +1,6 @@
 from typing import Any, Iterator
+from importlib import resources
+import json
 import copy
 
 from pybnk.util import calc_hash, lookup_table, logger
@@ -8,6 +10,27 @@ _undefined = object()
 
 
 class Node:
+    @classmethod
+    def from_template(
+        cls,
+        nid: int, template: str, attr: dict[str, Any] = None
+    ) -> "Node":
+        import pybnk
+
+        if not template.endswith(".json"):
+            template += ".json"
+
+        template_txt = resources.read_text(pybnk, "resources/templates/" + template)
+        template_dict = json.loads(template_txt)
+        node = Node(template_dict)
+        node.id = nid
+
+        if attr:
+            for path, value in attr.items():
+                node[path] = value
+
+        return node
+
     def __init__(self, node_dict: dict):
         self._attr = node_dict
         self._type = next(iter(self._attr["body"].keys()))
@@ -52,10 +75,16 @@ class Node:
         return h
 
     @id.setter
-    def id(self, id: int) -> None:
+    def id(self, id: int | str) -> None:
         idsec = self._attr["id"]
-        idsec["Hash"] = id
-        idsec.pop("String", None)
+        if isinstance(id, int):
+            idsec["Hash"] = id
+            idsec.pop("String", None)
+        elif isinstance(id, str):
+            idsec["Hash"] = calc_hash(id)
+            idsec["String"] = id
+        else:
+            raise ValueError(f"Invalid node ID {id}")
 
     @property
     def parent(self) -> int:
@@ -67,6 +96,9 @@ class Node:
     def parent(self, parent: "Node | int") -> None:
         if isinstance(parent, Node):
             parent = parent.id
+
+        if not isinstance(parent, int):
+            raise ValueError(f"Invalid parent {parent}")
         
         if self.parent > 0 and parent > 0 and parent != self.parent:
             logger.warning(f"Node {self} is being assigned new parent {parent}")

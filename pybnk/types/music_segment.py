@@ -2,10 +2,50 @@ from .wwise_node import WwiseNode
 
 
 class MusicSegment(WwiseNode):
-    """A timed piece of interactive music with tempo, time signature, and markers. 
-    
+    """A timed piece of interactive music with tempo, time signature, and markers.
+
     Contains music tracks and defines the musical structure for adaptive music systems.
     """
+
+    @classmethod
+    def new(
+        cls,
+        nid: int,
+        duration: float,
+        tempo: float = 120.0,
+        time_signature: tuple[int, int] = (4, 4),
+        parent_id: int = 0,
+    ) -> "MusicSegment":
+        """Create a new MusicSegment node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        duration : float
+            Segment duration in milliseconds.
+        tempo : float, default=120.0
+            Tempo in BPM.
+        time_signature : tuple[int, int], default=(4, 4)
+            Time signature (beat_count, beat_value).
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        MusicSegment
+            New MusicSegment instance.
+        """
+        node = cls.from_template(nid, "MusicSegment")
+
+        segment = cls(node.dict)
+        segment.duration = duration
+        segment.tempo = tempo
+        segment.time_signature = time_signature
+        if parent_id != 0:
+            segment.parent = parent_id
+
+        return segment
 
     @property
     def duration(self) -> float:

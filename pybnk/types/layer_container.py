@@ -1,11 +1,36 @@
+from pybnk.node import Node
 from .wwise_node import WwiseNode
 
 
 class LayerContainer(WwiseNode):
-    """Plays multiple child sounds simultaneously as layers. 
-    
+    """Plays multiple child sounds simultaneously as layers.
+
     Useful for layered sound design where different components play together (e.g., engine loop + transmission sounds).
     """
+
+    @classmethod
+    def new(cls, nid: int, parent_id: int = 0) -> "LayerContainer":
+        """Create a new LayerContainer node.
+
+        Parameters
+        ----------
+        nid : int
+            Node ID (hash).
+        parent_id : int, default=0
+            Parent node ID.
+
+        Returns
+        -------
+        LayerContainer
+            New LayerContainer instance.
+        """
+        node = cls.from_template(nid, "LayerContainer")
+
+        container = cls(node.dict)
+        if parent_id != 0:
+            container.parent = parent_id
+
+        return container
 
     @property
     def layer_count(self) -> int:
@@ -55,15 +80,15 @@ class LayerContainer(WwiseNode):
         """
         return self["children/items"]
 
-    def add_child(self, child_id: int | WwiseNode) -> None:
+    def add_child(self, child_id: int | Node) -> None:
         """Add a child node to the container.
 
         Parameters
         ----------
-        child_id : int | WwiseNode
+        child_id : int | Node
             Child node ID or Node instance.
         """
-        if isinstance(child_id, WwiseNode):
+        if isinstance(child_id, Node):
             child_id = child_id.id
 
         children = self["children/items"]
@@ -71,12 +96,12 @@ class LayerContainer(WwiseNode):
             children.append(child_id)
             self["children/count"] = len(children)
 
-    def remove_child(self, child_id: int | WwiseNode) -> bool:
+    def remove_child(self, child_id: int | Node) -> bool:
         """Remove a child node from the container.
 
         Parameters
         ----------
-        child_id : int | WwiseNode
+        child_id : int | Node
             Child node ID or Node instance to remove.
 
         Returns
@@ -84,7 +109,7 @@ class LayerContainer(WwiseNode):
         bool
             True if child was removed, False if not found.
         """
-        if isinstance(child_id, WwiseNode):
+        if isinstance(child_id, Node):
             child_id = child_id.id
 
         children = self["children/items"]

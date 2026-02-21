@@ -1,6 +1,6 @@
 from typing import Any
-
 from pybnk.node import Node
+from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
 
 
 class WwiseNode(Node):
@@ -8,6 +8,158 @@ class WwiseNode(Node):
 
     Provides convenient access to shared parameters like aux sends, virtual voice behavior, and state management.
     """
+
+    @property
+    def properties(self) -> list[dict]:
+        """Get the list of initial property values.
+
+        Returns
+        -------
+        list[Any]
+            List of property initial values.
+        """
+        return self["node_base_params/node_initial_params/prop_initial_values"]
+
+    def get_property(self, prop_name: str, default: float = None) -> float:
+        """Get a property value by name.
+
+        Parameters
+        ----------
+        prop_name : str
+            Property name (e.g., 'Volume', 'Pitch', 'LPF', 'HPF').
+        default : float, optional
+            Default value if property not found.
+
+        Returns
+        -------
+        float
+            Property value, or default if not found.
+        """
+        for prop_dict in self.properties:
+            if prop_name in prop_dict:
+                return prop_dict[prop_name]
+        return default
+
+    def set_property(self, prop_name: str, value: float) -> None:
+        """Set a property value by name.
+
+        If the property already exists, updates it. Otherwise, adds it.
+
+        Parameters
+        ----------
+        prop_name : str
+            Property name (e.g., 'Volume', 'Pitch', 'LPF', 'HPF').
+        value : float
+            Property value to set.
+        """
+        # Try to find and update existing property
+        for prop_dict in self.properties:
+            if prop_name in prop_dict:
+                prop_dict[prop_name] = value
+                return
+
+        # Property doesn't exist, add it
+        self.properties.append({prop_name: value})
+
+    def remove_property(self, prop_name: str) -> bool:
+        """Remove a property by name.
+
+        Parameters
+        ----------
+        prop_name : str
+            Property name to remove.
+
+        Returns
+        -------
+        bool
+            True if property was removed, False if not found.
+        """
+        prop_values = self.properties
+        for i, prop_dict in enumerate(prop_values):
+            if prop_name in prop_dict:
+                prop_values.pop(i)
+                return True
+        return False
+
+    def clear_properties(self) -> None:
+        """Remove all initial property values."""
+        self["node_base_params/node_initial_params/prop_initial_values"] = []
+
+    # Convenience properties for common parameters
+    @property
+    def volume(self) -> float:
+        """Get or set the volume in dB.
+
+        Returns
+        -------
+        float
+            Volume offset in dB (default 0.0 if not set).
+        """
+        return self.get_property("Volume", 0.0)
+
+    @volume.setter
+    def volume(self, value: float) -> None:
+        self.set_property("Volume", value)
+
+    @property
+    def pitch(self) -> float:
+        """Get or set the pitch in cents.
+
+        Returns
+        -------
+        float
+            Pitch offset in cents (default 0.0 if not set).
+        """
+        return self.get_property("Pitch", 0.0)
+
+    @pitch.setter
+    def pitch(self, value: float) -> None:
+        self.set_property("Pitch", value)
+
+    @property
+    def lowpass_filter(self) -> float:
+        """Get or set the low-pass filter value.
+
+        Returns
+        -------
+        float
+            LPF value (default 0.0 if not set).
+        """
+        return self.get_property("LPF", 0.0)
+
+    @lowpass_filter.setter
+    def lowpass_filter(self, value: float) -> None:
+        self.set_property("LPF", value)
+
+    @property
+    def highpass_filter(self) -> float:
+        """Get or set the high-pass filter value.
+
+        Returns
+        -------
+        float
+            HPF value (default 0.0 if not set).
+        """
+        return self.get_property("HPF", 0.0)
+
+    @highpass_filter.setter
+    def highpass_filter(self, value: float) -> None:
+        self.set_property("HPF", value)
+
+    @property
+    def attenuation_id(self) -> int:
+        """Get or set the attenuation ID reference.
+
+        Returns
+        -------
+        int
+            Attenuation node ID (default 0 if not set).
+        """
+        return int(self.get_property("AttenuationID", 0))
+
+    @attenuation_id.setter
+    def attenuation_id(self, value: int) -> None:
+        self.set_property("AttenuationID", float(value))
 
     @property
     def max_instances(self) -> int:
@@ -101,7 +253,7 @@ class WwiseNode(Node):
         self[f"node_base_params/aux_params/aux{index}"] = bus_id
 
     @property
-    def prop_values(self) -> list[Any]:
+    def properties(self) -> list[Any]:
         """Get the list of initial property values.
 
         Returns
@@ -121,6 +273,60 @@ class WwiseNode(Node):
             Number of RTPC entries.
         """
         return self["node_base_params/initial_rtpc/count"]
+
+    def add_rtpc(
+        self,
+        rtpc_id: int,
+        param_id: int,
+        curve_id: int | Node,
+        graph_points: list[tuple[float, float, CurveType]] = None,
+        rtpc_type: RtcpType = "GameParameter",
+        rtpc_accum: AccumulationType = "Additive",
+        curve_scaling: ScalingType = "DB",
+    ) -> None:
+        """Add an RTPC (Real-Time Parameter Control) entry.
+
+        Parameters
+        ----------
+        rtpc_id : int
+            RTPC identifier (game parameter ID).
+        param_id : int
+            Parameter to control (0=Volume, 2=LPF, 3=Pitch, 5=BusVolume, etc.).
+        curve_id : int | Node
+            Curve identifier for this RTPC.
+        graph_points : list[tuple[float, float, CurveType]], optional
+            List of (from, to, interpolation) tuples for the curve.
+            Defaults to a linear 0->-1, 1->0 curve if not provided.
+        rtpc_type : RtcpType, default="GameParameter"
+            RTPC type.
+        rtpc_accum : AccumulationType, default="Additive"
+            Accumulation mode.
+        curve_scaling : ScalingType, default="DB"
+            Curve scaling type ('DB', 'Linear', 'None').
+        """
+        if isinstance(curve_id, Node):
+            curve_id = curve_id.id
+
+        if graph_points is None:
+            graph_points = [(0.0, -1.0, "Linear"), (1.0, 0.0, "Linear")]
+
+        rtpc = {
+            "id": rtpc_id,
+            "rtpc_type": rtpc_type,
+            "rtpc_accum": rtpc_accum,
+            "param_id": param_id,
+            "curve_id": curve_id,
+            "curve_scaling": curve_scaling,
+            "graph_point_count": len(graph_points),
+            "graph_points": [
+                {"from": from_val, "to": to_val, "interpolation": interp}
+                for from_val, to_val, interp in graph_points
+            ],
+        }
+
+        rtpcs = self["node_base_params/initial_rtpc/rtpcs"]
+        rtpcs.append(rtpc)
+        self["node_base_params/initial_rtpc/count"] = len(rtpcs)
 
     def clear_rtpcs(self) -> None:
         """Remove all RTPC entries."""
