@@ -6,8 +6,7 @@ from pybnk.node import Node
 class WwiseNode(Node):
     """Base class for nodes with common node_base_params functionality.
 
-    Provides convenient access to shared parameters like aux sends,
-    virtual voice behavior, and state management.
+    Provides convenient access to shared parameters like aux sends, virtual voice behavior, and state management.
     """
 
     @property

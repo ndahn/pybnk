@@ -2,7 +2,9 @@ from .wwise_node import WwiseNode
 
 
 class Sound(WwiseNode):
-    """The fundamental playable audio object. Contains a single audio file (embedded or streamed) with codec settings and 3D positioning parameters.
+    """The fundamental playable audio object. 
+    
+    Contains a single audio file (embedded or streamed) with codec settings and 3D positioning parameters.
     """
 
     @property

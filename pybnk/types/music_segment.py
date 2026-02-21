@@ -2,7 +2,9 @@ from .wwise_node import WwiseNode
 
 
 class MusicSegment(WwiseNode):
-    """A timed piece of interactive music with tempo, time signature, and markers. Contains music tracks and defines the musical structure for adaptive music systems.
+    """A timed piece of interactive music with tempo, time signature, and markers. 
+    
+    Contains music tracks and defines the musical structure for adaptive music systems.
     """
 
     @property

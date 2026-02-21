@@ -1,0 +1,167 @@
+{
+  "body_type": 8,
+  "size": 219,
+  "id": {
+    "Hash": -1
+  },
+  "body": {
+    "Bus": {
+      "initial_values": {
+        "override_bus_id": 3803692087,
+        "device_share_set_id": 0,
+        "bus_initial_params": {
+          "prop_bundle": [
+            {
+              "CenterPCT": 100.0
+            },
+            {
+              "HDRBusThreshold": 0.0
+            },
+            {
+              "HDRBusRatio": 100.0
+            },
+            {
+              "HDRBusReleaseTime": 0.0
+            },
+            {
+              "HDRBusGameParamMax": 100.0
+            }
+          ],
+          "positioning_params": {
+            "unk1": false,
+            "three_dimensional_position_type": "Emitter",
+            "speaker_panning_type": "DirectSpeakerAssignment",
+            "listener_relative_routing": false,
+            "override_parent": true,
+            "unk2": false,
+            "enable_diffraction": false,
+            "hold_listener_orientation": false,
+            "hold_emitter_position_and_orientation": false,
+            "enable_attenuation": false,
+            "three_dimensional_spatialization_mode": "None",
+            "path_mode": "StepSequence",
+            "transition_time": 0,
+            "vertex_count": 0,
+            "vertices": [],
+            "path_list_item_count": 0,
+            "path_list_item_offsets": [],
+            "three_dimensional_automation_params": []
+          },
+          "aux_params": {
+            "unk1": false,
+            "unk2": false,
+            "unk3": false,
+            "override_reflections_aux_bus": true,
+            "has_aux": true,
+            "override_user_aux_sends": true,
+            "unk4": 1,
+            "aux1": 1848941422,
+            "aux2": 0,
+            "aux3": 0,
+            "aux4": 0,
+            "reflections_aux_bus": 0
+          },
+          "flags": 0,
+          "max_instance_count": 0,
+          "channel_config": 0,
+          "hdr_flags": 2
+        },
+        "recovery_time": 1000,
+        "max_duck_volume": -96.0,
+        "duck_count": 1,
+        "ducks": [
+          {
+            "bus_id": 1788190166,
+            "duck_volume": -200.0,
+            "fade_out_time": 3000,
+            "fade_in_time": 500,
+            "fade_curve": "SCurve",
+            "target_prop": "BusVolume"
+          }
+        ],
+        "bus_initial_fx_params": {
+          "fx_count": 0,
+          "fx_bypass": 0,
+          "fx": [],
+          "fx_id_0": 0,
+          "is_share_set_0": 0
+        },
+        "override_attachment_params": 0,
+        "initial_rtpc": {
+          "count": 3,
+          "rtpcs": [
+            {
+              "id": 560139250,
+              "rtpc_type": "GameParameter",
+              "rtpc_accum": "Additive",
+              "param_id": 5,
+              "curve_id": 588902222,
+              "curve_scaling": "DB",
+              "graph_point_count": 2,
+              "graph_points": [
+                {
+                  "from": 0.0,
+                  "to": -1.0,
+                  "interpolation": "Linear"
+                },
+                {
+                  "from": 1.0,
+                  "to": 0.0,
+                  "interpolation": "Linear"
+                }
+              ]
+            },
+            {
+              "id": 3362400191,
+              "rtpc_type": "GameParameter",
+              "rtpc_accum": "Additive",
+              "param_id": 0,
+              "curve_id": 57096618,
+              "curve_scaling": "DB",
+              "graph_point_count": 2,
+              "graph_points": [
+                {
+                  "from": 0.0,
+                  "to": -1.0,
+                  "interpolation": "Linear"
+                },
+                {
+                  "from": 1.0,
+                  "to": 0.0,
+                  "interpolation": "Linear"
+                }
+              ]
+            },
+            {
+              "id": 2918011349,
+              "rtpc_type": "GameParameter",
+              "rtpc_accum": "Additive",
+              "param_id": 5,
+              "curve_id": 540907454,
+              "curve_scaling": "DB",
+              "graph_point_count": 2,
+              "graph_points": [
+                {
+                  "from": 0.0,
+                  "to": -1.0,
+                  "interpolation": "Linear"
+                },
+                {
+                  "from": 1.0,
+                  "to": 0.0,
+                  "interpolation": "Linear"
+                }
+              ]
+            }
+          ]
+        },
+        "state_chunk": {
+          "state_property_count": 0,
+          "state_property_info": [],
+          "state_group_count": 0,
+          "state_group_chunks": []
+        }
+      }
+    }
+  }
+}

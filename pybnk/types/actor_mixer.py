@@ -2,7 +2,9 @@ from .wwise_node import WwiseNode
 
 
 class ActorMixer(WwiseNode):
-    """A hierarchical container that groups sounds and other mixers. Used to organize audio assets and apply shared processing/routing through the mixer hierarchy.
+    """A hierarchical container that groups sounds and other mixers. 
+    
+    Used to organize audio assets and apply shared processing/routing through the mixer hierarchy.
     """
 
     @property

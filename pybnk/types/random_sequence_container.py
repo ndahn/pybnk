@@ -3,7 +3,9 @@ from .wwise_node import WwiseNode
 
 
 class RandomSequenceContainer(WwiseNode):
-    """Plays its children either randomly or in sequence. Supports looping, transition timing, and avoiding recent repeats. Used for variations (footsteps, gunshots, voice lines).
+    """Plays its children either randomly or in sequence. 
+    
+    Supports looping, transition timing, and avoiding recent repeats. Used for variations (footsteps, gunshots, voice lines).
     """
 
     @property

@@ -2,7 +2,9 @@ from .wwise_node import WwiseNode
 
 
 class MusicTrack(WwiseNode):
-    """An individual audio track within a music segment. Contains the actual audio sources and defines when/how they play within the segment timeline.
+    """An individual audio track within a music segment. 
+    
+    Contains the actual audio sources and defines when/how they play within the segment timeline.
     """
 
     @property

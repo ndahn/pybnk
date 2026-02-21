@@ -1,9 +1,10 @@
-from typing import Any
 from .wwise_node import WwiseNode
 
 
 class LayerContainer(WwiseNode):
-    """Plays multiple child sounds simultaneously as layers. Useful for layered sound design where different components play together (e.g., engine loop + transmission sounds).
+    """Plays multiple child sounds simultaneously as layers. 
+    
+    Useful for layered sound design where different components play together (e.g., engine loop + transmission sounds).
     """
 
     @property

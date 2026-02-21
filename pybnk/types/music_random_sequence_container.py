@@ -2,7 +2,9 @@ from .wwise_node import WwiseNode
 
 
 class MusicRandomSequenceContainer(WwiseNode):
-    """ Interactive music playlist that randomly or sequentially plays music segments. Includes transition rules for smooth musical transitions and weighted selection for segments.
+    """ Interactive music playlist that randomly or sequentially plays music segments. 
+    
+    Includes transition rules for smooth musical transitions and weighted selection for segments.
     """
 
     @property
