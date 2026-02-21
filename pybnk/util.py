@@ -45,10 +45,13 @@ def repack_soundbank(bnk_dir: Path) -> Path:
     return bnk_dir.parent / bnk_dir.stem + ".bnk"
 
 
-def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
+def format_hierarchy(bnk: "Soundbank", graph: nx.DiGraph) -> str:
     visited = set()
+    ret = ""
 
     def delve(nid: Any, prefix: str):
+        nonlocal ret
+
         if nid in visited:
             return
 
@@ -58,7 +61,7 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
         for i, child in enumerate(children):
             is_last = i == len(children) - 1
             branch = "└──" if is_last else "├──"
-            print(f"{prefix}{branch} {child}")
+            ret += (f"{prefix}{branch} {child}\n")
 
             new_prefix = prefix + ("    " if is_last else "│   ")
             delve(child, new_prefix)
@@ -74,6 +77,7 @@ def print_hierarchy(bnk: "Soundbank", graph: nx.DiGraph):
         logger.warning(f"Multiple roots found, using {root}")
 
     delve(root, "")
+    return ret.rstrip("\n")
 
 
 def calc_hash(input: str) -> int:

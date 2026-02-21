@@ -1,9 +1,8 @@
-from pprint import pprint
-
 from pybnk import Soundbank, Node, calc_hash
+from pybnk.create import new_event
 from pybnk.modify import add_children
 from pybnk.wem import import_wems
-from pybnk.util import print_hierarchy, logger
+from pybnk.util import format_hierarchy, logger
 
 
 def copy_event(
@@ -26,11 +25,92 @@ def copy_event(
     return event
 
 
-def copy_structure(
+def copy_node_structure(
+    src_bnk: Soundbank,
+    dst_bnk: Soundbank,
+    entrypoint: Node,
+) -> list[tuple[int, str]]:
+    # Collect the hierarchy responsible for playing the sound(s)
+    action_tree = src_bnk.get_hierarchy(entrypoint)
+    tree_str = format_hierarchy(src_bnk, action_tree)
+    logger.info(f"Hierarchy for node {entrypoint}:\n{tree_str}\n")
+
+    wems = [(nid, wem) for nid, wem in action_tree.nodes.data("wem") if wem]
+    dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
+
+    # Go upwards through the parents chain and see what needs to be transferred
+    upchain = src_bnk.get_parent_chain(entrypoint)
+    upchain_str = "\n".join([
+        f" ⤷ {up_id} ({src_bnk[up_id].type})"
+        for up_id in reversed(upchain)
+    ])
+    logger.info(f"\nThe parent chain consists of the following nodes:\n{upchain_str}\n")
+
+    up_child = entrypoint
+    for up_id in upchain:
+        # Once we encounter an existing node we can assume the rest of the chain is
+        # intact. Child nodes must be inserted *before* the first existing parent.
+        if up_id in dst_bnk:
+            add_children(dst_bnk[up_id], up_child)
+            break
+
+        # First time we encounter upchain node, clear the children, as non-existing items
+        # will make the soundbank invalid
+        up = src_bnk[up_id].copy()
+        up["children/items"] = []
+        dst_bnk.add_nodes([up])
+
+        up_child = up
+
+    # Collect additional referenced items
+    extras = src_bnk.find_related_objects(action_tree.nodes)
+    extras_str = "\n".join([
+        f" - {nid} ({src_bnk[nid].type})"
+        for nid in extras
+    ])
+    logger.info(f"\nThe following extra items were collected:\n{extras_str}\n")
+
+    for oid in extras:
+        if oid not in src_bnk:
+            continue
+
+        if oid in dst_bnk:
+            continue
+
+        dst_bnk.add_nodes(src_bnk[oid].copy())
+
+    return wems
+
+
+def copy_wems(
+    src_bnk: Soundbank,
+    dst_bnk: Soundbank,
+    wems: list[str],
+) -> None:
+    wems_str = "\n".join(f"- {w}" for w in wems)
+    logger.info(f"Discovered the following WEMs:\n{wems_str}\n")
+
+    logger.info("Copying wems...")
+    wem_paths = []
+    for nid, wem in wems:
+        wp = src_bnk.bnk_dir / f"{wem}.wem"
+        if wp.is_file():
+            wem_paths.append(wp)
+        else:
+            sound = src_bnk[nid]
+            plugin = sound["bank_source_data/plugin"]
+            stype = sound["bank_source_data/source_type"]
+            logger.warning(
+                f"WEM {wem} ({plugin}, {stype}) not found in source soundbank, skipped"
+            )
+
+    import_wems(dst_bnk, wem_paths)
+
+
+def copy_wwise_events(
     src_bnk: Soundbank,
     dst_bnk: Soundbank,
     wwise_map: dict[str, str],
-    quiet: bool = False,
 ) -> None:
     wems = []
 
@@ -54,64 +134,14 @@ def copy_structure(
 
             # NOTE action_bnk_id will already be translated from src_bnk to dst_bnk
             if action_bnk_id != dst_bnk.id:
-                print(
-                    f"Action {action_id} of event {play_evt} references node in external soundbank {action_bnk_id}"
+                logger.warning(
+                    f"Action {action.id} references node in external soundbank {action_bnk_id}"
                 )
-                continue
+                return
 
             entrypoint = src_bnk[action["external_id"]]
-
-            # Collect the hierarchy responsible for playing the sound(s)
-            action_tree = src_bnk.get_hierarchy(entrypoint)
-
-            if not quiet:
-                print_hierarchy(src_bnk, action_tree)
-
-            wems.extend(((nid, wem) for nid, wem in action_tree.nodes.data("wem") if wem))
-            dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
-
-            # Go upwards through the parents chain and see what needs to be transferred
-            upchain = src_bnk.get_parent_chain(entrypoint)
-
-            if not quiet:
-                logger.info("\nThe parent chain consists of the following nodes:")
-                for up_id in reversed(upchain):
-                    print(f" ⤷ {up_id} ({src_bnk[up_id].type})")
-                print()
-
-            up_child = entrypoint
-            for up_id in upchain:
-                # Once we encounter an existing node we can assume the rest of the chain is
-                # intact. Child nodes must be inserted *before* the first existing parent.
-                if up_id in dst_bnk:
-                    add_children(dst_bnk[up_id], up_child)
-                    break
-
-                # First time we encounter upchain node, clear the children, as non-existing items
-                # will make the soundbank invalid
-                up = src_bnk[up_id].copy()
-                up["children/items"] = []
-                dst_bnk.add_nodes([up])
-
-                up_child = up
-
-            # Collect additional referenced items
-            extras = src_bnk.find_related_objects(action_tree.nodes)
-
-            if extras and not quiet:
-                logger.info("\nThe following extra items were collected:")
-                for nid in extras:
-                    print(f" - {nid} ({src_bnk[nid].type})")
-                print()
-
-            for oid in extras:
-                if oid not in src_bnk:
-                    continue
-
-                if oid in dst_bnk:
-                    continue
-
-                dst_bnk.add_nodes(src_bnk[oid].copy())
+            new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
+            wems.extend(new_wems)
 
     # Verify
     logger.info("\nVerifying soundbank...")
@@ -123,26 +153,40 @@ def copy_structure(
         logger.info(" - seems surprisingly fine :o\n")
 
     # Copy WEMs
-    if not quiet:
-        logger.info("Discovered the following WEMs:")
-        pprint(wems)
-
-    logger.info("Copying wems...")
-    wem_paths = []
-    for nid, wem in wems:
-        wp = src_bnk.bnk_dir / f"{wem}.wem"
-        if wp.is_file():
-            wem_paths.append(wp)
-        else:
-            sound = src_bnk[nid]
-            plugin = sound["bank_source_data/plugin"]
-            stype = sound["bank_source_data/source_type"]
-            logger.warning(
-                f"WEM {wem} ({plugin}, {stype}) not found in source soundbank, skipped"
-            )
-
-    import_wems(dst_bnk, wem_paths)
+    copy_wems(src_bnk, dst_bnk, wems)
     
     # Yay!
-    print()
+    logger.info("Done. Yay!")
+
+
+def copy_structures_with_new_events(
+    src_bnk: Soundbank,
+    dst_bnk: Soundbank,
+    nodes: dict[Node, str],
+) -> None:
+    wems = []
+
+    for entrypoint, wwise_dst in nodes.items():
+        play_event, play_action = new_event(dst_bnk, f"Play_{wwise_dst}", entrypoint, "Play")
+        dst_bnk.add_event(play_event, play_action)
+
+        stop_event, stop_action = new_event(dst_bnk, f"Stop_{wwise_dst}", entrypoint, "Stop")
+        dst_bnk.add_event(stop_event, stop_action)
+
+        new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
+        wems.extend(new_wems)
+
+    # Verify
+    logger.info("\nVerifying soundbank...")
+    issues = dst_bnk.verify()
+    if issues:
+        for issue in issues:
+            logger.warning(f" - {issue}")
+    else:
+        logger.info(" - seems surprisingly fine :o\n")
+
+    # Copy WEMs
+    copy_wems(src_bnk, dst_bnk, wems)
+    
+    # Yay!
     logger.info("Done. Yay!")

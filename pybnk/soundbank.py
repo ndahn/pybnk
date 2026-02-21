@@ -184,6 +184,9 @@ class Soundbank:
         return idx
 
     def add_event(self, event: Node, actions: list[Node]) -> int:
+        if isinstance(actions, Node):
+            actions = [actions]
+            
         # Events appear towards the end of the soundbank
         first_event = self.query_one({"type": "Event"})
         idx = self._id2index[first_event.id]

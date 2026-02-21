@@ -114,6 +114,9 @@ class Node:
         except KeyError:
             return False
 
+    def __hash__(self):
+        return self.id
+
     def __contains__(self, path: Any) -> bool:
         if not isinstance(path, str):
             return False

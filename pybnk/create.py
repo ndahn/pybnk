@@ -138,29 +138,28 @@ def new_event(
     bnk: Soundbank,
     name: str,
     node: Node | int,
-    play_attr: dict[str, Any] = None,
-    stop_attr: dict[str, Any] = None,
-) -> tuple[Node, tuple[Node, Node]]:
+    action_type: Literal["Play", "Stop"],
+    action_attr: dict[str, Any] = None,
+) -> tuple[Node, Node]:
     if isinstance(node, Node):
         node = node.id
 
-    play_action = new_from_template(
+    action = new_from_template(
         bnk.new_id(),
-        "Action_Play",
-        {"external_id": node, "params/Play/bank_id": bnk.id} | (play_attr or {}),
-    )
-    stop_action = new_from_template(
-        bnk.new_id(),
-        "Action_Stop",
-        {"external_id": node} | (stop_attr or {}),
+        f"Action_{action_type}",
+        {"external_id": node} | (action_attr or {}),
     )
 
+    # Only set for play actions?
+    if action_type == "Play":
+        action[f"params/{action_type}/bank_id"] = bnk.id
+
     event = new_from_template(
-        bnk.new_id(), "Event", {"actions": [play_action.id, stop_action.id]}
+        bnk.new_id(), "Event", {"actions": [action.id]}
     )
     event.id = calc_hash(name)
 
-    return (event, (play_action, stop_action))
+    return (event, action)
 
 
 def create_simple_sound(
@@ -182,10 +181,10 @@ def create_simple_sound(
     rsc.parent = actor_mixer.id
 
     play_event, play_action = new_event(
-        bnk, f"Play_{wwise_name}", rsc.id, action_type="Play"
+        bnk, f"Play_{wwise_name}", rsc.id, "Play"
     )
     stop_event, stop_action = new_event(
-        bnk, f"Stop_{wwise_name}", rsc.id, action_type="Stop"
+        bnk, f"Stop_{wwise_name}", rsc.id, "Stop"
     )
 
     bnk.add_nodes(sounds + [rsc])
