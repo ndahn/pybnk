@@ -295,8 +295,9 @@ class Soundbank:
                     break
 
     def find_related_objects(self, object_ids: list[int]) -> set[int]:
-        """Collect any values of attributes that look like they could be a reference to another object, e.g. a bus."""
+        """Recursively collect any values of attributes that look like they could be a reference to another object, e.g. a bus."""
         extras = []
+        object_ids = set(object_ids)  # for efficiency
 
         # TODO instead of just taking everything that even remotely looks like an object we really should decide based on node type and attribute name, but.... eh
         def delve(item: Any, field: str, new_ids: set):
@@ -399,10 +400,9 @@ class Soundbank:
 
             verified_ids.add(node_id)
 
-        if required_ids and len(verified_ids) < len(required_ids):
-            issues.append(
-                f"Expected nodes not found: {[required_ids.difference(verified_ids)]}"
-            )
+        missing = required_ids.difference(verified_ids)
+        if missing:
+            issues.append(f"Expected nodes not found: {sorted(missing)}")
 
         return issues
 
