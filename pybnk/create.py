@@ -188,5 +188,5 @@ def create_simple_sound(
     )
 
     bnk.add_nodes(sounds + [rsc])
-    bnk.add_event(play_event, [play_action])
-    bnk.add_event(stop_event, [stop_action])
+    bnk.add_event(play_event, play_action)
+    bnk.add_event(stop_event, stop_action)
