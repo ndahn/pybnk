@@ -4,7 +4,7 @@ import traceback
 import re
 
 from pybnk import Soundbank
-from pybnk.transfer import copy_structure
+from pybnk.transfer import copy_wwise_events
 
 
 # ------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     try:
         src_bnk = Soundbank.load(src_bnk_dir)
         dst_bnk = Soundbank.load(dst_bnk_dir)
-        copy_structure(src_bnk, dst_bnk, wwise_ids)
+        copy_wwise_events(src_bnk, dst_bnk, wwise_ids)
     except Exception:
         if hasattr(sys, "gettrace") and sys.gettrace() is not None:
             # Debugger is active, let the debugger handle it

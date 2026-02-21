@@ -6,7 +6,7 @@ import traceback
 import threading
 
 from pybnk import Soundbank
-from pybnk.transfer import copy_structure
+from pybnk.transfer import copy_wwise_events
 from pybnk.gui.localization import Localization, English, Chinese
 from pybnk.gui.calc_hash_dialog import CalcHashDialog
 from pybnk.gui.id_selection_dialog import IdSelectionDialog
@@ -316,7 +316,7 @@ class TransferSoundsDialog(tk.Tk):
                 try:
                     src_bnk = Soundbank.load(src_bank_dir)
                     dst_bnk = Soundbank.load(dst_bank_dir)
-                    copy_structure(src_bnk, dst_bnk, wwise_map)
+                    copy_wwise_events(src_bnk, dst_bnk, wwise_map)
 
                     if enable_write:
                         dst_bnk.save()
