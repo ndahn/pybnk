@@ -108,17 +108,6 @@ class MusicTrack(WwiseNode):
         return self["sources"]
 
     @property
-    def source_count(self) -> int:
-        """Get the number of sources.
-
-        Returns
-        -------
-        int
-            Number of sources in the track.
-        """
-        return self["source_count"]
-
-    @property
     def playlist(self) -> list[dict]:
         """Get the playlist items.
 
@@ -128,17 +117,6 @@ class MusicTrack(WwiseNode):
             List of playlist item dictionaries.
         """
         return self["playlist"]
-
-    @property
-    def playlist_item_count(self) -> int:
-        """Get the number of playlist items.
-
-        Returns
-        -------
-        int
-            Number of playlist items.
-        """
-        return self["playlist_item_count"]
 
     def add_source(
         self,

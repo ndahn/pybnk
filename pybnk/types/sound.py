@@ -146,28 +146,6 @@ class Sound(WwiseNode):
         self["bank_source_data/media_information/in_memory_media_size"] = value
 
     @property
-    def is_streamed(self) -> bool:
-        """Check if the sound is streamed from disk.
-
-        Returns
-        -------
-        bool
-            True if streamed, False if embedded.
-        """
-        return self.source_type == "Streamed"
-
-    @property
-    def is_embedded(self) -> bool:
-        """Check if the sound is embedded in the bank.
-
-        Returns
-        -------
-        bool
-            True if embedded, False if streamed.
-        """
-        return self.source_type == "Embedded"
-
-    @property
     def enable_attenuation(self) -> bool:
         """Get or set whether 3D attenuation is enabled.
 

@@ -35,17 +35,6 @@ class LayerContainer(WwiseNode):
         return container
 
     @property
-    def layer_count(self) -> int:
-        """Get the number of layers.
-
-        Returns
-        -------
-        int
-            Number of layers in the container.
-        """
-        return self["layer_count"]
-
-    @property
     def layers(self) -> list[dict]:
         """Get the list of layers.
 
@@ -57,7 +46,7 @@ class LayerContainer(WwiseNode):
         return self["layers"]
 
     @property
-    def is_continuous_validation(self) -> bool:
+    def continuous_validation(self) -> bool:
         """Get or set continuous validation flag.
 
         Returns
@@ -67,8 +56,8 @@ class LayerContainer(WwiseNode):
         """
         return bool(self["is_continuous_validation"])
 
-    @is_continuous_validation.setter
-    def is_continuous_validation(self, value: bool) -> None:
+    @continuous_validation.setter
+    def continuous_validation(self, value: bool) -> None:
         self["is_continuous_validation"] = int(value)
 
     @property

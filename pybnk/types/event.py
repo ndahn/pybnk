@@ -51,17 +51,6 @@ class Event(Node):
         """
         return self["actions"]
     
-    @property
-    def action_count(self) -> int:
-        """Get the number of actions.
-        
-        Returns
-        -------
-        int
-            Number of actions.
-        """
-        return self["action_count"]
-    
     def add_action(self, action_id: int | Node) -> None:
         """Add an action to the event.
         

@@ -100,17 +100,6 @@ class Attenuation(Node):
         return self["curves"]
 
     @property
-    def curve_count(self) -> int:
-        """Get the number of curves.
-
-        Returns
-        -------
-        int
-            Number of attenuation curves.
-        """
-        return self["curve_count"]
-
-    @property
     def curves_to_use(self) -> list[int]:
         """Get or set which curves are active.
 

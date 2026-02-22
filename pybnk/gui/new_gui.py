@@ -4,7 +4,7 @@ import json
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.types import Event, Action
+from pybnk.types import Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
@@ -97,37 +97,36 @@ class PyBnkGui:
                 ):
                     dpg.add_table_column(label="Node", width_stretch=True)
 
+            dpg.add_child_window(
+                autosize_y=True,
+                width=400,
+                resizable_x=True,
+                border=True,
+                tag=f"{tag}_attributes",
+            )
+
             with dpg.child_window(
+                width=400,
                 autosize_x=True,
                 autosize_y=True,
+                border=False,
             ):
-                dpg.add_child_window(
-                    autosize_x=True,
-                    auto_resize_y=True,
-                    border=False,
-                    tag=f"{tag}_attributes",
+                dpg.add_input_text(
+                    multiline=True,
+                    width=-1,
+                    height=-30,
+                    callback=None,  # TODO change border color to show changes were made
+                    tag=f"{tag}_json",
                 )
-                dpg.add_separator()
-                with dpg.child_window(
-                    autosize_x=True,
-                    autosize_y=True,
-                    border=False,
-                ):
-                    dpg.add_input_text(
-                        multiline=True,
-                        width=-1,
-                        height=-30,
-                        tag=f"{tag}_json",
+                with dpg.group(horizontal=True):
+                    dpg.add_button(
+                        label="Apply",
+                        callback=self.apply_json,
                     )
-                    with dpg.group(horizontal=True):
-                        dpg.add_button(
-                            label="Apply",
-                            callback=self.apply_json,
-                        )
-                        dpg.add_button(
-                            label="Reset",
-                            callback=self.reset_json,
-                        )
+                    dpg.add_button(
+                        label="Reset",
+                        callback=self.reset_json,
+                    )
 
     def _save_soundbank(self) -> None:
         if not self.bnk:
@@ -278,7 +277,6 @@ class PyBnkGui:
             return
 
         self.selected_node.update(data)
-        # TODO write to soundbank
         self.regenerate()
 
     def reset_json(self) -> None:
@@ -294,14 +292,90 @@ class PyBnkGui:
         node = node.cast()
         self.selected_node = node
 
-        # JSON data
         dpg.set_value(f"{self.tag}_json", node.json())
+        self._create_attribute_widgets()
 
-        # Attributes
+    def _create_attribute_widgets(self) -> None:
         dpg.delete_item(f"{self.tag}_attributes", children_only=True, slot=1)
-        dpg.add_text(str(node), parent=f"{self.tag}_attributes")
+        node = self.selected_node
 
-        # TODO update attributes window
+        if not node:
+            return
+
+        def update_name_and_id(sender: str, new_name: str, user_data: Any) -> None:
+            if not new_name:
+                return
+
+            node.id = new_name
+            dpg.set_value(f"{self.tag}_attr_hash", str(node.id))
+
+        with dpg.group(parent=f"{self.tag}_attributes"):
+            dpg.add_text(node.type)
+            dpg.add_input_text(
+                label="Name", 
+                default_value=node.lookup_name("<?>"),
+                callback=update_name_and_id,
+            )
+            dpg.add_input_text(
+                label="Hash",
+                default_value=str(node.id),
+                readonly=True,
+                enabled=False,
+                tag=f"{self.tag}_attr_hash",
+            )
+
+            properties = {
+                name: prop
+                for name, prop in node.__class__.__dict__.items()
+                if isinstance(prop, property)
+            }
+
+            for name, prop in properties.items():
+                value = prop.fget(node)
+                readonly = prop.fset is None
+                print(name, value, type(value), isinstance(value, int))
+
+                def set_property(sender: str, new_value: Any, prop: property):
+                    prop.fset(node, new_value)
+
+                if isinstance(value, bool):
+                    dpg.add_checkbox(
+                        label=name,
+                        default_value=value,
+                        callback=set_property,
+                        enabled=not readonly,
+                        user_data=prop,
+                    )
+                elif isinstance(value, int):
+                    dpg.add_input_int(
+                        label=name,
+                        default_value=value,
+                        callback=set_property,
+                        readonly=readonly,
+                        enabled=not readonly,
+                        user_data=prop,
+                    )
+                elif isinstance(value, float):
+                    dpg.add_input_float(
+                        label=name,
+                        default_value=value,
+                        callback=set_property,
+                        readonly=readonly,
+                        enabled=not readonly,
+                        user_data=prop,
+                    )
+                elif isinstance(value, str):
+                    dpg.add_input_text(
+                        label=name,
+                        default_value=value,
+                        callback=set_property,
+                        readonly=readonly,
+                        enabled=not readonly,
+                        user_data=prop,
+                    )
+
+            dpg.add_child_window(height=-30, border=False)
+            dpg.add_button(label="Reset")
 
     def clear(self) -> None:
         self.bnk = None
@@ -317,7 +391,7 @@ class PyBnkGui:
 if __name__ == "__main__":
     dpg.create_context()
     dpg_init()
-    dpg.create_viewport(title="PyBnk", width=600, height=600)
+    dpg.create_viewport(title="PyBnk", width=1000, height=700)
 
     with dpg.window() as main_window:
         app = PyBnkGui()

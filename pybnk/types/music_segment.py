@@ -124,17 +124,6 @@ class MusicSegment(WwiseNode):
         """
         return self["markers"]
 
-    @property
-    def marker_count(self) -> int:
-        """Get the number of markers.
-
-        Returns
-        -------
-        int
-            Number of markers in the segment.
-        """
-        return self["marker_count"]
-
     def add_marker(self, marker_id: int, position: float, name: str = "") -> None:
         """Add a marker to the segment.
 

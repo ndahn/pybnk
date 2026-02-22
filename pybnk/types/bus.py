@@ -286,17 +286,6 @@ class Bus(Node):
         return self["initial_values/ducks"]
 
     @property
-    def duck_count(self) -> int:
-        """Get the number of ducking configurations.
-
-        Returns
-        -------
-        int
-            Number of ducks.
-        """
-        return self["initial_values/duck_count"]
-
-    @property
     def rtpcs(self) -> list[dict]:
         """Get the RTPC (real-time parameter control) entries.
 
@@ -306,17 +295,6 @@ class Bus(Node):
             List of RTPC dictionaries.
         """
         return self["initial_values/initial_rtpc/rtpcs"]
-
-    @property
-    def rtpc_count(self) -> int:
-        """Get the number of RTPC entries.
-
-        Returns
-        -------
-        int
-            Number of RTPCs.
-        """
-        return self["initial_values/initial_rtpc/count"]
 
     def add_rtpc(
         self,

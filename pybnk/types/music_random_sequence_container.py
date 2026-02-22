@@ -115,17 +115,6 @@ class MusicRandomSequenceContainer(WwiseNode):
         return self["playlist_items"]
 
     @property
-    def playlist_item_count(self) -> int:
-        """Get the number of playlist items.
-
-        Returns
-        -------
-        int
-            Number of items in the playlist.
-        """
-        return self["playlist_item_count"]
-
-    @property
     def transition_rules(self) -> list[dict]:
         """Get the transition rules.
 
@@ -135,17 +124,6 @@ class MusicRandomSequenceContainer(WwiseNode):
             List of transition rule dictionaries.
         """
         return self["music_trans_node_params/transition_rules"]
-
-    @property
-    def transition_rule_count(self) -> int:
-        """Get the number of transition rules.
-
-        Returns
-        -------
-        int
-            Number of transition rules.
-        """
-        return self["music_trans_node_params/transition_rule_count"]
 
     @property
     def children_ids(self) -> list[int]:
