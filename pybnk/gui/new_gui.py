@@ -72,6 +72,38 @@ class PyBnkGui:
                     callback=self._repack_soundbank,
                 )
 
+            with dpg.menu(label="Help"):
+                with dpg.menu(label="dearpygui"):
+                    dpg.add_menu_item(
+                        label="About", callback=lambda: dpg.show_tool(dpg.mvTool_About)
+                    )
+                    dpg.add_menu_item(
+                        label="Metrics", callback=lambda: dpg.show_tool(dpg.mvTool_Metrics)
+                    )
+                    dpg.add_menu_item(
+                        label="Documentation",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_Doc),
+                    )
+                    dpg.add_menu_item(
+                        label="Debug", callback=lambda: dpg.show_tool(dpg.mvTool_Debug)
+                    )
+                    dpg.add_menu_item(
+                        label="Style Editor",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_Style),
+                    )
+                    dpg.add_menu_item(
+                        label="Font Manager",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_Font),
+                    )
+                    dpg.add_menu_item(
+                        label="Item Registry",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_ItemRegistry),
+                    )
+                    dpg.add_menu_item(
+                        label="Stack Tool",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_Stack),
+                    )
+
     def _setup_content(self) -> None:
         tag = self.tag
 
@@ -333,7 +365,6 @@ class PyBnkGui:
             for name, prop in properties.items():
                 value = prop.fget(node)
                 readonly = prop.fset is None
-                print(name, value, type(value), isinstance(value, int))
 
                 def set_property(sender: str, new_value: Any, prop: property):
                     prop.fset(node, new_value)
