@@ -26,10 +26,11 @@ class Node:
     def wrap(cls, node_dict: dict, *args, **kwargs):
         # Make sure the subclasses have been loaded
         import pybnk.types
-        
+
         def all_subclasses(c: type) -> list[type[Node]]:
             return set(c.__subclasses__()).union(
-                [s for c in c.__subclasses__() for s in all_subclasses(c)])
+                [s for c in c.__subclasses__() for s in all_subclasses(c)]
+            )
 
         tp = next(iter(node_dict["body"].keys()))
         for sub in all_subclasses(cls):
@@ -48,8 +49,41 @@ class Node:
     def json(self) -> str:
         return json.dumps(self._attr, indent=2)
 
-    def update(self, data: dict) -> None:
-        self._attr = data
+    def update(self, data: dict, delete_missing: bool = False) -> None:
+        # Merge with our attr so that references stay valid and the soundbank's
+        # HIRC this node belongs to is updated, too
+        def merge(target, source):
+            if isinstance(target, dict) and isinstance(source, dict):
+                # Remove keys that don't exist in source
+                if delete_missing:
+                    keys_to_remove = set(target.keys()) - set(source.keys())
+                    for key in keys_to_remove:
+                        del target[key]
+
+                # Update or add keys from source
+                for key, value in source.items():
+                    if (
+                        key in target
+                        and isinstance(target[key], (dict, list))
+                        and isinstance(value, (dict, list))
+                    ):
+                        # Recursively update if both are containers
+                        merge(target[key], value)
+                    else:
+                        # Replace with new value
+                        target[key] = value
+
+            elif isinstance(target, list) and isinstance(source, list):
+                # Clear list and extend with new values
+                target.clear()
+                target.extend(source)
+            else:
+                # Type changed, replace old value
+                target[key] = source[key]
+
+            return target
+
+        merge(self._attr, data)
 
     @property
     def dict(self) -> dict:
@@ -68,7 +102,7 @@ class Node:
         if not h:
             h = calc_hash(idsec["String"])
             idsec["Hash"] = h
-        
+
         return h
 
     @id.setter
@@ -96,10 +130,10 @@ class Node:
 
         if not isinstance(parent, int):
             raise ValueError(f"Invalid parent {parent}")
-        
+
         if self.parent > 0 and parent > 0 and parent != self.parent:
             logger.warning(f"Node {self} is being assigned new parent {parent}")
-        
+
         self["node_base_params/direct_parent_id"] = parent
 
     @property
@@ -125,10 +159,10 @@ class Node:
             s = lookup_table.get(self.id)
             if s:
                 idsec["String"] = s
-        
+
         if s is None:
             return default
-            
+
         return s
 
     def paths(self) -> Iterator[str]:
@@ -143,7 +177,7 @@ class Node:
             if isinstance(item, dict):
                 for key, value in item.items():
                     delve(value, path + "/" + key)
-        
+
         yield from delve(self.body, "")
 
     def get(self, path: str, default: Any = _undefined) -> Any:
@@ -152,7 +186,7 @@ class Node:
         except KeyError as e:
             if default != _undefined:
                 return default
-            
+
             raise e
 
     def set(self, path: str, value: Any) -> bool:
@@ -192,7 +226,7 @@ class Node:
 
             for sub in parts[:-1]:
                 attr = attr[sub]
-            
+
             attr[parts[-1]] = val
         except KeyError as e:
             raise KeyError(f"Path '{path}' not found in node {self}") from e
