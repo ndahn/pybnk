@@ -1,10 +1,11 @@
 from typing import Any
 from importlib import resources
+import json
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
 from pybnk.types import Event, Action
-from pybnk.util import logger
+from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.localization import Localization, English
@@ -36,10 +37,11 @@ class PyBnkGui:
             tag = dpg.generate_uuid()
 
         self.tag = tag
+        self.max_events = 500
         self.language: Localization = English()
         self.bnk: Soundbank = None
         self.events: dict[int, Event] = {}
-        self.max_events = 500
+        self.selected_node: Node = None
 
         self._setup_menu()
         self._setup_content()
@@ -56,12 +58,18 @@ class PyBnkGui:
                 dpg.add_menu_item(
                     label="Save",
                     shortcut="ctrl-s",
-                    callback=None,  # TODO
+                    callback=self._save_soundbank,
                 )
                 dpg.add_menu_item(
                     label="Save As...",
                     shortcut="ctrl-shift-s",
-                    callback=None,  # TODO
+                    callback=self._save_soundbank_as,
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
+                    label="Repack",
+                    shortcut="f4",
+                    callback=self._repack_soundbank,
                 )
 
     def _setup_content(self) -> None:
@@ -75,7 +83,9 @@ class PyBnkGui:
                 autosize_y=True,
                 tag=f"{tag}_events_window",
             ):
-                dpg.add_input_text(hint="Filter...", width=-1, tag=f"{tag}_events_filter")
+                dpg.add_input_text(
+                    hint="Filter...", width=-1, tag=f"{tag}_events_filter"
+                )
                 dpg.add_text("Showing 0 events", tag=f"{tag}_events_count")
                 with dpg.table(
                     no_host_extendX=True,
@@ -112,20 +122,50 @@ class PyBnkGui:
                     with dpg.group(horizontal=True):
                         dpg.add_button(
                             label="Apply",
-                            callback=None, # TODO
+                            callback=self.apply_json,
                         )
                         dpg.add_button(
                             label="Reset",
-                            callback=None, # TODO
+                            callback=self.reset_json,
                         )
+
+    def _save_soundbank(self) -> None:
+        if not self.bnk:
+            return
+
+        self.bnk.save()
+
+    def _save_soundbank_as(self) -> None:
+        if not self.bnk:
+            return
+
+        lang = self.language
+        path = save_file_dialog(
+            title=lang.save_soundbank,
+            default_dir=str(self.bnk.bnk_dir),
+            filetypes={lang.json_files: "*.json"},
+        )
+        if path:
+            self.bnk.save(path)
+
+    def _repack_soundbank(self) -> None:
+        if not self.bnk:
+            return
+
+        repack_soundbank(self.bnk.bnk_dir)
 
     def _open_soundbank(self) -> None:
         lang = self.language
         path = open_file_dialog(
             title=lang.open,
-            filetypes={lang.soundbank_files: "*.json"},
+            filetypes={
+                lang.json_files: "*.json",
+                lang.soundbank_files: "*.bnk",
+            },
         )
         if path:
+            if path.endswith(".bnk"):
+                unpack_soundbank(path)
             self._load_soundbank(path)
 
     def _load_soundbank(self, path: str) -> None:
@@ -136,9 +176,15 @@ class PyBnkGui:
         self.bnk = bnk
         tag = self.tag
 
-        def lazy_load_action_structure(sender: str, anchor: str, action: Action):
+        def node_selected_helper(sender: str, app_data: Any, node: Node) -> None:
+            self.on_node_selected(node)
+
+        def lazy_load_action_structure(
+            sender: str, anchor: str, action: Action
+        ) -> None:
+            node_selected_helper(sender, None, action)
+
             entrypoint = bnk[action.target_id]
-            self.on_node_selected(sender, None, entrypoint)
             g = bnk.get_hierarchy(entrypoint)
 
             def delve(nid: int) -> None:
@@ -149,7 +195,7 @@ class PyBnkGui:
                 if children:
                     with table_tree_node(
                         label,
-                        callback=self.on_node_selected,
+                        callback=node_selected_helper,
                         table=f"{tag}_events_table",
                         tag=f"{tag}_node_{nid}",
                         before=anchor,
@@ -165,7 +211,7 @@ class PyBnkGui:
                     ):
                         dpg.add_selectable(
                             label=label,
-                            callback=self.on_node_selected,
+                            callback=node_selected_helper,
                             tag=f"{tag}_node_{node.id}",
                             user_data=nid,
                         )
@@ -195,7 +241,7 @@ class PyBnkGui:
 
             with table_tree_node(
                 f"{name} ({event.id})",
-                callback=self.on_node_selected,
+                callback=node_selected_helper,
                 table=f"{tag}_events_table",
                 tag=f"{tag}_event_{event.id}",
                 user_data=event,
@@ -209,18 +255,52 @@ class PyBnkGui:
                         tag=f"{tag}_action_{aid}",
                         user_data=action,
                     )
-            
+
             if len(self.events) >= self.max_events:
                 break
 
         logger.info(f"Loaded {len(self.events)} events")
 
-    def on_node_selected(self, sender: str, app_data: Any, node: int | Node) -> None:
+    def regenerate(self) -> None:
+        if self.selected_node:
+            self.on_node_selected(self.selected_node)
+
+    def apply_json(self) -> None:
+        if not self.selected_node:
+            return
+
+        data_str = dpg.get_value(f"{self.tag}_json")
+        try:
+            data = json.loads(data_str)
+        except json.JSONDecodeError as e:
+            logger.error("Failed to parse json", exc_info=e)
+            # TODO show error to user
+            return
+
+        self.selected_node.update(data)
+        # TODO write to soundbank
+        self.regenerate()
+
+    def reset_json(self) -> None:
+        value = ""
+        if self.selected_node:
+            value = self.selected_node.json()
+        dpg.set_value(f"{self.tag}_json", value)
+
+    def on_node_selected(self, node: int | Node) -> None:
         if isinstance(node, int):
             node: Node = self.bnk[node]
 
         node = node.cast()
+        self.selected_node = node
+
+        # JSON data
         dpg.set_value(f"{self.tag}_json", node.json())
+
+        # Attributes
+        dpg.delete_item(f"{self.tag}_attributes", children_only=True, slot=1)
+        dpg.add_text(str(node), parent=f"{self.tag}_attributes")
+
         # TODO update attributes window
 
     def clear(self) -> None:

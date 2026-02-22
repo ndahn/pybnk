@@ -48,6 +48,9 @@ class Node:
     def json(self) -> str:
         return json.dumps(self._attr, indent=2)
 
+    def update(self, data: dict) -> None:
+        self._attr = data
+
     @property
     def dict(self) -> dict:
         return self._attr
