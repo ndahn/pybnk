@@ -52,7 +52,12 @@ def copy_node_structure(
     tree_str = format_hierarchy(src_bnk, action_tree)
     logger.info(f"Hierarchy for node {entrypoint}:\n{tree_str}\n")
 
-    wems = [(nid, wem) for nid, wem in action_tree.nodes.data("wem") if wem]
+    wems = []
+    # MusicTrack nodes can have multiple sources
+    for nid, n_wems in action_tree.nodes.data("wems"):
+        if n_wems:
+            wems.extend((nid, w) for w in n_wems)
+    
     dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
 
     # Go upwards through the parents chain and see what needs to be transferred
@@ -165,7 +170,7 @@ def copy_wwise_events(
 
             entrypoint = src_bnk[action["external_id"]]
             new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
-            wems.extend(new_wems)
+            wems.extend(w for _, w in new_wems)
 
     # Verify
     logger.info("\nVerifying soundbank...")
@@ -198,7 +203,7 @@ def copy_structures_with_new_events(
         dst_bnk.add_event(stop_event, stop_action)
 
         new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
-        wems.extend(new_wems)
+        wems.extend(w for _, w in new_wems)
 
     # Verify
     logger.info("\nVerifying soundbank...")

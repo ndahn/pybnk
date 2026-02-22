@@ -1,4 +1,5 @@
 from pybnk.node import Node
+from pybnk.enums import SourceType
 from .wwise_node import WwiseNode
 
 
@@ -42,7 +43,7 @@ class MusicTrack(WwiseNode):
         track = cls(temp)
         track.id = nid
         if source_id is not None:
-            track.add_source(plugin, source_type, source_id)
+            track.add_source(source_id, source_type, plugin)
             track.add_playlist_item(source_id)
 
         if parent is not None:
@@ -140,18 +141,22 @@ class MusicTrack(WwiseNode):
         return self["playlist_item_count"]
 
     def add_source(
-        self, plugin: str, source_type: str, source_id: int, media_size: int = 0
+        self,
+        source_id: int,
+        source_type: SourceType = "Embedded",
+        plugin: str = "VORBIS",
+        media_size: int = 0,
     ) -> None:
         """Add an audio source to the track.
 
         Parameters
         ----------
-        plugin : str
-            Codec plugin (e.g., 'VORBIS', 'PCM').
-        source_type : str
-            Source type (e.g., 'Streaming', 'Embedded').
         source_id : int
             Media source ID.
+        source_type : SourceType
+            Source type.
+        plugin : str
+            Codec plugin.
         media_size : int, default=0
             In-memory media size in bytes.
         """

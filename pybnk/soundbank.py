@@ -256,7 +256,10 @@ class Soundbank:
             if node_type == "Sound":
                 # We found an actual sound
                 wem = node["bank_source_data/media_information/source_id"]
-                g.nodes[node_id]["wem"] = wem
+                g.nodes[node_id]["wems"] = [wem]
+            elif node_type == "MusicTrack":
+                wems = [src["source_id"] for src in node["sources"]]
+                g.nodes[node_id]["wems"] = wems
 
             if "children" in node_params:
                 children = node_params["children"].get("items", [])

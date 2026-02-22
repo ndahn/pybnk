@@ -1,5 +1,5 @@
 from typing import Literal, TypeAlias
-from enum import StrEnum
+from enum import StrEnum, IntFlag
 
 
 class SoundType(StrEnum):
@@ -21,8 +21,18 @@ class SoundType(StrEnum):
     DYNAMIC_DIALOG = "d"
 
 
+# Not a flag, just a convenient way to map the known types
+class ActionType(IntFlag):
+    PLAY = 1027
+    STOP = 259
+    MUTE_BUS = 1538
+    RESET_BUS_VOLUME = 2818
+    RESET_BUS_LPFM = 3842
+
+
 RtcpType: TypeAlias = Literal["GameParameter"]
 AccumulationType: TypeAlias = Literal["Additive"]
 ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
 CurveType: TypeAlias = Literal["Linear", "SCurve", "Log1", "Log3", "Sine", "Constant"]
 SourceType: TypeAlias = Literal["Embedded", "Streaming", "PrefetchStreaming"]
+PluginType: TypeAlias = Literal["VORBIS", "PCM"]

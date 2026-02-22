@@ -1,4 +1,5 @@
-from pybnk.node import Node
+from pybnk import Soundbank, Node
+from pybnk.enums import ActionType
 
 
 class Action(Node):
@@ -32,20 +33,22 @@ class Action(Node):
         fade_curve : int, default=4
             Fade curve type.
         bank_id : int, default=0
-            Bank ID containing the target.
+            ID of the target soundbank.
 
         Returns
         -------
         Action
             New Play action instance.
         """
-        node = cls.from_template(nid, "Action_Play")
-        action = cls(node.dict)
+        temp = cls.load_template(nid, cls.__name__)
+        action = cls(temp)
+
         action.action_type = 1027  # Play action type
         action.target_id = target_id
         action.is_bus = False
-        action["params/Play/fade_curve"] = fade_curve
-        action["params/Play/bank_id"] = bank_id
+        action.fade_curve = fade_curve
+        action.bank_id = bank_id
+
         return action
 
     @classmethod
@@ -54,8 +57,9 @@ class Action(Node):
         nid: int,
         target_id: int,
         transition_time: int = 0,
-        flags1: int = 5,
+        flags1: int = 4,
         flags2: int = 6,
+        bank_id: int = 0,
     ) -> "Action":
         """Create a Stop action.
 
@@ -67,18 +71,21 @@ class Action(Node):
             Target sound/container ID to stop.
         transition_time : int, default=0
             Fade-out time in milliseconds.
-        flags1 : int, default=5
+        flags1 : int, default=4
             Stop flags 1.
         flags2 : int, default=6
             Stop flags 2.
+        bank_id : int, default=0
+            ID of the target soundbank.
 
         Returns
         -------
         Action
             New Stop action instance.
         """
-        node = cls.from_template(nid, "Action_Stop")
-        action = cls(node.dict)
+        temp = cls.load_template(nid, cls.__name__)
+        action = cls(temp)
+        
         action.action_type = 259  # Stop action type
         action.target_id = target_id
         action.is_bus = False
@@ -86,11 +93,13 @@ class Action(Node):
             action.transition_time = transition_time
         action["params/StopEO/stop/flags1"] = flags1
         action["params/StopEO/stop/flags2"] = flags2
+        action.bank_id = bank_id
+
         return action
 
     @classmethod
     def new_mute_bus(
-        cls, nid: int, target_bus_id: int, fade_curve: int = 4
+        cls, nid: int, target_bus_id: int, fade_curve: int = 4, bank_id: int = 0,
     ) -> "Action":
         """Create a Mute Bus action.
 
@@ -102,18 +111,23 @@ class Action(Node):
             Target bus ID to mute.
         fade_curve : int, default=4
             Fade curve type.
+        bank_id : int, default=0
+            ID of the target soundbank.
 
         Returns
         -------
         Action
             New Mute Bus action instance.
         """
-        node = cls.from_template(nid, "Action_MuteBus")
-        action = cls(node.dict)
+        temp = cls.load_template(nid, cls.__name__)
+        action = cls(temp)
+
         action.action_type = 1538  # Mute bus action type
         action.target_id = target_bus_id
         action.is_bus = True
-        action["params/MuteM/fade_curve"] = fade_curve
+        action.fade_curve = fade_curve
+        action.bank_id = bank_id
+
         return action
 
     @classmethod
@@ -123,6 +137,7 @@ class Action(Node):
         target_bus_id: int,
         transition_time: int = 2000,
         fade_curve: int = 4,
+        bank_id: int = 0,
     ) -> "Action":
         """Create a Reset Bus Volume action.
 
@@ -136,20 +151,25 @@ class Action(Node):
             Transition time in milliseconds.
         fade_curve : int, default=4
             Fade curve type.
+        bank_id : int, default=0
+            ID of the target soundbank.
 
         Returns
         -------
         Action
             New Reset Bus Volume action instance.
         """
-        node = cls.from_template(nid, "Action_ResetBusVolume")
-        action = cls(node.dict)
+        temp = cls.load_template(nid, cls.__name__)
+        action = cls(temp)
+
         action.action_type = 2818  # Reset bus volume action type
         action.target_id = target_bus_id
         action.is_bus = True
         if transition_time != 0:
             action.transition_time = transition_time
-        action["params/ResetVolumeM/fade_curve"] = fade_curve
+        action.fade_curve = fade_curve
+        action.bank_id = bank_id
+
         return action
 
     @classmethod
@@ -159,6 +179,7 @@ class Action(Node):
         target_bus_id: int,
         transition_time: int = 2000,
         fade_curve: int = 4,
+        bank_id: int = 0,
     ) -> "Action":
         """Create a Reset Bus LPFM (Low-Pass Filter) action.
 
@@ -172,24 +193,29 @@ class Action(Node):
             Transition time in milliseconds.
         fade_curve : int, default=4
             Fade curve type.
+        bank_id : int, default=0
+            ID of the target soundbank.
 
         Returns
         -------
         Action
             New Reset Bus LPFM action instance.
         """
-        node = cls.from_template(nid, "Action_ResetBusLPFM")
-        action = cls(node.dict)
+        temp = cls.load_template(nid, cls.__name__)
+        action = cls(temp)
+
         action.action_type = 3842  # Reset bus LPFM action type
         action.target_id = target_bus_id
         action.is_bus = True
         if transition_time != 0:
             action.transition_time = transition_time
-        action["params/ResetLPFM/fade_curve"] = fade_curve
+        action.fade_curve = fade_curve
+        action.bank_id = bank_id
+        
         return action
 
     @property
-    def action_type(self) -> int:
+    def action_type(self) -> ActionType | int:
         """Get the action type identifier.
 
         Returns
@@ -197,11 +223,11 @@ class Action(Node):
         int
             Action type code (e.g., 1027=Play, 259=Stop, 1538=Mute).
         """
-        return self["action_type"]
+        return ActionType(self["action_type"])
 
     @action_type.setter
-    def action_type(self, value: int) -> None:
-        self["action_type"] = value
+    def action_type(self, value: ActionType) -> None:
+        self["action_type"] = int(value)
 
     @property
     def target_id(self) -> int:
@@ -277,6 +303,31 @@ class Action(Node):
         param_key = next(iter(params.keys()))
         if "fade_curve" in params[param_key]:
             params[param_key]["fade_curve"] = value
+
+    @property
+    def bank_id(self) -> int:
+        """Get  or set the ID of the soundbank this action targets.
+
+        Returns
+        -------
+        int
+            The soundbank's ID.
+        """
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "bank_id" in params[param_key]:
+            return params[param_key]["bank_id"]
+        return 0
+
+    @bank_id.setter
+    def bank_id(self, value: int | Soundbank) -> None:
+        if isinstance(value, Soundbank):
+            value = value.id
+
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "bank_id" in params[param_key]:
+            params[param_key]["bank_id"] = value
 
     @property
     def exceptions(self) -> list[int]:

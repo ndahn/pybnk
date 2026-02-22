@@ -1,0 +1,6 @@
+dearpygui >= 2.2.0
+networkx >= 3.6.0
+pydub >= 0.25.0
+audioop-lts >= 0.2.2
+crossfiledialog >= 1.1.0
+pywin32

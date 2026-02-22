@@ -83,7 +83,10 @@ class Localization:
         return getattr(self, key, key)
 
     def __getattr__(self, name: str) -> str:
-        return self[name]
+        try:
+            return object.__getattribute__(self, name)
+        except AttributeError:
+            return name
 
 
 @dataclass

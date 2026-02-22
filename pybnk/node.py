@@ -22,28 +22,31 @@ class Node:
         template_txt = resources.files(pybnk).joinpath(path).read_text()
         return json.loads(template_txt)
 
-    def __new__(cls, node_dict: dict, *args, **kwargs):
-        tp = next(iter(node_dict["body"].keys()))
-        if cls.__name__ == tp:
-            # Shortcut
-            return object.__new__(cls, node_dict, *args, **kwargs)
-
+    @classmethod
+    def wrap(cls, node_dict: dict, *args, **kwargs):
         # Make sure the subclasses have been loaded
         import pybnk.types
-
+        
         def all_subclasses(c: type) -> list[type[Node]]:
             return set(c.__subclasses__()).union(
                 [s for c in c.__subclasses__() for s in all_subclasses(c)])
 
-        for sub in all_subclasses():
+        tp = next(iter(node_dict["body"].keys()))
+        for sub in all_subclasses(cls):
             if sub.__name__ == tp:
-                return object.__new__(sub, node_dict, *args, **kwargs)
+                return sub(node_dict, *args, **kwargs)
 
-        return object.__new__(cls, node_dict, *args, **kwargs)
+        return cls(node_dict, *args, **kwargs)
 
     def __init__(self, node_dict: dict):
         self._attr = node_dict
         self._type = next(iter(self._attr["body"].keys()))
+
+    def cast(self) -> "Node":
+        return Node.wrap(self._attr)
+
+    def json(self) -> str:
+        return json.dumps(self._attr, indent=2)
 
     @property
     def dict(self) -> dict:

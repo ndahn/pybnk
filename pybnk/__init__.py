@@ -5,6 +5,5 @@ from .node import Node
 from .soundbank import Soundbank
 from .hash import calc_hash, lookup_table
 from . import convenience
-from . import modify
 from . import transfer
 from . import wem
