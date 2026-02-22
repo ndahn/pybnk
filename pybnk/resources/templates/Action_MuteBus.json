@@ -1,23 +1,26 @@
 {
   "body_type": 3,
-  "size": 18,
+  "size": 15,
   "id": {
-    "Hash": -1
+    "Hash": 948946842
   },
   "body": {
     "Action": {
-      "action_type": 1027,
-      "external_id": -1,
-      "is_bus": 0,
+      "action_type": 1538,
+      "external_id": 393239870,
+      "is_bus": 1,
       "prop_bundle": [],
       "ranged_modifiers": {
         "count": 0,
         "entries": []
       },
       "params": {
-        "Play": {
+        "MuteM": {
           "fade_curve": 4,
-          "bank_id": -1
+          "except": {
+            "count": 0,
+            "exceptions": []
+          }
         }
       }
     }

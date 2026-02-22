@@ -14,7 +14,7 @@ class MusicTrack(WwiseNode):
         source_id: int = None,
         plugin: str = "VORBIS",
         source_type: str = "Streaming",
-        parent_id: int = 0,
+        parent: int | Node = None,
     ) -> "MusicTrack":
         """Create a new MusicTrack node.
 
@@ -28,23 +28,24 @@ class MusicTrack(WwiseNode):
             Codec plugin ('VORBIS', 'PCM', etc.).
         source_type : str, default="Streaming"
             Source type ('Streaming' or 'Embedded').
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         MusicTrack
             New MusicTrack instance.
         """
-        node = cls.from_template(nid, "MusicTrack")
+        temp = cls.load_template(cls.__name__)
 
-        track = cls(node.dict)
+        track = cls(temp)
+        track.id = nid
         if source_id is not None:
             track.add_source(plugin, source_type, source_id)
             track.add_playlist_item(source_id)
 
-        if parent_id != 0:
-            track.parent = parent_id
+        if parent is not None:
+            track.parent = parent
 
         return track
 

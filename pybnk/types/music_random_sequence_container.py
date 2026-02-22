@@ -1,4 +1,5 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 
@@ -14,7 +15,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         nid: int,
         tempo: float = 120.0,
         time_signature: tuple[int, int] = (4, 4),
-        parent_id: int = 0,
+        parent: int | Node = None,
     ) -> "MusicRandomSequenceContainer":
         """Create a new MusicRandomSequenceContainer node.
 
@@ -26,21 +27,22 @@ class MusicRandomSequenceContainer(WwiseNode):
             Tempo in BPM.
         time_signature : tuple[int, int], default=(4, 4)
             Time signature (beat_count, beat_value).
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         MusicRandomSequenceContainer
             New MusicRandomSequenceContainer instance.
         """
-        node = cls.from_template(nid, "MusicRandomSequenceContainer")
+        temp = cls.load_template(cls.__name__)
 
-        container = cls(node.dict)
+        container = cls(temp)
+        container.id = nid
         container.tempo = tempo
         container.time_signature = time_signature
-        if parent_id != 0:
-            container.parent = parent_id
+        if parent is not None:
+            container.parent = parent
 
         return container
 
@@ -177,6 +179,9 @@ class MusicRandomSequenceContainer(WwiseNode):
             Number of recent items to avoid repeating.
         """
         if isinstance(segment_id, Node):
+            if segment_id.parent > 0 and segment_id.parent != self.id:
+                logger.warning(f"Adding already adopted child {segment_id} to {self}")
+            
             segment_id = segment_id.id
 
         item = {

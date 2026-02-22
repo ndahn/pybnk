@@ -1,6 +1,5 @@
 from pybnk import Soundbank, Node, calc_hash
-from pybnk.create import new_event
-from pybnk.modify import add_children
+from pybnk.convenience import new_event
 from pybnk.wem import import_wems
 from pybnk.util import format_hierarchy, logger
 
@@ -69,7 +68,14 @@ def copy_node_structure(
         # Once we encounter an existing node we can assume the rest of the chain is
         # intact. Child nodes must be inserted *before* the first existing parent.
         if up_id in dst_bnk:
-            add_children(dst_bnk[up_id], up_child)
+            up_node = dst_bnk[up_id]
+            items = up_node["children/items"]
+
+            if up_child.id not in items:
+                items.append(up_child.id)
+                up_child.parent = up_node.id
+                items.sort()
+
             break
 
         # First time we encounter upchain node, clear the children, as non-existing items

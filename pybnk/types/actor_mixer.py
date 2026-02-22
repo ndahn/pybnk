@@ -1,42 +1,45 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 
 class ActorMixer(WwiseNode):
-    """A hierarchical container that groups sounds and other mixers. 
-    
+    """A hierarchical container that groups sounds and other mixers.
+
     Used to organize audio assets and apply shared processing/routing through the mixer hierarchy.
     """
 
     @classmethod
-    def new(cls, nid: int, parent_id: int = 0, 
-            override_bus_id: int | Node = 0) -> "ActorMixer":
+    def new(
+        cls, nid: int, override_bus_id: int | Node = 0, parent: int | Node = None, 
+    ) -> "ActorMixer":
         """Create a new ActorMixer node.
-        
+
         Parameters
         ----------
         nid : int
             Node ID (hash).
-        parent_id : int, default=0
-            Parent node ID.
         override_bus_id : int, default=0
             Override bus ID (0 = use parent bus).
-            
+        parent : int | Node, default=None
+            Parent node.
+
         Returns
         -------
         ActorMixer
             New ActorMixer instance.
         """
-        node = cls.from_template(nid, "ActorMixer")
+        temp = cls.load_template(cls.__name__)
 
         if not isinstance(override_bus_id, Node):
             override_bus_id = override_bus_id.id
 
-        mixer = cls(node.dict)
+        mixer = cls(temp)
+        mixer.id = nid
         mixer.override_bus_id = override_bus_id
-        if parent_id != 0:
-            mixer.parent = parent_id
-        
+        if parent is not None:
+            mixer.parent = parent
+
         return mixer
 
     @property
@@ -76,6 +79,9 @@ class ActorMixer(WwiseNode):
             Child node ID or Node instance.
         """
         if isinstance(child_id, Node):
+            if child_id.parent > 0 and child_id.parent != self.id:
+                logger.warning(f"Adding already adopted child {child_id} to {self}")
+            
             child_id = child_id.id
 
         children = self["children/items"]

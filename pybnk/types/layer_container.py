@@ -1,4 +1,5 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 
@@ -9,26 +10,27 @@ class LayerContainer(WwiseNode):
     """
 
     @classmethod
-    def new(cls, nid: int, parent_id: int = 0) -> "LayerContainer":
+    def new(cls, nid: int, parent: int | Node = None) -> "LayerContainer":
         """Create a new LayerContainer node.
 
         Parameters
         ----------
         nid : int
             Node ID (hash).
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         LayerContainer
             New LayerContainer instance.
         """
-        node = cls.from_template(nid, "LayerContainer")
+        temp = cls.load_template(cls.__name__)
 
-        container = cls(node.dict)
-        if parent_id != 0:
-            container.parent = parent_id
+        container = cls(temp)
+        container.id = nid
+        if parent is not None:
+            container.parent = parent
 
         return container
 
@@ -89,6 +91,9 @@ class LayerContainer(WwiseNode):
             Child node ID or Node instance.
         """
         if isinstance(child_id, Node):
+            if child_id.parent > 0 and child_id.parent != self.id:
+                logger.warning(f"Adding already adopted child {child_id} to {self}")
+            
             child_id = child_id.id
 
         children = self["children/items"]

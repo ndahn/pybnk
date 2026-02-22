@@ -11,10 +11,10 @@ class MusicSegment(WwiseNode):
     def new(
         cls,
         nid: int,
-        duration: float,
+        duration: float = 1000.0,
         tempo: float = 120.0,
         time_signature: tuple[int, int] = (4, 4),
-        parent_id: int = 0,
+        parent: int | Node = None,
     ) -> "MusicSegment":
         """Create a new MusicSegment node.
 
@@ -22,28 +22,29 @@ class MusicSegment(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        duration : float
+        duration : float, default=1000.0
             Segment duration in milliseconds.
         tempo : float, default=120.0
             Tempo in BPM.
         time_signature : tuple[int, int], default=(4, 4)
             Time signature (beat_count, beat_value).
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         MusicSegment
             New MusicSegment instance.
         """
-        node = cls.from_template(nid, "MusicSegment")
+        temp = cls.load_template(cls.__name__)
 
-        segment = cls(node.dict)
+        segment = cls(temp)
+        segment.id = nid
         segment.duration = duration
         segment.tempo = tempo
         segment.time_signature = time_signature
-        if parent_id != 0:
-            segment.parent = parent_id
+        if parent is not None:
+            segment.parent = parent
 
         return segment
 

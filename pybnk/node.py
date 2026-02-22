@@ -11,25 +11,33 @@ _undefined = object()
 
 class Node:
     @classmethod
-    def from_template(
-        cls,
-        nid: int, template: str, attr: dict[str, Any] = None
-    ) -> "Node":
+    def load_template(cls, template: str) -> dict:
         import pybnk
 
         if not template.endswith(".json"):
             template += ".json"
 
         template_txt = resources.read_text(pybnk, "resources/templates/" + template)
-        template_dict = json.loads(template_txt)
-        node = Node(template_dict)
-        node.id = nid
+        return json.loads(template_txt)
 
-        if attr:
-            for path, value in attr.items():
-                node[path] = value
+    def __new__(cls, node_dict: dict, *args, **kwargs):
+        tp = next(iter(node_dict["body"].keys()))
+        if cls.__name__ == tp:
+            # Shortcut
+            return object.__new__(cls, node_dict, *args, **kwargs)
 
-        return node
+        # Make sure the subclasses have been loaded
+        import pybnk.types
+
+        def all_subclasses(c: type) -> list[type[Node]]:
+            return set(c.__subclasses__()).union(
+                [s for c in c.__subclasses__() for s in all_subclasses(c)])
+
+        for sub in all_subclasses():
+            if sub.__name__ == tp:
+                return object.__new__(sub, node_dict, *args, **kwargs)
+
+        return object.__new__(cls, node_dict, *args, **kwargs)
 
     def __init__(self, node_dict: dict):
         self._attr = node_dict
@@ -39,29 +47,10 @@ class Node:
     def dict(self) -> dict:
         return self._attr
 
-    def copy(self, new_id: int = None, parent: int = None) -> "Node":
-        attr = copy.deepcopy(self._attr)
-        n = Node(attr)
-
-        if new_id is not None:
-            n.id = new_id
-        if parent is not None:
-            n.parent = parent
-
-        return n
-
-    def lookup_name(self, default: str = None) -> str:
-        idsec = self._attr["id"]
-        s = idsec.get("String")
-        if not s:
-            s = lookup_table.get(self.id)
-            if s:
-                idsec["String"] = s
-        
-        if s is None:
-            return default
-            
-        return s
+    @property
+    def type(self) -> str:
+        """Get the type of a HIRC node (e.g. RandomSequenceContainer)."""
+        return self._type
 
     @property
     def id(self) -> int:
@@ -106,14 +95,33 @@ class Node:
         self["node_base_params/direct_parent_id"] = parent
 
     @property
-    def type(self) -> str:
-        """Get the type of a HIRC node (e.g. RandomSequenceContainer)."""
-        return self._type
-
-    @property
     def body(self) -> dict:
         """Return the body of a node where the relevant attributes are stored."""
         return self._attr["body"][self.type]
+
+    def copy(self, new_id: int = None, parent: int = None) -> "Node":
+        attr = copy.deepcopy(self._attr)
+        n = Node(attr)
+
+        if new_id is not None:
+            n.id = new_id
+        if parent is not None:
+            n.parent = parent
+
+        return n
+
+    def lookup_name(self, default: str = None) -> str:
+        idsec = self._attr["id"]
+        s = idsec.get("String")
+        if not s:
+            s = lookup_table.get(self.id)
+            if s:
+                idsec["String"] = s
+        
+        if s is None:
+            return default
+            
+        return s
 
     def paths(self) -> Iterator[str]:
         def delve(item: dict, path: str):

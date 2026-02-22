@@ -23,8 +23,9 @@ class Attenuation(Node):
         Attenuation
             New Attenuation instance with default volume curve.
         """
-        node = cls.from_template(nid, "Attenuation")
-        attenuation = cls(node.dict)
+        temp = cls.load_template(cls.__name__)
+        attenuation = cls(temp)
+        attenuation.id = nid
         return attenuation
 
     @property

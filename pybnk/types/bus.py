@@ -25,12 +25,13 @@ class Bus(Node):
         Bus
             New Bus instance.
         """
-        node = cls.from_template(nid, "Bus")
+        temp = cls.load_template(cls.__name__)
 
         if isinstance(parent_bus_id, Node):
             parent_bus_id = parent_bus_id.id
 
-        bus = cls(node.dict)
+        bus = cls(temp)
+        bus.id = nid
         bus.override_bus_id = parent_bus_id
 
         return bus

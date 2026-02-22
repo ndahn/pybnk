@@ -1,15 +1,19 @@
 {
   "body_type": 3,
-  "size": 16,
+  "size": 21,
   "id": {
-    "Hash": -1
+    "Hash": 398325444
   },
   "body": {
     "Action": {
       "action_type": 259,
-      "external_id": -1,
+      "external_id": 11977792,
       "is_bus": 0,
-      "prop_bundle": [],
+      "prop_bundle": [
+        {
+          "TransitionTime": 3000
+        }
+      ],
       "ranged_modifiers": {
         "count": 0,
         "entries": []
@@ -17,7 +21,7 @@
       "params": {
         "StopEO": {
           "stop": {
-            "flags1": 4,
+            "flags1": 5,
             "flags2": 6
           },
           "except": {

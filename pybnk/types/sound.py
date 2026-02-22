@@ -1,4 +1,9 @@
+import os
+from pathlib import Path
+
+from pybnk.enums import SourceType
 from .wwise_node import WwiseNode
+
 
 
 class Sound(WwiseNode):
@@ -13,8 +18,8 @@ class Sound(WwiseNode):
         nid: int,
         source_id: int,
         plugin: str = "VORBIS",
-        source_type: str = "Embedded",
-        parent_id: int = 0,
+        source_type: SourceType = "Embedded",
+        parent: int | Node = None,
     ) -> "Sound":
         """Create a new Sound node.
 
@@ -26,25 +31,57 @@ class Sound(WwiseNode):
             Media source ID.
         plugin : str, default="VORBIS"
             Codec plugin ('VORBIS', 'PCM', etc.).
-        source_type : str, default="Embedded"
+        source_type : SourceType, default="Embedded"
             Source type ('Embedded' or 'Streamed').
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         Sound
             New Sound instance.
         """
-        node = cls.from_template(nid, "Sound")
+        temp = cls.load_template(cls.__name__)
 
-        sound = cls(node.dict)
+        sound = cls(temp)
+        sound.id = nid
         sound.source_id = source_id
         sound.plugin = plugin
         sound.source_type = source_type
-        if parent_id != 0:
-            sound.parent = parent_id
+        if parent is not None:
+            sound.parent = parent
 
+        return sound
+
+    @classmethod
+    def new_from_wem(
+        cls,
+        nid: int,
+        wem: Path,
+        mode: SourceType = "Embedded",
+        parent: int | Node = None,
+    ) -> "Sound":
+        wem_id = int(wem.name.rsplit(".")[0])
+        size = os.path.getsize(str(wem))
+
+        if mode == "Embedded":
+            pass
+        elif mode == "Streaming":
+            # TODO not used in ER I think?
+            pass
+        elif mode == "PrefetchStreaming":
+            # TODO create prefetch snippet
+            pass
+
+        # TODO source duration (in ms)
+        # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
+        # https://discord.com/channels/529802828278005773/1252503668515934249
+
+        sound = cls.new(nid, wem_id)
+        sound.media_size = size
+        if parent is not None:
+            sound.parent = parent
+        
         return sound
 
     @property

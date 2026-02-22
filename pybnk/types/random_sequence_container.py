@@ -1,4 +1,5 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 
@@ -10,7 +11,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @classmethod
     def new(
-        cls, nid: int, mode: int = 0, loop_count: int = 1, parent_id: int = 0
+        cls, nid: int, avoid_repeats: bool = False, loop_count: int = 1, parent: int | Node = None
     ) -> "RandomSequenceContainer":
         """Create a new RandomSequenceContainer node.
 
@@ -18,25 +19,26 @@ class RandomSequenceContainer(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        mode : int, default=0
-            Playback mode (0 = Random, 1 = Sequence).
+        avoid_repeats : bool, default=False
+            If True this RSC will avoid playing the same child twice in a row.
         loop_count : int, default=1
             Number of loops (0 = infinite).
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int | Node, default=None
+            Parent node.
 
         Returns
         -------
         RandomSequenceContainer
             New RandomSequenceContainer instance.
         """
-        node = cls.from_template(nid, "RandomSequenceContainer")
+        temp = cls.load_template(cls.__name__)
 
-        container = cls(node.dict)
-        container.mode = mode
+        container = cls(temp)
+        container.id = nid
+        container.avoid_repeats = avoid_repeats
         container.loop_count = loop_count
-        if parent_id != 0:
-            container.parent = parent_id
+        if parent is not None:
+            container.parent = parent
 
         return container
 
@@ -71,6 +73,21 @@ class RandomSequenceContainer(WwiseNode):
         self["transition_time"] = value
 
     @property
+    def avoid_repeats(self) -> bool:
+        """Get or set whether playing the same child twice is allowed.
+
+        Returns
+        -------
+        bool
+            True if playing the same child twice in a row should be avoided, False otherwise.
+        """
+        return (self["mode"] == 1)
+
+    @avoid_repeats.setter
+    def avoid_repeats(self, value: bool) -> None:
+        self["mode"] = 1 if value else 0
+
+    @property
     def avoid_repeat_count(self) -> int:
         """Get or set how many recent items to avoid repeating.
 
@@ -84,21 +101,6 @@ class RandomSequenceContainer(WwiseNode):
     @avoid_repeat_count.setter
     def avoid_repeat_count(self, value: int) -> None:
         self["avoid_repeat_count"] = value
-
-    @property
-    def mode(self) -> int:
-        """Get or set the playback mode.
-
-        Returns
-        -------
-        int
-            0 = Random, 1 = Sequence.
-        """
-        return self["mode"]
-
-    @mode.setter
-    def mode(self, value: int) -> None:
-        self["mode"] = value
 
     @property
     def children_ids(self) -> list[int]:
@@ -120,6 +122,9 @@ class RandomSequenceContainer(WwiseNode):
             Child node ID or Node instance.
         """
         if isinstance(child_id, Node):
+            if child_id.parent > 0 and child_id.parent != self.id:
+                logger.warning(f"Adding already adopted child {child_id} to {self}")
+            
             child_id = child_id.id
 
         children: list[int] = self["children/items"]

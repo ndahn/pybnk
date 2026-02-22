@@ -5,9 +5,11 @@ from collections import deque
 import json
 import copy
 import shutil
+from importlib import resources
 import networkx as nx
 
-from pybnk.util import calc_hash, logger
+from pybnk.hash import calc_hash
+from pybnk.util import logger
 from pybnk.node import Node
 
 
@@ -44,6 +46,22 @@ class Soundbank:
                 pass
 
         return cls(bnk_path, bnk_json, bnk_id, hirc)
+
+    @classmethod
+    def create_empty_soundbank(path: Path | str, name: str) -> "Soundbank":
+        import pybnk
+
+        if not path.is_dir():
+            raise ValueError(f"{path} is not a directory")
+
+        bnk = json.loads(resources.read_text(pybnk, "resources/empty_soundbank.json"))
+        name_hash = calc_hash(name)
+        bnk["sections"][0]["body"]["BKHD"]["bank_id"] = name_hash
+
+        bnk_path = Path(path) / name / "soundbank.json"
+        json.dump(bnk, bnk_path.open("w"))
+
+        return Soundbank.load(bnk_path)
 
     def __init__(
         self,
@@ -186,6 +204,15 @@ class Soundbank:
     def add_event(self, event: Node, actions: Node | list[Node]) -> int:
         if isinstance(actions, Node):
             actions = [actions]
+
+        if event.id in self._id2index:
+            raise ValueError(f"Event {event} already exists")
+
+        for n in actions:
+            if n.id in self._id2index:
+                raise ValueError(
+                    f"A node with ID {n.id} is already in the soundbank"
+                )
 
         # Events appear towards the end of the soundbank
         first_event = self.query_one({"type": "Event"})

@@ -6,7 +6,7 @@
   },
   "body": {
     "Action": {
-      "action_type": 1027,
+      "action_type": -1,
       "external_id": -1,
       "is_bus": 0,
       "prop_bundle": [],
@@ -14,12 +14,7 @@
         "count": 0,
         "entries": []
       },
-      "params": {
-        "Play": {
-          "fade_curve": 4,
-          "bank_id": -1
-        }
-      }
+      "params": {}
     }
   }
 }
