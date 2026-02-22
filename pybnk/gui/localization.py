@@ -82,6 +82,9 @@ class Localization:
     def __getitem__(self, key: str) -> str:
         return getattr(self, key, key)
 
+    def __getattr__(self, name: str) -> str:
+        return self[name]
+
 
 @dataclass
 class English(Localization):

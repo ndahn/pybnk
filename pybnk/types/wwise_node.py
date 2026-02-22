@@ -1,4 +1,3 @@
-from typing import Any
 from pybnk.node import Node
 from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
 
@@ -251,17 +250,6 @@ class WwiseNode(Node):
         if index < 1 or index > 4:
             raise ValueError("Aux index must be between 1 and 4")
         self[f"node_base_params/aux_params/aux{index}"] = bus_id
-
-    @property
-    def properties(self) -> list[Any]:
-        """Get the list of initial property values.
-
-        Returns
-        -------
-        list[Any]
-            List of property initial values.
-        """
-        return self["node_base_params/node_initial_params/prop_initial_values"]
 
     @property
     def rtpc_count(self) -> int:

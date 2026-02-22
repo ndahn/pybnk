@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+from pybnk.node import Node
 from pybnk.enums import SourceType
 from .wwise_node import WwiseNode
 

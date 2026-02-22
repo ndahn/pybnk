@@ -24,11 +24,14 @@ class Event(Node):
             New Event instance.
         """
         temp = cls.load_template(cls.__name__)
-        temp.id = name
-        return cls(temp)
+
+        event = cls(temp)
+        event.id = name
+
+        return event
 
     @classmethod
-    def get_event_name(sound_type: SoundType, event_id: int, event_type: str = None) -> str:
+    def make_event_name(sound_type: SoundType, event_id: int, event_type: str = None) -> str:
         if not 0 < event_id < 1_000_000_000:
             raise ValueError(f"event ID {event_id} outside expected range")
 

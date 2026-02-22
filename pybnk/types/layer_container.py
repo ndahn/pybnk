@@ -129,7 +129,7 @@ class LayerContainer(WwiseNode):
         self["children/items"] = []
         self["children/count"] = 0
 
-    # Seems to not be used in ER/NR, so no clue what would go here
+    # NOTE Seems to not be used in ER/NR, so no clue what would go here
     def add_layer(self, layer: dict) -> None:
         """Add a layer definition to the container.
 

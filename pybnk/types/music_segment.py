@@ -1,3 +1,4 @@
+from pybnk.node import Node
 from .wwise_node import WwiseNode
 
 

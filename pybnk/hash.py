@@ -25,7 +25,7 @@ def load_lookup_table(path: Path = None) -> dict[int, str]:
 
     if not path:
         path = "resources/wwise_ids.txt"
-        keys = resources.read_text(pybnk, path)
+        keys = resources.files(pybnk).joinpath(path).read_text()
     else:
         keys = [x.strip() for x in path.read_text().splitlines()]
 

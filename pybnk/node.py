@@ -3,7 +3,8 @@ from importlib import resources
 import json
 import copy
 
-from pybnk.util import calc_hash, lookup_table, logger
+from pybnk.hash import calc_hash, lookup_table
+from pybnk.util import logger
 
 
 _undefined = object()
@@ -17,7 +18,8 @@ class Node:
         if not template.endswith(".json"):
             template += ".json"
 
-        template_txt = resources.read_text(pybnk, "resources/templates/" + template)
+        path = "resources/templates/" + template
+        template_txt = resources.files(pybnk).joinpath(path).read_text()
         return json.loads(template_txt)
 
     def __new__(cls, node_dict: dict, *args, **kwargs):

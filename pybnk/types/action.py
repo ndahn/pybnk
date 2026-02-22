@@ -1,66 +1,28 @@
-from node import Node
+from pybnk.node import Node
 
 
 class Action(Node):
-    """Base class for Action nodes that perform operations on audio objects.
-    
+    """Unified Action node for all action types.
+
     Actions are triggered by Events and perform operations like playing,
-    stopping, pausing sounds, or modifying properties.
+    stopping, pausing sounds, muting buses, or modifying properties.
+
+    Use the appropriate factory method for each action type:
+    - Action.new_play() - Start playback
+    - Action.new_stop() - Stop playback
+    - Action.new_mute_bus() - Mute a bus
+    - Action.new_reset_bus_volume() - Reset bus volume
+    - Action.new_reset_bus_lpfm() - Reset bus low-pass filter
     """
 
-    @property
-    def action_type(self) -> int:
-        """Get the action type identifier.
-        
-        Returns
-        -------
-        int
-            Action type code.
-        """
-        return self["action_type"]
-    
-    @property
-    def target_id(self) -> int:
-        """Get the target object ID.
-        
-        Returns
-        -------
-        int
-            ID of the target sound/container/bus.
-        """
-        return self["external_id"]
-    
-    @target_id.setter
-    def target_id(self, value: int) -> None:
-        self["external_id"] = value
-    
-    @property
-    def is_bus(self) -> bool:
-        """Get whether the target is a bus.
-        
-        Returns
-        -------
-        bool
-            True if targeting a bus, False if targeting a sound/container.
-        """
-        return bool(self["is_bus"])
-    
-    @is_bus.setter
-    def is_bus(self, value: bool) -> None:
-        self["is_bus"] = int(value)
-
-
-class ActionPlay(Action):
-    """Play action that starts playback of a sound or container.
-    
-    Triggers audio playback when the associated event is posted.
-    """
+    # Factory methods for different action types
 
     @classmethod
-    def new(cls, nid: int, target_id: int, fade_curve: int = 4,
-            bank_id: int = 0) -> "ActionPlay":
-        """Create a new Play action.
-        
+    def new_play(
+        cls, nid: int, target_id: int, fade_curve: int = 4, bank_id: int = 0
+    ) -> "Action":
+        """Create a Play action.
+
         Parameters
         ----------
         nid : int
@@ -71,63 +33,32 @@ class ActionPlay(Action):
             Fade curve type.
         bank_id : int, default=0
             Bank ID containing the target.
-            
+
         Returns
         -------
-        ActionPlay
-            New ActionPlay instance.
+        Action
+            New Play action instance.
         """
         node = cls.from_template(nid, "Action_Play")
         action = cls(node.dict)
+        action.action_type = 1027  # Play action type
         action.target_id = target_id
-        action.fade_curve = fade_curve
-        if bank_id != 0:
-            action.bank_id = bank_id
+        action.is_bus = False
+        action["params/Play/fade_curve"] = fade_curve
+        action["params/Play/bank_id"] = bank_id
         return action
 
-    @property
-    def fade_curve(self) -> int:
-        """Get or set the fade curve type.
-        
-        Returns
-        -------
-        int
-            Fade curve identifier.
-        """
-        return self["params/Play/fade_curve"]
-    
-    @fade_curve.setter
-    def fade_curve(self, value: int) -> None:
-        self["params/Play/fade_curve"] = value
-
-    @property
-    def bank_id(self) -> int:
-        """Get or set the bank ID.
-        
-        Returns
-        -------
-        int
-            Bank ID.
-        """
-        return self["params/Play/bank_id"]
-    
-    @bank_id.setter
-    def bank_id(self, value: int) -> None:
-        self["params/Play/bank_id"] = value
-
-
-class ActionStop(Action):
-    """Stop action that halts playback of a sound or container.
-    
-    Stops audio playback when the associated event is posted, with
-    optional fade-out and exception handling.
-    """
-
     @classmethod
-    def new(cls, nid: int, target_id: int, transition_time: int = 0,
-            flags1: int = 5, flags2: int = 6) -> "ActionStop":
-        """Create a new Stop action.
-        
+    def new_stop(
+        cls,
+        nid: int,
+        target_id: int,
+        transition_time: int = 0,
+        flags1: int = 5,
+        flags2: int = 6,
+    ) -> "Action":
+        """Create a Stop action.
+
         Parameters
         ----------
         nid : int
@@ -140,25 +71,172 @@ class ActionStop(Action):
             Stop flags 1.
         flags2 : int, default=6
             Stop flags 2.
-            
+
         Returns
         -------
-        ActionStop
-            New ActionStop instance.
+        Action
+            New Stop action instance.
         """
         node = cls.from_template(nid, "Action_Stop")
         action = cls(node.dict)
+        action.action_type = 259  # Stop action type
         action.target_id = target_id
+        action.is_bus = False
         if transition_time != 0:
             action.transition_time = transition_time
-        action.stop_flags1 = flags1
-        action.stop_flags2 = flags2
+        action["params/StopEO/stop/flags1"] = flags1
+        action["params/StopEO/stop/flags2"] = flags2
+        return action
+
+    @classmethod
+    def new_mute_bus(
+        cls, nid: int, target_bus_id: int, fade_curve: int = 4
+    ) -> "Action":
+        """Create a Mute Bus action.
+
+        Parameters
+        ----------
+        nid : int
+            Action ID (hash).
+        target_bus_id : int
+            Target bus ID to mute.
+        fade_curve : int, default=4
+            Fade curve type.
+
+        Returns
+        -------
+        Action
+            New Mute Bus action instance.
+        """
+        node = cls.from_template(nid, "Action_MuteBus")
+        action = cls(node.dict)
+        action.action_type = 1538  # Mute bus action type
+        action.target_id = target_bus_id
+        action.is_bus = True
+        action["params/MuteM/fade_curve"] = fade_curve
+        return action
+
+    @classmethod
+    def new_reset_bus_volume(
+        cls,
+        nid: int,
+        target_bus_id: int,
+        transition_time: int = 2000,
+        fade_curve: int = 4,
+    ) -> "Action":
+        """Create a Reset Bus Volume action.
+
+        Parameters
+        ----------
+        nid : int
+            Action ID (hash).
+        target_bus_id : int
+            Target bus ID.
+        transition_time : int, default=2000
+            Transition time in milliseconds.
+        fade_curve : int, default=4
+            Fade curve type.
+
+        Returns
+        -------
+        Action
+            New Reset Bus Volume action instance.
+        """
+        node = cls.from_template(nid, "Action_ResetBusVolume")
+        action = cls(node.dict)
+        action.action_type = 2818  # Reset bus volume action type
+        action.target_id = target_bus_id
+        action.is_bus = True
+        if transition_time != 0:
+            action.transition_time = transition_time
+        action["params/ResetVolumeM/fade_curve"] = fade_curve
+        return action
+
+    @classmethod
+    def new_reset_bus_lpfm(
+        cls,
+        nid: int,
+        target_bus_id: int,
+        transition_time: int = 2000,
+        fade_curve: int = 4,
+    ) -> "Action":
+        """Create a Reset Bus LPFM (Low-Pass Filter) action.
+
+        Parameters
+        ----------
+        nid : int
+            Action ID (hash).
+        target_bus_id : int
+            Target bus ID.
+        transition_time : int, default=2000
+            Transition time in milliseconds.
+        fade_curve : int, default=4
+            Fade curve type.
+
+        Returns
+        -------
+        Action
+            New Reset Bus LPFM action instance.
+        """
+        node = cls.from_template(nid, "Action_ResetBusLPFM")
+        action = cls(node.dict)
+        action.action_type = 3842  # Reset bus LPFM action type
+        action.target_id = target_bus_id
+        action.is_bus = True
+        if transition_time != 0:
+            action.transition_time = transition_time
+        action["params/ResetLPFM/fade_curve"] = fade_curve
         return action
 
     @property
+    def action_type(self) -> int:
+        """Get the action type identifier.
+
+        Returns
+        -------
+        int
+            Action type code (e.g., 1027=Play, 259=Stop, 1538=Mute).
+        """
+        return self["action_type"]
+
+    @action_type.setter
+    def action_type(self, value: int) -> None:
+        self["action_type"] = value
+
+    @property
+    def target_id(self) -> int:
+        """Get the target object ID.
+
+        Returns
+        -------
+        int
+            ID of the target sound/container/bus.
+        """
+        return self["external_id"]
+
+    @target_id.setter
+    def target_id(self, value: int) -> None:
+        self["external_id"] = value
+
+    @property
+    def is_bus(self) -> bool:
+        """Get whether the target is a bus.
+
+        Returns
+        -------
+        bool
+            True if targeting a bus, False if targeting a sound/container.
+        """
+        return bool(self["is_bus"])
+
+    @is_bus.setter
+    def is_bus(self, value: bool) -> None:
+        self["is_bus"] = int(value)
+
+    @property
     def transition_time(self) -> int:
-        """Get or set the transition (fade-out) time.
-        
+        """Get or set the transition time.
+
         Returns
         -------
         int
@@ -168,7 +246,7 @@ class ActionStop(Action):
             if "TransitionTime" in prop:
                 return prop["TransitionTime"]
         return 0
-    
+
     @transition_time.setter
     def transition_time(self, value: int) -> None:
         # Remove existing TransitionTime if present
@@ -179,60 +257,62 @@ class ActionStop(Action):
             prop_bundle.append({"TransitionTime": value})
 
     @property
-    def stop_flags1(self) -> int:
-        """Get or set stop flags 1.
-        
-        Returns
-        -------
-        int
-            Stop flags 1.
-        """
-        return self["params/StopEO/stop/flags1"]
-    
-    @stop_flags1.setter
-    def stop_flags1(self, value: int) -> None:
-        self["params/StopEO/stop/flags1"] = value
+    def fade_curve(self) -> int:
+        """Get or set the fade curve (if applicable to this action type).
 
-    @property
-    def stop_flags2(self) -> int:
-        """Get or set stop flags 2.
-        
         Returns
         -------
         int
-            Stop flags 2.
+            Fade curve identifier (0 if not applicable).
         """
-        return self["params/StopEO/stop/flags2"]
-    
-    @stop_flags2.setter
-    def stop_flags2(self, value: int) -> None:
-        self["params/StopEO/stop/flags2"] = value
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "fade_curve" in params[param_key]:
+            return params[param_key]["fade_curve"]
+        return 0
+
+    @fade_curve.setter
+    def fade_curve(self, value: int) -> None:
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "fade_curve" in params[param_key]:
+            params[param_key]["fade_curve"] = value
 
     @property
     def exceptions(self) -> list[int]:
-        """Get the list of exception IDs.
-        
+        """Get the list of exception IDs (if applicable to this action type).
+
         Returns
         -------
         list[int]
-            List of IDs to exclude from stopping.
+            List of IDs to exclude from this action.
         """
-        return self["params/StopEO/except/exceptions"]
-    
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "except" in params[param_key]:
+            return params[param_key]["except"]["exceptions"]
+        return []
+
     def add_exception(self, exception_id: int) -> None:
-        """Add an exception to the stop action.
-        
+        """Add an exception to the action.
+
         Parameters
         ----------
         exception_id : int
-            ID of object to exclude from stopping.
+            ID of object to exclude from this action.
         """
-        exceptions = self["params/StopEO/except/exceptions"]
-        if exception_id not in exceptions:
-            exceptions.append(exception_id)
-            self["params/StopEO/except/count"] = len(exceptions)
-    
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "except" in params[param_key]:
+            exceptions = params[param_key]["except"]["exceptions"]
+            if exception_id not in exceptions:
+                exceptions.append(exception_id)
+                params[param_key]["except"]["count"] = len(exceptions)
+
     def clear_exceptions(self) -> None:
         """Remove all exceptions."""
-        self["params/StopEO/except/exceptions"] = []
-        self["params/StopEO/except/count"] = 0
+        params = self["params"]
+        param_key = next(iter(params.keys()))
+        if "except" in params[param_key]:
+            params[param_key]["except"]["exceptions"] = []
+            params[param_key]["except"]["count"] = 0

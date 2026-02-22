@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pybnk.util import calc_hash
+from pybnk.hash import calc_hash
 
 
 def generate_lookup_table(input: Path, output: Path) -> None:

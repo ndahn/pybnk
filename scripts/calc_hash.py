@@ -2,7 +2,7 @@
 import sys
 import tkinter as tk
 
-from pybnk.util import calc_hash
+from pybnk.hash import calc_hash
 from pybnk.gui.calc_hash_dialog import CalcHashDialog
 from pybnk.gui.localization import English
 

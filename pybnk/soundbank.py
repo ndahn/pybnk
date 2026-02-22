@@ -228,8 +228,11 @@ class Soundbank:
         self._regenerate_index_table()
         return idx
 
-    def get_hierarchy(self, entrypoint: Node) -> nx.DiGraph:
+    def get_hierarchy(self, entrypoint: int | Node) -> nx.DiGraph:
         """Collects all descendant nodes from the specified entrypoint in a graph."""
+        if isinstance(entrypoint, int):
+            entrypoint = self[entrypoint]
+
         g = nx.DiGraph()
         todo = deque([(entrypoint.id, None)])
 
