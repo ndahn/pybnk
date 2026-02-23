@@ -30,7 +30,7 @@ class Attenuation(Node):
 
     @property
     def is_cone_enabled(self) -> bool:
-        """Get or set whether cone attenuation is enabled.
+        """Whether cone attenuation is enabled.
 
         Returns
         -------
@@ -101,7 +101,7 @@ class Attenuation(Node):
 
     @property
     def curves_to_use(self) -> list[int]:
-        """Get or set which curves are active.
+        """Which curves are active.
 
         Returns
         -------

@@ -147,7 +147,7 @@ class Sound(WwiseNode):
 
     @property
     def enable_attenuation(self) -> bool:
-        """Get or set whether 3D attenuation is enabled.
+        """Whether 3D attenuation is enabled.
 
         Returns
         -------

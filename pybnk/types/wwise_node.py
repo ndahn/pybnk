@@ -177,7 +177,7 @@ class WwiseNode(Node):
 
     @property
     def use_virtual_behavior(self) -> bool:
-        """Get or set whether virtual voice behavior is enabled.
+        """Whether virtual voice behavior is enabled.
 
         Returns
         -------
@@ -207,7 +207,7 @@ class WwiseNode(Node):
 
     @property
     def has_aux(self) -> bool:
-        """Get or set whether auxiliary sends are enabled.
+        """Whether auxiliary sends are enabled.
 
         Returns
         -------

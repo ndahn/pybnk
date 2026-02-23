@@ -74,7 +74,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def avoid_repeats(self) -> bool:
-        """Get or set whether playing the same child twice is allowed.
+        """Whether playing the same child twice is allowed.
 
         Returns
         -------
@@ -89,7 +89,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def avoid_repeat_count(self) -> int:
-        """Get or set how many recent items to avoid repeating.
+        """How many recent items to avoid repeating.
 
         Returns
         -------

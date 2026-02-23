@@ -15,6 +15,7 @@ from pybnk.gui.table_tree_nodes import (
     table_tree_leaf,
     add_lazy_table_tree_node,
 )
+from pybnk.gui.theme import init_themes, themes
 
 
 def dpg_init():
@@ -152,7 +153,7 @@ class PyBnkGui:
                     multiline=True,
                     width=-1,
                     height=-30,
-                    callback=None,  # TODO change border color to show changes were made
+                    callback=lambda s, a, u: self._set_component_highlight(s, True),
                     tag=f"{tag}_json",
                 )
                 with dpg.group(horizontal=True):
@@ -164,6 +165,12 @@ class PyBnkGui:
                         label="Reset",
                         callback=self.reset_json,
                     )
+
+    def _set_component_highlight(self, widget: str, highlight: bool) -> None:
+        if highlight:
+            dpg.bind_item_theme(widget, themes.item_blue)
+        else:
+            dpg.bind_item_theme(widget, themes.item_default)
 
     def _save_soundbank(self) -> None:
         if not self.bnk:
@@ -232,7 +239,6 @@ class PyBnkGui:
                 sub_tag = f"{tag}_node_{nid}"
                 if dpg.does_item_exist(sub_tag):
                     # Item already open somewhere else
-                    # TODO this is a bit stupid right now, always adds a new leaf on click
                     label = f"*{node.type} ({node.id})"
                     with table_tree_leaf(
                         table=f"{tag}_events_table",
@@ -344,6 +350,7 @@ class PyBnkGui:
         if self.selected_node:
             value = self.selected_node.json()
         dpg.set_value(f"{self.tag}_json", value)
+        dpg.bind_item_theme(f"{self.tag}_json", themes.item_default)
 
     def on_node_selected(self, node: int | Node) -> None:
         if isinstance(node, int):
@@ -353,6 +360,7 @@ class PyBnkGui:
         self.selected_node = node
 
         dpg.set_value(f"{self.tag}_json", node.json())
+        self._set_component_highlight(f"{self.tag}_json", False)
         self._create_attribute_widgets()
 
     def _create_attribute_widgets(self) -> None:
@@ -457,6 +465,7 @@ class PyBnkGui:
 if __name__ == "__main__":
     dpg.create_context()
     dpg_init()
+    init_themes()
     dpg.create_viewport(title="PyBnk", width=1100, height=700)
 
     with dpg.window() as main_window:

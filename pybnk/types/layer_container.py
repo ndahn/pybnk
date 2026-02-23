@@ -47,7 +47,7 @@ class LayerContainer(WwiseNode):
 
     @property
     def continuous_validation(self) -> bool:
-        """Get or set continuous validation flag.
+        """Continuous validation flag.
 
         Returns
         -------

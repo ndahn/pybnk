@@ -2,6 +2,7 @@ test/
 /test.py
 tmp/
 *.pdb
+dpg_demo.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
