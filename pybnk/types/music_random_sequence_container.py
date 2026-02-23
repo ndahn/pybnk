@@ -105,7 +105,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def playlist_items(self) -> list[dict]:
-        """Playlist items.
+        """Segments in the playlist with their weights and loop settings.
 
         Returns
         -------
@@ -116,7 +116,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def transition_rules(self) -> list[dict]:
-        """Transition rules.
+        """Rules defining musical transitions between segments.
 
         Returns
         -------
@@ -127,7 +127,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def children_ids(self) -> list[int]:
-        """Get list of child segment IDs.
+        """Music segments available for playback in this container.
 
         Returns
         -------
@@ -143,7 +143,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         weight: int = 50000,
         avoid_repeat: int = 0,
     ) -> None:
-        """Add a playlist item to the container.
+        """Associates a segment with this playlist for random/sequential playback.
 
         Parameters
         ----------
@@ -180,7 +180,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         self["playlist_item_count"] = len(self["playlist_items"])
 
     def remove_playlist_item(self, playlist_item_id: int | Node) -> bool:
-        """Remove a playlist item by its ID.
+        """Disassociates a playlist item from this container.
 
         Parameters
         ----------
@@ -205,6 +205,6 @@ class MusicRandomSequenceContainer(WwiseNode):
         return False
 
     def clear_playlist(self) -> None:
-        """Remove all playlist items from the container."""
+        """Disassociates all playlist items from this container."""
         self["playlist_items"] = []
         self["playlist_item_count"] = 0

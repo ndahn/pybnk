@@ -115,7 +115,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def markers(self) -> list[dict]:
-        """Markers.
+        """Timing markers for synchronization and transitions within the segment.
 
         Returns
         -------
@@ -125,7 +125,7 @@ class MusicSegment(WwiseNode):
         return self["markers"]
 
     def add_marker(self, marker_id: int, position: float, name: str = "") -> None:
-        """Add a marker to the segment.
+        """Places a timing marker at a specific position within the segment.
 
         Parameters
         ----------
@@ -146,7 +146,7 @@ class MusicSegment(WwiseNode):
         self["marker_count"] = len(self["markers"])
 
     def remove_marker(self, marker_id: int) -> bool:
-        """Remove a marker by ID.
+        """Removes a timing marker from the segment.
 
         Parameters
         ----------
@@ -167,13 +167,13 @@ class MusicSegment(WwiseNode):
         return False
 
     def clear_markers(self) -> None:
-        """Remove all markers from the segment."""
+        """Removes all timing markers from the segment."""
         self["markers"] = []
         self["marker_count"] = 0
 
     @property
     def children_ids(self) -> list[int]:
-        """Get list of child track IDs.
+        """Music tracks within this segment.
 
         Returns
         -------

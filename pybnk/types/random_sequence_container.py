@@ -74,7 +74,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def avoid_repeats(self) -> bool:
-        """Whether playing the same child twice is allowed.
+        """Controls whether the same child can play consecutively.
 
         Returns
         -------
@@ -89,7 +89,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def avoid_repeat_count(self) -> int:
-        """How many recent items to avoid repeating.
+        """Number of recently played children excluded from selection.
 
         Returns
         -------
@@ -104,7 +104,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def children_ids(self) -> list[int]:
-        """Get list of child node IDs.
+        """Child nodes available for random or sequential playback.
 
         Returns
         -------
@@ -114,7 +114,7 @@ class RandomSequenceContainer(WwiseNode):
         return self["children/items"]
 
     def add_child(self, child_id: int | Node) -> None:
-        """Add a child node to the container.
+        """Associates a child node for random or sequential playback.
 
         Parameters
         ----------
@@ -134,7 +134,7 @@ class RandomSequenceContainer(WwiseNode):
             children.sort()
 
     def remove_child(self, child_id: int | Node) -> bool:
-        """Remove a child node from the container.
+        """Disassociates a child node from this container.
 
         Parameters
         ----------
@@ -157,13 +157,13 @@ class RandomSequenceContainer(WwiseNode):
         return False
 
     def clear_children(self) -> None:
-        """Remove all children from the container."""
+        """Disassociates all children from this container."""
         self["children/items"] = []
         self["children/count"] = 0
 
     @property
     def playlist_ids(self) -> list[int]:
-        """Get list of playlist item IDs.
+        """Items currently in the playback playlist.
 
         Returns
         -------
@@ -173,7 +173,7 @@ class RandomSequenceContainer(WwiseNode):
         return self["playlist/items"]
 
     def add_to_playlist(self, item_id: int | Node) -> None:
-        """Add an item to the playlist.
+        """Associates an item with the playback playlist.
 
         Parameters
         ----------

@@ -30,7 +30,7 @@ class Attenuation(Node):
 
     @property
     def is_cone_enabled(self) -> bool:
-        """Whether cone attenuation is enabled.
+        """Controls whether directional attenuation based on sound source orientation is applied.
 
         Returns
         -------
@@ -90,7 +90,7 @@ class Attenuation(Node):
 
     @property
     def curves(self) -> list[dict]:
-        """Attenuation curves.
+        """Distance-based curves defining how audio properties change over space.
 
         Returns
         -------
@@ -101,7 +101,7 @@ class Attenuation(Node):
 
     @property
     def curves_to_use(self) -> list[int]:
-        """Which curves are active.
+        """Mapping of curve slots to active curves for different audio properties.
 
         Returns
         -------
@@ -111,7 +111,7 @@ class Attenuation(Node):
         return self["curves_to_use"]
 
     def add_curve(self, curve_scaling: ScalingType = "DB") -> dict:
-        """Add a new attenuation curve.
+        """Creates a new distance-based curve for controlling audio properties.
 
         Parameters
         ----------
@@ -135,7 +135,7 @@ class Attenuation(Node):
         to_value: float,
         interpolation: CurveType = "Linear",
     ) -> None:
-        """Add a point to an attenuation curve.
+        """Defines how an audio property changes at a specific distance.
 
         Parameters
         ----------
@@ -157,13 +157,13 @@ class Attenuation(Node):
         curve["point_count"] = len(curve["points"])
 
     def clear_curves(self) -> None:
-        """Remove all attenuation curves."""
+        """Removes all distance-based curves from this attenuation."""
         self["curves"] = []
         self["curve_count"] = 0
 
     @property
     def rtpcs(self) -> list[dict]:
-        """RTPC (real-time parameter control) entries.
+        """Real-time parameter controls for dynamic audio property adjustments.
 
         Returns
         -------
@@ -182,7 +182,7 @@ class Attenuation(Node):
         rtpc_accum: AccumulationType = "Additive",
         curve_scaling: ScalingType = "DB",
     ) -> None:
-        """Add an RTPC (Real-Time Parameter Control) entry.
+        """Associates a game parameter with an audio property for runtime control.
 
         Parameters
         ----------
@@ -227,6 +227,6 @@ class Attenuation(Node):
         self["initial_rtpc/count"] = len(rtpcs)
 
     def clear_rtpcs(self) -> None:
-        """Remove all RTPC entries."""
+        """Removes all real-time parameter controls from this attenuation."""
         self["initial_rtpc/rtpcs"] = []
         self["initial_rtpc/count"] = 0

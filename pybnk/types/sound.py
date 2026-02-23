@@ -147,7 +147,7 @@ class Sound(WwiseNode):
 
     @property
     def enable_attenuation(self) -> bool:
-        """Whether 3D attenuation is enabled.
+        """Controls whether distance-based volume falloff is applied.
 
         Returns
         -------
@@ -162,7 +162,7 @@ class Sound(WwiseNode):
 
     @property
     def three_dimensional_spatialization(self) -> str:
-        """3D spatialization mode.
+        """Controls how positional audio is rendered in 3D space.
 
         Returns
         -------
@@ -180,7 +180,7 @@ class Sound(WwiseNode):
         ] = value
 
     def set_streaming(self, streamed: bool = True) -> None:
-        """Set the sound to be streamed or embedded.
+        """Configures whether audio loads into memory or streams from disk.
 
         Parameters
         ----------

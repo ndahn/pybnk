@@ -42,7 +42,7 @@ class Event(Node):
 
     @property
     def actions(self) -> list[int]:
-        """Action IDs.
+        """Actions executed when this event is triggered.
         
         Returns
         -------
@@ -52,7 +52,7 @@ class Event(Node):
         return self["actions"]
     
     def add_action(self, action_id: int | Node) -> None:
-        """Add an action to the event.
+        """Associates an action with this event for execution on trigger.
         
         Parameters
         ----------
@@ -68,7 +68,7 @@ class Event(Node):
             self["action_count"] = len(actions)
     
     def remove_action(self, action_id: int | Node) -> bool:
-        """Remove an action from the event.
+        """Disassociates an action from this event.
         
         Parameters
         ----------
@@ -91,6 +91,6 @@ class Event(Node):
         return False
     
     def clear_actions(self) -> None:
-        """Remove all actions from the event."""
+        """Disassociates all actions from this event."""
         self["actions"] = []
         self["action_count"] = 0

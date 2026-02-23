@@ -22,7 +22,7 @@ class Action(Node):
     def new_play(
         cls, nid: int, target_id: int, fade_curve: int = 4, bank_id: int = 0
     ) -> "Action":
-        """Create a Play action.
+        """Creates an action that starts audio playback.
 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class Action(Node):
         flags2: int = 6,
         bank_id: int = 0,
     ) -> "Action":
-        """Create a Stop action.
+        """Creates an action that stops audio playback.
 
         Parameters
         ----------
@@ -101,7 +101,7 @@ class Action(Node):
     def new_mute_bus(
         cls, nid: int, target_bus_id: int, fade_curve: int = 4, bank_id: int = 0,
     ) -> "Action":
-        """Create a Mute Bus action.
+        """Creates an action that mutes a bus, silencing all audio routed through it.
 
         Parameters
         ----------
@@ -139,7 +139,7 @@ class Action(Node):
         fade_curve: int = 4,
         bank_id: int = 0,
     ) -> "Action":
-        """Create a Reset Bus Volume action.
+        """Creates an action that restores a bus to its default volume.
 
         Parameters
         ----------
@@ -181,7 +181,7 @@ class Action(Node):
         fade_curve: int = 4,
         bank_id: int = 0,
     ) -> "Action":
-        """Create a Reset Bus LPFM (Low-Pass Filter) action.
+        """Creates an action that restores a bus's low-pass filter to default settings.
 
         Parameters
         ----------
@@ -246,7 +246,7 @@ class Action(Node):
 
     @property
     def is_bus(self) -> bool:
-        """Get whether the target is a bus.
+        """Indicates whether this action targets a bus or a sound/container.
 
         Returns
         -------
@@ -306,7 +306,7 @@ class Action(Node):
 
     @property
     def bank_id(self) -> int:
-        """Get  or set the ID of the soundbank this action targets.
+        """Soundbank containing the target of this action.
 
         Returns
         -------
@@ -331,7 +331,7 @@ class Action(Node):
 
     @property
     def exceptions(self) -> list[int]:
-        """Exception IDs (if applicable to this action type).
+        """Objects excluded from this action's effects.
 
         Returns
         -------
@@ -345,7 +345,7 @@ class Action(Node):
         return []
 
     def add_exception(self, exception_id: int) -> None:
-        """Add an exception to the action.
+        """Excludes a specific object from this action's effects.
 
         Parameters
         ----------
@@ -361,7 +361,7 @@ class Action(Node):
                 params[param_key]["except"]["count"] = len(exceptions)
 
     def clear_exceptions(self) -> None:
-        """Remove all exceptions."""
+        """Clears all exceptions, allowing this action to affect all targets."""
         params = self["params"]
         param_key = next(iter(params.keys()))
         if "except" in params[param_key]:

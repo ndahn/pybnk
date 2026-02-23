@@ -61,7 +61,7 @@ class ActorMixer(WwiseNode):
 
     @property
     def children_ids(self) -> list[int]:
-        """Get list of child node IDs.
+        """Child nodes organized under this mixer for shared processing.
 
         Returns
         -------
@@ -71,7 +71,7 @@ class ActorMixer(WwiseNode):
         return self["children/items"]
 
     def add_child(self, child_id: int | Node) -> None:
-        """Add a child node to the mixer.
+        """Associates a child node with this mixer for hierarchical organization.
 
         Parameters
         ----------
@@ -90,7 +90,7 @@ class ActorMixer(WwiseNode):
             self["children/count"] = len(children)
 
     def remove_child(self, child_id: int | Node) -> bool:
-        """Remove a child node from the mixer.
+        """Disassociates a child node from this mixer.
 
         Parameters
         ----------
@@ -113,6 +113,6 @@ class ActorMixer(WwiseNode):
         return False
 
     def clear_children(self) -> None:
-        """Remove all children from the mixer."""
+        """Disassociates all children from this mixer."""
         self["children/items"] = []
         self["children/count"] = 0

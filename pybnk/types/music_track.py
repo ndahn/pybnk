@@ -98,7 +98,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def sources(self) -> list[dict]:
-        """Audio sources.
+        """Audio files used by this track.
 
         Returns
         -------
@@ -109,7 +109,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def playlist(self) -> list[dict]:
-        """Playlist items.
+        """Timing and playback configuration for sources on the timeline.
 
         Returns
         -------
@@ -125,7 +125,7 @@ class MusicTrack(WwiseNode):
         plugin: str = "VORBIS",
         media_size: int = 0,
     ) -> None:
-        """Add an audio source to the track.
+        """Associates an audio file with this track.
 
         Parameters
         ----------
@@ -160,7 +160,7 @@ class MusicTrack(WwiseNode):
         begin_trim: float = 0.0,
         end_trim: float = 0.0,
     ) -> None:
-        """Add a playlist item to the track.
+        """Schedules a source to play at a specific time on the track timeline.
 
         Parameters
         ----------
@@ -188,11 +188,11 @@ class MusicTrack(WwiseNode):
         self["playlist_item_count"] = len(self["playlist"])
 
     def clear_sources(self) -> None:
-        """Remove all sources from the track."""
+        """Disassociates all audio sources from this track."""
         self["sources"] = []
         self["source_count"] = 0
 
     def clear_playlist(self) -> None:
-        """Remove all playlist items from the track."""
+        """Clears the track timeline, removing all scheduled playback items."""
         self["playlist"] = []
         self["playlist_item_count"] = 0

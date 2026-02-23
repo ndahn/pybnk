@@ -36,7 +36,7 @@ class LayerContainer(WwiseNode):
 
     @property
     def layers(self) -> list[dict]:
-        """Layers.
+        """Layer definitions for simultaneous playback configuration.
 
         Returns
         -------
@@ -47,7 +47,7 @@ class LayerContainer(WwiseNode):
 
     @property
     def continuous_validation(self) -> bool:
-        """Continuous validation flag.
+        """Controls whether layer validation runs continuously during playback.
 
         Returns
         -------
@@ -62,7 +62,7 @@ class LayerContainer(WwiseNode):
 
     @property
     def children_ids(self) -> list[int]:
-        """Get list of child node IDs.
+        """Child nodes that play as layers within this container.
 
         Returns
         -------
@@ -72,7 +72,7 @@ class LayerContainer(WwiseNode):
         return self["children/items"]
 
     def add_child(self, child_id: int | Node) -> None:
-        """Add a child node to the container.
+        """Associates a child node as a layer within this container.
 
         Parameters
         ----------
@@ -91,7 +91,7 @@ class LayerContainer(WwiseNode):
             self["children/count"] = len(children)
 
     def remove_child(self, child_id: int | Node) -> bool:
-        """Remove a child node from the container.
+        """Disassociates a child node from this container.
 
         Parameters
         ----------
@@ -114,13 +114,13 @@ class LayerContainer(WwiseNode):
         return False
 
     def clear_children(self) -> None:
-        """Remove all children from the container."""
+        """Disassociates all children from this container."""
         self["children/items"] = []
         self["children/count"] = 0
 
     # NOTE Seems to not be used in ER/NR, so no clue what would go here
     def add_layer(self, layer: dict) -> None:
-        """Add a layer definition to the container.
+        """Associates a layer definition with this container.
 
         Parameters
         ----------
@@ -131,6 +131,6 @@ class LayerContainer(WwiseNode):
         self["layer_count"] = len(self["layers"])
 
     def clear_layers(self) -> None:
-        """Remove all layers from the container."""
+        """Disassociates all layer definitions from this container."""
         self["layers"] = []
         self["layer_count"] = 0

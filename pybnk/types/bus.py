@@ -48,7 +48,7 @@ class Bus(Node):
         return self["initial_values/bus_initial_params/prop_bundle"]
     
     def get_property(self, prop_name: str, default: float = None) -> float:
-        """Get a bus property value by name.
+        """Retrieves a specific bus property value.
         
         Parameters
         ----------
@@ -68,7 +68,7 @@ class Bus(Node):
         return default
     
     def set_property(self, prop_name: str, value: float) -> None:
-        """Set a bus property value by name.
+        """Configures a specific bus property value.
         
         If the property already exists, updates it. Otherwise, adds it.
         
@@ -89,7 +89,7 @@ class Bus(Node):
         self.prop_bundle.append({prop_name: value})
     
     def remove_property(self, prop_name: str) -> bool:
-        """Remove a property by name.
+        """Removes a specific property from the bus.
         
         Parameters
         ----------
@@ -109,7 +109,7 @@ class Bus(Node):
         return False
     
     def clear_properties(self) -> None:
-        """Remove all bus property values."""
+        """Removes all property values from this bus."""
         self["initial_values/bus_initial_params/prop_bundle"] = []
     
     # Convenience properties for common bus parameters
@@ -276,7 +276,7 @@ class Bus(Node):
 
     @property
     def ducks(self) -> list[dict]:
-        """Ducking configurations.
+        """Automatic volume reduction rules for other buses when this bus plays.
 
         Returns
         -------
@@ -287,7 +287,7 @@ class Bus(Node):
 
     @property
     def rtpcs(self) -> list[dict]:
-        """RTPC (real-time parameter control) entries.
+        """Real-time parameter controls for dynamic audio adjustments.
 
         Returns
         -------
@@ -306,7 +306,7 @@ class Bus(Node):
         rtpc_accum: AccumulationType = "Additive",
         curve_scaling: ScalingType = "DB",
     ) -> None:
-        """Add an RTPC (Real-Time Parameter Control) entry.
+        """Associates a game parameter with a bus property for runtime control.
 
         Parameters
         ----------
@@ -351,7 +351,7 @@ class Bus(Node):
         self["initial_values/initial_rtpc/count"] = len(rtpcs)
 
     def clear_rtpcs(self) -> None:
-        """Remove all RTPC entries."""
+        """Removes all real-time parameter controls from this bus."""
         self["initial_values/initial_rtpc/rtpcs"] = []
         self["initial_values/initial_rtpc/count"] = 0
 
@@ -363,7 +363,7 @@ class Bus(Node):
         fade_in: int = 500,
         fade_curve: str = "SCurve",
     ) -> None:
-        """Add a ducking configuration for another bus. Ducking is used to automatically reduce (attenuate) the volume of another bus while this one is playing.
+        """Configures automatic volume reduction of another bus when this bus plays.
 
         Parameters
         ----------
@@ -393,7 +393,7 @@ class Bus(Node):
         self["initial_values/duck_count"] = len(self["initial_values/ducks"])
 
     def remove_duck(self, target_bus_id: int | Node) -> bool:
-        """Remove a ducking configuration by target bus ID.
+        """Removes ducking configuration for a specific target bus.
 
         Parameters
         ----------
@@ -417,12 +417,12 @@ class Bus(Node):
         return False
 
     def clear_ducks(self) -> None:
-        """Remove all ducking configurations."""
+        """Removes all ducking configurations from this bus."""
         self["initial_values/ducks"] = []
         self["initial_values/duck_count"] = 0
 
     def get_aux_bus(self, index: int) -> int:
-        """Get an auxiliary bus ID by index.
+        """Retrieves an auxiliary send bus used for effects processing.
 
         Parameters
         ----------
@@ -439,7 +439,7 @@ class Bus(Node):
         return self[f"initial_values/bus_initial_params/aux_params/aux{index}"]
 
     def set_aux_bus(self, index: int, bus_id: int | Node) -> None:
-        """Set an auxiliary bus ID by index.
+        """Configures an auxiliary send bus for effects processing.
 
         Parameters
         ----------
