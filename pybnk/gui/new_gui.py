@@ -220,6 +220,23 @@ class PyBnkGui:
 
             def delve(nid: int) -> None:
                 node: Node = bnk[nid]
+
+                sub_tag = f"{tag}_node_{nid}"
+                if dpg.does_item_exist(sub_tag):
+                    # Item already open somewhere else
+                    label = f"*{node.type} ({node.id})"
+                    with table_tree_leaf(
+                        table=f"{tag}_events_table",
+                        before=anchor,
+                    ):
+                        dpg.add_selectable(
+                            label=label,
+                            callback=node_selected_helper, # TODO navigate to other instance?
+                            user_data=nid,
+                        )
+                    
+                    return
+
                 label = f"{node.type} ({node.id})"
                 children = g.successors(nid)
 
@@ -228,7 +245,7 @@ class PyBnkGui:
                         label,
                         callback=node_selected_helper,
                         table=f"{tag}_events_table",
-                        tag=f"{tag}_node_{nid}",
+                        tag=sub_tag,
                         before=anchor,
                         user_data=nid,
                     ):
@@ -237,7 +254,7 @@ class PyBnkGui:
                 else:
                     with table_tree_leaf(
                         table=f"{tag}_events_table",
-                        tag=f"{tag}_node_{nid}",
+                        tag=sub_tag,
                         before=anchor,
                     ):
                         dpg.add_selectable(
@@ -278,6 +295,7 @@ class PyBnkGui:
                 user_data=event,
             ):
                 for aid in event.actions:
+                    # TODO Make actions the top level items and add a list of events associated with them?
                     action = Action(bnk[aid].dict)
                     add_lazy_table_tree_node(
                         f"{action.action_type.name} ({aid})",
