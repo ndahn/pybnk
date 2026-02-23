@@ -53,7 +53,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def track_type(self) -> int:
-        """Get or set the track type.
+        """Track type.
 
         Returns
         -------
@@ -68,7 +68,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def look_ahead_time(self) -> int:
-        """Get or set the look-ahead time in milliseconds.
+        """Look-ahead time in milliseconds.
 
         Returns
         -------
@@ -83,7 +83,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def subtrack_count(self) -> int:
-        """Get or set the number of subtracks.
+        """Number of subtracks.
 
         Returns
         -------
@@ -98,7 +98,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def sources(self) -> list[dict]:
-        """Get the list of audio sources.
+        """Audio sources.
 
         Returns
         -------
@@ -109,7 +109,7 @@ class MusicTrack(WwiseNode):
 
     @property
     def playlist(self) -> list[dict]:
-        """Get the playlist items.
+        """Playlist items.
 
         Returns
         -------

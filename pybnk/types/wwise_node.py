@@ -10,7 +10,7 @@ class WwiseNode(Node):
 
     @property
     def properties(self) -> list[dict]:
-        """Get the list of initial property values.
+        """Initial property values.
 
         Returns
         -------
@@ -87,7 +87,7 @@ class WwiseNode(Node):
     # Convenience properties for common parameters
     @property
     def volume(self) -> float:
-        """Get or set the volume in dB.
+        """Volume in dB.
 
         Returns
         -------
@@ -102,7 +102,7 @@ class WwiseNode(Node):
 
     @property
     def pitch(self) -> float:
-        """Get or set the pitch in cents.
+        """Pitch in cents.
 
         Returns
         -------
@@ -117,7 +117,7 @@ class WwiseNode(Node):
 
     @property
     def lowpass_filter(self) -> float:
-        """Get or set the low-pass filter value.
+        """Low-pass filter value.
 
         Returns
         -------
@@ -132,7 +132,7 @@ class WwiseNode(Node):
 
     @property
     def highpass_filter(self) -> float:
-        """Get or set the high-pass filter value.
+        """High-pass filter value.
 
         Returns
         -------
@@ -147,7 +147,7 @@ class WwiseNode(Node):
 
     @property
     def attenuation_id(self) -> int:
-        """Get or set the attenuation ID reference.
+        """Attenuation ID reference.
 
         Returns
         -------
@@ -162,7 +162,7 @@ class WwiseNode(Node):
 
     @property
     def max_instances(self) -> int:
-        """Get or set the maximum number of concurrent instances.
+        """Maximum number of concurrent instances.
 
         Returns
         -------
@@ -192,7 +192,7 @@ class WwiseNode(Node):
 
     @property
     def virtual_queue_behavior(self) -> str:
-        """Get or set the virtual voice queue behavior.
+        """Virtual voice queue behavior.
 
         Returns
         -------
@@ -250,17 +250,6 @@ class WwiseNode(Node):
         if index < 1 or index > 4:
             raise ValueError("Aux index must be between 1 and 4")
         self[f"node_base_params/aux_params/aux{index}"] = bus_id
-
-    @property
-    def rtpc_count(self) -> int:
-        """Get the number of RTPC (real-time parameter control) entries.
-
-        Returns
-        -------
-        int
-            Number of RTPC entries.
-        """
-        return self["node_base_params/initial_rtpc/count"]
 
     def add_rtpc(
         self,

@@ -51,7 +51,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def duration(self) -> float:
-        """Get or set the segment duration in milliseconds.
+        """Segment duration in milliseconds.
 
         Returns
         -------
@@ -66,7 +66,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def tempo(self) -> float:
-        """Get or set the tempo in BPM.
+        """Tempo in BPM.
 
         Returns
         -------
@@ -81,7 +81,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def time_signature(self) -> tuple[int, int]:
-        """Get or set the time signature.
+        """Time signature.
 
         Returns
         -------
@@ -100,7 +100,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def grid_period(self) -> float:
-        """Get or set the grid period in milliseconds.
+        """Grid period in milliseconds.
 
         Returns
         -------
@@ -115,7 +115,7 @@ class MusicSegment(WwiseNode):
 
     @property
     def markers(self) -> list[dict]:
-        """Get the list of markers.
+        """Markers.
 
         Returns
         -------

@@ -48,7 +48,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def tempo(self) -> float:
-        """Get or set the tempo in BPM.
+        """Tempo in BPM.
 
         Returns
         -------
@@ -63,7 +63,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def time_signature(self) -> tuple[int, int]:
-        """Get or set the time signature.
+        """Time signature.
 
         Returns
         -------
@@ -90,7 +90,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def grid_period(self) -> float:
-        """Get or set the grid period in milliseconds.
+        """Grid period in milliseconds.
 
         Returns
         -------
@@ -105,7 +105,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def playlist_items(self) -> list[dict]:
-        """Get the playlist items.
+        """Playlist items.
 
         Returns
         -------
@@ -116,7 +116,7 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     @property
     def transition_rules(self) -> list[dict]:
-        """Get the transition rules.
+        """Transition rules.
 
         Returns
         -------

@@ -45,7 +45,7 @@ class Attenuation(Node):
 
     @property
     def cone_inside_degrees(self) -> float:
-        """Get or set the cone inside angle in degrees.
+        """Cone inside angle in degrees.
 
         Returns
         -------
@@ -60,7 +60,7 @@ class Attenuation(Node):
 
     @property
     def cone_outside_degrees(self) -> float:
-        """Get or set the cone outside angle in degrees.
+        """Cone outside angle in degrees.
 
         Returns
         -------
@@ -75,7 +75,7 @@ class Attenuation(Node):
 
     @property
     def cone_outside_volume(self) -> float:
-        """Get or set the volume outside the cone.
+        """Volume outside the cone.
 
         Returns
         -------
@@ -90,7 +90,7 @@ class Attenuation(Node):
 
     @property
     def curves(self) -> list[dict]:
-        """Get the attenuation curves.
+        """Attenuation curves.
 
         Returns
         -------
@@ -163,7 +163,7 @@ class Attenuation(Node):
 
     @property
     def rtpcs(self) -> list[dict]:
-        """Get the RTPC (real-time parameter control) entries.
+        """RTPC (real-time parameter control) entries.
 
         Returns
         -------
@@ -171,17 +171,6 @@ class Attenuation(Node):
             List of RTPC dictionaries.
         """
         return self["initial_rtpc/rtpcs"]
-
-    @property
-    def rtpc_count(self) -> int:
-        """Get the number of RTPC entries.
-
-        Returns
-        -------
-        int
-            Number of RTPCs.
-        """
-        return self["initial_rtpc/count"]
 
     def add_rtpc(
         self,

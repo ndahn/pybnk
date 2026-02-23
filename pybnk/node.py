@@ -91,12 +91,12 @@ class Node:
 
     @property
     def type(self) -> str:
-        """Get the type of a HIRC node (e.g. RandomSequenceContainer)."""
+        """Type of a HIRC node (e.g. RandomSequenceContainer)."""
         return self._type
 
     @property
     def id(self) -> int:
-        """Get the ID of a HIRC node (i.e. its hash)."""
+        """ID of a HIRC node (i.e. its hash)."""
         idsec = self._attr["id"]
         h = idsec.get("Hash")
         if not h:
@@ -119,7 +119,7 @@ class Node:
 
     @property
     def parent(self) -> int:
-        """Get the ID of a node's parent node."""
+        """ID of a node's parent node."""
         # NOTE: some nodes like buses don't have a direct_parent_id
         return self.get("node_base_params/direct_parent_id", None)
 

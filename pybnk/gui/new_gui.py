@@ -1,6 +1,7 @@
 from typing import Any
 from importlib import resources
 import json
+from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
@@ -72,6 +73,9 @@ class PyBnkGui:
                     shortcut="f4",
                     callback=self._repack_soundbank,
                 )
+
+            with dpg.menu(label="Create"):
+                pass
 
             with dpg.menu(label="Help"):
                 with dpg.menu(label="dearpygui"):
@@ -389,6 +393,7 @@ class PyBnkGui:
             for name, prop in properties.items():
                 value = prop.fget(node)
                 readonly = prop.fset is None
+                doc = doc_parse(prop.__doc__)
 
                 def set_property(sender: str, new_value: Any, prop: property):
                     prop.fset(node, new_value)
@@ -428,6 +433,12 @@ class PyBnkGui:
                         enabled=not readonly,
                         user_data=prop,
                     )
+                else:
+                    continue
+
+                if doc:
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text(doc.short_description)
 
             dpg.add_child_window(height=-30, border=False)
             dpg.add_button(label="Reset")

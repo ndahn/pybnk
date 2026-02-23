@@ -42,7 +42,7 @@ class Event(Node):
 
     @property
     def actions(self) -> list[int]:
-        """Get the list of action IDs.
+        """Action IDs.
         
         Returns
         -------

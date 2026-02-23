@@ -38,7 +38,7 @@ class Bus(Node):
 
     @property
     def prop_bundle(self) -> list[dict]:
-        """Get the list of bus property values.
+        """Bus property values.
         
         Returns
         -------
@@ -115,7 +115,7 @@ class Bus(Node):
     # Convenience properties for common bus parameters
     @property
     def center_pct(self) -> float:
-        """Get or set the center percentage. 
+        """Center percentage. 
         
         CenterPCT controls speaker balance in surround sound setups, specifically how much audio goes to the center speaker vs. left/right speakers.
 
@@ -138,7 +138,7 @@ class Bus(Node):
     
     @property
     def hdr_threshold(self) -> float:
-        """Get or set the HDR (High Dynamic Range Audio) bus threshold.
+        """HDR (High Dynamic Range Audio) bus threshold.
         
         Returns
         -------
@@ -153,7 +153,7 @@ class Bus(Node):
     
     @property
     def hdr_ratio(self) -> float:
-        """Get or set the HDR (High Dynamic Range Audio) bus ratio.
+        """HDR (High Dynamic Range Audio) bus ratio.
         
         Returns
         -------
@@ -168,7 +168,7 @@ class Bus(Node):
     
     @property
     def hdr_release_time(self) -> float:
-        """Get or set the HDR (High Dynamic Range Audio) bus release time.
+        """HDR (High Dynamic Range Audio) bus release time.
         
         Returns
         -------
@@ -183,7 +183,7 @@ class Bus(Node):
     
     @property
     def hdr_game_param_max(self) -> float:
-        """Get or set the HDR (High Dynamic Range Audio) game parameter maximum.
+        """HDR (High Dynamic Range Audio) game parameter maximum.
         
         Returns
         -------
@@ -198,7 +198,7 @@ class Bus(Node):
 
     @property
     def override_bus_id(self) -> int:
-        """Get or set the parent bus ID.
+        """Parent bus ID.
 
         Returns
         -------
@@ -216,7 +216,7 @@ class Bus(Node):
 
     @property
     def max_instances(self) -> int:
-        """Get or set the maximum number of instances.
+        """Maximum number of simultaneous instances.
 
         Returns
         -------
@@ -231,7 +231,7 @@ class Bus(Node):
 
     @property
     def channel_config(self) -> int:
-        """Get or set the channel configuration.
+        """Channel configuration.
 
         Returns
         -------
@@ -246,7 +246,7 @@ class Bus(Node):
 
     @property
     def recovery_time(self) -> int:
-        """Get or set the ducking recovery time in milliseconds.
+        """Ducking recovery time in milliseconds.
 
         Returns
         -------
@@ -261,7 +261,7 @@ class Bus(Node):
 
     @property
     def max_duck_volume(self) -> float:
-        """Get or set the maximum duck volume in dB.
+        """Maximum duck volume in dB.
 
         Returns
         -------
@@ -276,7 +276,7 @@ class Bus(Node):
 
     @property
     def ducks(self) -> list[dict]:
-        """Get the list of ducking configurations.
+        """Ducking configurations.
 
         Returns
         -------
@@ -287,7 +287,7 @@ class Bus(Node):
 
     @property
     def rtpcs(self) -> list[dict]:
-        """Get the RTPC (real-time parameter control) entries.
+        """RTPC (real-time parameter control) entries.
 
         Returns
         -------

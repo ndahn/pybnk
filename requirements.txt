@@ -4,3 +4,4 @@ pydub >= 0.25.0
 audioop-lts >= 0.2.2
 crossfiledialog >= 1.1.0
 pywin32
+docstring_parser >= 0.17.0

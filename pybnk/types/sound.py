@@ -87,7 +87,7 @@ class Sound(WwiseNode):
 
     @property
     def source_id(self) -> int:
-        """Get or set the media source ID.
+        """Media source ID.
 
         Returns
         -------
@@ -102,7 +102,7 @@ class Sound(WwiseNode):
 
     @property
     def plugin(self) -> str:
-        """Get or set the codec plugin type.
+        """Codec plugin type.
 
         Returns
         -------
@@ -117,7 +117,7 @@ class Sound(WwiseNode):
 
     @property
     def source_type(self) -> str:
-        """Get or set the source type.
+        """Source type.
 
         Returns
         -------
@@ -132,7 +132,7 @@ class Sound(WwiseNode):
 
     @property
     def media_size(self) -> int:
-        """Get or set the in-memory media size in bytes.
+        """In-memory media size in bytes.
 
         Returns
         -------
@@ -162,7 +162,7 @@ class Sound(WwiseNode):
 
     @property
     def three_dimensional_spatialization(self) -> str:
-        """Get or set the 3D spatialization mode.
+        """3D spatialization mode.
 
         Returns
         -------

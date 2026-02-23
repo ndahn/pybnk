@@ -36,7 +36,7 @@ class LayerContainer(WwiseNode):
 
     @property
     def layers(self) -> list[dict]:
-        """Get the list of layers.
+        """Layers.
 
         Returns
         -------

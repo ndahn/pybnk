@@ -44,7 +44,7 @@ class ActorMixer(WwiseNode):
 
     @property
     def override_bus_id(self) -> int:
-        """Get or set the override bus ID.
+        """Override bus ID.
 
         Returns
         -------

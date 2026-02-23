@@ -44,7 +44,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def loop_count(self) -> int:
-        """Get or set the number of times the container loops.
+        """Number of times the container loops.
 
         Returns
         -------
@@ -59,7 +59,7 @@ class RandomSequenceContainer(WwiseNode):
 
     @property
     def transition_time(self) -> float:
-        """Get or set the transition time in milliseconds.
+        """Transition time in milliseconds.
 
         Returns
         -------

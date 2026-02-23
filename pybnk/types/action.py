@@ -216,7 +216,7 @@ class Action(Node):
 
     @property
     def action_type(self) -> ActionType | int:
-        """Get the action type identifier.
+        """Action type identifier.
 
         Returns
         -------
@@ -231,7 +231,7 @@ class Action(Node):
 
     @property
     def target_id(self) -> int:
-        """Get the target object ID.
+        """Target object ID.
 
         Returns
         -------
@@ -261,7 +261,7 @@ class Action(Node):
 
     @property
     def transition_time(self) -> int:
-        """Get or set the transition time.
+        """Transition time.
 
         Returns
         -------
@@ -284,7 +284,7 @@ class Action(Node):
 
     @property
     def fade_curve(self) -> int:
-        """Get or set the fade curve (if applicable to this action type).
+        """Fade curve (if applicable to this action type).
 
         Returns
         -------
@@ -331,7 +331,7 @@ class Action(Node):
 
     @property
     def exceptions(self) -> list[int]:
-        """Get the list of exception IDs (if applicable to this action type).
+        """Exception IDs (if applicable to this action type).
 
         Returns
         -------
