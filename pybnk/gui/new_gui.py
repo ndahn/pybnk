@@ -5,9 +5,11 @@ from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.types import Action, Event
+from pybnk.types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
+from pybnk.gui.helpers import create_widget, center_window
+from pybnk.gui.style import init_themes, themes
 from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.localization import Localization, English
 from pybnk.gui.table_tree_nodes import (
@@ -15,8 +17,7 @@ from pybnk.gui.table_tree_nodes import (
     table_tree_leaf,
     add_lazy_table_tree_node,
 )
-from pybnk.gui.helpers import create_widget
-from pybnk.gui.theme import init_themes, themes
+from pybnk.gui.create_node_dialog import create_node_dialog
 
 
 def dpg_init():
@@ -77,6 +78,20 @@ class PyBnkGui:
                 )
 
             with dpg.menu(label="Create"):
+                dpg.add_menu_item(
+                    label="Simple Sound",
+                    callback=None, # TODO
+                )
+                dpg.add_menu_item(
+                    label="Boss Track",
+                    callback=None, # TODO
+                )
+                dpg.add_menu_item(
+                    label="Ambience Track",
+                    callback=None, # TODO
+                )
+
+            with dpg.menu(label="Globals"):
                 pass
 
             with dpg.menu(label="Help"):
@@ -408,11 +423,12 @@ class PyBnkGui:
                     prop.fset(node, new_value)
 
                 widget = create_widget(
-                    value, 
+                    type(value), 
                     name,
                     set_property,
-                    readonly,
-                    prop,
+                    value,
+                    readonly=readonly,
+                    user_data=prop,
                 )
                 
                 if widget and doc:
@@ -431,6 +447,22 @@ class PyBnkGui:
         dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
+
+    def _open_create_node_dialog(self) -> None:
+        tag = f"{self.tag}_create_node_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_node_created(node: WwiseNode) -> None:
+            print(node)
+            pass
+
+        create_node_dialog(self.bnk, on_node_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
 
 
 if __name__ == "__main__":

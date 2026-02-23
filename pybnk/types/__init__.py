@@ -9,3 +9,4 @@ from .music_segment import MusicSegment
 from .music_track import MusicTrack
 from .random_sequence_container import RandomSequenceContainer
 from .sound import Sound
+from .wwise_node import WwiseNode

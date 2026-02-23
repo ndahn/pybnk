@@ -1,6 +1,25 @@
 from dearpygui import dearpygui as dpg
 
 
+# https://coolors.co/palette/ffbe0b-fb5607-ff006e-8338ec-3a86ff
+yellow = (255, 190, 11, 255)
+orange = (251, 86, 7, 255)
+red = (234, 11, 30, 255)
+pink = (255, 0, 110, 255)
+purple = (127, 50, 236, 255)
+blue = (58, 134, 255, 255)
+green = (138, 201, 38, 255)
+
+white = (255, 255, 255, 255)
+light_grey = (151, 151, 151, 255)
+dark_grey = (62, 62, 62, 255)
+black = (0, 0, 0, 255)
+
+light_blue = (112, 214, 255, 255)
+light_green = (112, 255, 162, 255)
+light_red = (255, 112, 119)
+
+
 class themes:
     item_default = None
     item_blue = None
