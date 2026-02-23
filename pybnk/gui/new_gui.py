@@ -15,6 +15,7 @@ from pybnk.gui.table_tree_nodes import (
     table_tree_leaf,
     add_lazy_table_tree_node,
 )
+from pybnk.gui.helpers import create_widget
 from pybnk.gui.theme import init_themes, themes
 
 
@@ -406,45 +407,15 @@ class PyBnkGui:
                 def set_property(sender: str, new_value: Any, prop: property):
                     prop.fset(node, new_value)
 
-                if isinstance(value, bool):
-                    dpg.add_checkbox(
-                        label=name,
-                        default_value=value,
-                        callback=set_property,
-                        enabled=not readonly,
-                        user_data=prop,
-                    )
-                elif isinstance(value, int):
-                    dpg.add_input_int(
-                        label=name,
-                        default_value=value,
-                        callback=set_property,
-                        readonly=readonly,
-                        enabled=not readonly,
-                        user_data=prop,
-                    )
-                elif isinstance(value, float):
-                    dpg.add_input_float(
-                        label=name,
-                        default_value=value,
-                        callback=set_property,
-                        readonly=readonly,
-                        enabled=not readonly,
-                        user_data=prop,
-                    )
-                elif isinstance(value, str):
-                    dpg.add_input_text(
-                        label=name,
-                        default_value=value,
-                        callback=set_property,
-                        readonly=readonly,
-                        enabled=not readonly,
-                        user_data=prop,
-                    )
-                else:
-                    continue
-
-                if doc:
+                widget = create_widget(
+                    value, 
+                    name,
+                    set_property,
+                    readonly,
+                    prop,
+                )
+                
+                if widget and doc:
                     with dpg.tooltip(dpg.last_item()):
                         dpg.add_text(doc.short_description)
 
