@@ -42,6 +42,7 @@ class PyBnkGui:
         self.bnk: Soundbank = None
         self.events: dict[int, Event] = {}
         self.selected_node: Node = None
+        self.selected_root: str = None
 
         self._setup_menu()
         self._setup_content()
@@ -110,7 +111,7 @@ class PyBnkGui:
         with dpg.group(horizontal=True):
             with dpg.child_window(
                 horizontal_scrollbar=False,
-                width=200,
+                width=300,
                 resizable_x=True,
                 autosize_y=True,
                 tag=f"{tag}_events_window",
@@ -208,13 +209,16 @@ class PyBnkGui:
         tag = self.tag
 
         def node_selected_helper(sender: str, app_data: Any, node: Node) -> None:
+            # Deselect previous selectable
+            if self.selected_root and dpg.does_item_exist(self.selected_root):
+                dpg.set_value(self.selected_root, False)
+            
+            self.selected_root = sender
             self.on_node_selected(node)
 
         def lazy_load_action_structure(
             sender: str, anchor: str, action: Action
         ) -> None:
-            node_selected_helper(sender, None, action)
-
             entrypoint = bnk[action.target_id]
             g = bnk.get_hierarchy(entrypoint)
 
@@ -224,6 +228,7 @@ class PyBnkGui:
                 sub_tag = f"{tag}_node_{nid}"
                 if dpg.does_item_exist(sub_tag):
                     # Item already open somewhere else
+                    # TODO this is a bit stupid right now, always adds a new leaf on click
                     label = f"*{node.type} ({node.id})"
                     with table_tree_leaf(
                         table=f"{tag}_events_table",
@@ -243,7 +248,7 @@ class PyBnkGui:
                 if children:
                     with table_tree_node(
                         label,
-                        callback=node_selected_helper,
+                        on_click_callback=node_selected_helper,
                         table=f"{tag}_events_table",
                         tag=sub_tag,
                         before=anchor,
@@ -289,7 +294,7 @@ class PyBnkGui:
 
             with table_tree_node(
                 f"{name} ({event.id})",
-                callback=node_selected_helper,
+                on_click_callback=node_selected_helper,
                 table=f"{tag}_events_table",
                 tag=f"{tag}_event_{event.id}",
                 user_data=event,
@@ -300,6 +305,7 @@ class PyBnkGui:
                     add_lazy_table_tree_node(
                         f"{action.action_type.name} ({aid})",
                         lazy_load_action_structure,
+                        on_click_callback=node_selected_helper,
                         table=f"{tag}_events_table",
                         tag=f"{tag}_action_{aid}",
                         user_data=action,
@@ -440,7 +446,7 @@ class PyBnkGui:
 if __name__ == "__main__":
     dpg.create_context()
     dpg_init()
-    dpg.create_viewport(title="PyBnk", width=1000, height=700)
+    dpg.create_viewport(title="PyBnk", width=1100, height=700)
 
     with dpg.window() as main_window:
         app = PyBnkGui()

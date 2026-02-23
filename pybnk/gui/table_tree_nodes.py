@@ -12,10 +12,11 @@ class RowDescriptor:
     level: int
     row: str = None
     table: str = None
-    node: str = None
     selectable: str = None
+    button: str = None
     is_lazy: bool = False
-    callback: Callable = None
+    on_fold_cb: Callable[[str, bool, Any], None] = None
+    on_click_cb: Callable[[str, bool, Any], None] = None
     user_data: Any = None
 
 
@@ -32,7 +33,7 @@ def is_foldable_row(row: str) -> bool:
 
 def is_foldable_row_leaf(row: str) -> bool:
     desc = _get_descriptor(row)
-    return desc is not None and desc.node is None
+    return desc is not None and desc.button is None
 
 
 def is_lazy_foldable(row: str) -> bool:
@@ -42,7 +43,11 @@ def is_lazy_foldable(row: str) -> bool:
 
 def is_foldable_row_expanded(row: str) -> bool:
     desc = _get_descriptor(row)
-    return desc is not None and desc.node is not None and dpg.get_value(desc.node)
+    return (
+        desc is not None
+        and desc.button is not None
+        and dpg.get_item_label(desc.button) == "-"
+    )
 
 
 def get_row_level(row: str, default: int = 0) -> int:
@@ -60,8 +65,8 @@ def is_row_index_visible(table, row_level: int, row_idx: int = -1) -> bool:
         if not desc:
             return True
 
-        if desc.node is not None and desc.level < row_level:
-            return dpg.get_value(desc.node)
+        if desc.level < row_level:
+            return is_foldable_row_expanded(parent)
 
     return True
 
@@ -87,7 +92,7 @@ def get_foldable_child_rows(table: str, row: int | str) -> Generator[str, None, 
     row_idx = rows.index(row)
 
     if row_idx >= 0:
-        rows = rows[row_idx + 1 :]
+        rows = rows[row_idx + 1:]
 
     for child_row in rows:
         if not is_foldable_row(child_row):
@@ -158,13 +163,16 @@ def apply_row_indent(
             if until != 0 and child_row == until:
                 break
 
-            child_row_content = dpg.get_item_children(child_row, slot=1)
-            if child_row_content:
-                dpg.set_item_indent(child_row_content[0], indent_level * INDENT_STEP)
-
             desc = _get_descriptor(child_row)
             if desc:
-                desc.level += indent_level
+                child_level = desc.level + indent_level
+                desc.level = child_level
+            else:
+                child_level = indent_level
+
+            child_row_content = dpg.get_item_children(child_row, slot=1)
+            if child_row_content:
+                dpg.set_item_indent(child_row_content[0], child_level * INDENT_STEP)
 
 
 def set_foldable_row_status(row: str, expanded: bool) -> None:
@@ -179,11 +187,11 @@ def set_foldable_row_status(row: str, expanded: bool) -> None:
         return
 
     if desc.is_lazy:
-        dpg.set_value(desc.node, expanded)
+        dpg.set_item_label(desc.button, "-" if expanded else "+")
         _on_lazy_node_clicked(row, expanded, desc)
     else:
-        dpg.set_value(desc.selectable, not expanded)
-        _on_row_clicked(desc.selectable, expanded, desc)
+        dpg.set_item_label(desc.button, "-" if not expanded else "+")
+        _on_row_clicked(desc.button, expanded, desc)
 
 
 @contextmanager
@@ -194,7 +202,8 @@ def table_tree_node(
     folded: bool = True,
     tag: str = 0,
     before: str = 0,
-    callback: Callable[[str, bool, RowDescriptor], None] = None,
+    on_click_callback: Callable[[str, bool, Any], None] = None,
+    on_fold_callback: Callable[[str, bool, RowDescriptor], None] = None,
     user_data: Any = None,
 ) -> Generator[str, None, None]:
     if not table:
@@ -204,7 +213,7 @@ def table_tree_node(
         tag = dpg.generate_uuid()
 
     cur_level = dpg.get_item_user_data(table) or 0
-    tree_node = f"{tag}_foldable_row_node"
+    button = f"{tag}_foldable_row_button"
     selectable = f"{tag}_foldable_row_selectable"
     show = is_row_index_visible(table, cur_level)
 
@@ -212,9 +221,10 @@ def table_tree_node(
         level=cur_level,
         row=tag,
         table=table,
-        node=tree_node,
+        button=button,
         selectable=selectable,
-        callback=callback,
+        on_fold_cb=on_fold_callback,
+        on_click_cb=on_click_callback,
         user_data=user_data,
     )
 
@@ -225,23 +235,24 @@ def table_tree_node(
         user_data=descriptor,
         show=show,
     ):
-        with dpg.group(horizontal=True, horizontal_spacing=0):
-            dpg.add_selectable(
-                span_columns=True,
+        with dpg.group(horizontal=True, indent=cur_level * INDENT_STEP):
+            dpg.add_button(
+                label="+" if folded else "-",
+                small=True,
                 callback=_on_row_clicked,
                 user_data=descriptor,
-                tag=selectable,
+                tag=button,
             )
-            dpg.add_tree_node(
-                tag=tree_node,
+            dpg.add_selectable(
                 label=label,
-                indent=cur_level * INDENT_STEP,
-                default_open=not folded,
+                callback=on_click_callback,
+                tag=selectable,
+                user_data=user_data,
             )
 
     try:
         dpg.set_item_user_data(table, cur_level + 1)
-        yield tree_node
+        yield tag
     finally:
         dpg.set_item_user_data(table, cur_level)
 
@@ -281,8 +292,9 @@ def table_tree_leaf(
 
 def add_lazy_table_tree_node(
     label: str,
-    content_callback: Callable,
+    content_callback: Callable[[str, str, Any], None],
     *,
+    on_click_callback: Callable[[str, bool, Any], None] = None,
     table: str = None,
     tag: str = 0,
     before: str = 0,
@@ -295,20 +307,18 @@ def add_lazy_table_tree_node(
         tag = dpg.generate_uuid()
 
     cur_level = dpg.get_item_user_data(table) or 0
-    tree_node = f"{tag}_foldable_row_node"
+    button = f"{tag}_foldable_row_button"
     selectable = f"{tag}_foldable_row_selectable"
     show = is_row_index_visible(table, cur_level)
-
-    print("###", user_data, cur_level)
 
     descriptor = RowDescriptor(
         level=cur_level,
         row=tag,
         table=table,
-        node=tree_node,
+        button=button,
         selectable=selectable,
         is_lazy=True,
-        callback=content_callback,
+        on_fold_cb=content_callback,
         user_data=user_data,
     )
 
@@ -319,45 +329,39 @@ def add_lazy_table_tree_node(
         user_data=descriptor,
         show=show,
     ):
-        with dpg.group(horizontal=True, horizontal_spacing=0):
-            dpg.add_selectable(
-                span_columns=True,
+        with dpg.group(horizontal=True, indent=cur_level * INDENT_STEP):
+            dpg.add_button(
+                label="+",
+                small=True,
                 callback=_on_lazy_node_clicked,
                 user_data=descriptor,
-                tag=selectable,
+                tag=button,
             )
-            dpg.add_tree_node(
-                tag=tree_node,
+            dpg.add_selectable(
                 label=label,
-                indent=cur_level * INDENT_STEP,
-                default_open=False,
+                callback=on_click_callback,
+                tag=selectable,
+                user_data=user_data,
             )
 
-    return tree_node
+    return selectable
 
 
 def _on_row_clicked(sender: str, value: Any, desc: RowDescriptor):
     # Make sure it happens quickly and without flickering
     with dpg.mutex():
-        dpg.set_value(sender, False)
-
         row = desc.row
         table = desc.table
-        is_leaf = desc.node is None
-        is_expanded = not dpg.get_value(desc.node) if not is_leaf else False
+        is_leaf = desc.button is None
+        is_expanded = not is_foldable_row_expanded(row)
 
         # Toggle the node's "expanded" status
         if not is_leaf:
-            dpg.set_value(desc.node, is_expanded)
-
-        # Handle lazy nodes: they manage their own children
-        if desc.is_lazy:
-            _on_lazy_node_clicked(row, is_expanded, desc)
-            return
+            dpg.set_item_label(desc.button, "-" if is_expanded else "+")
 
         # Call user callback for regular nodes
-        if desc.callback:
-            desc.callback(row, is_leaf or is_expanded, desc.user_data)
+        if desc.on_fold_cb:
+            desc.on_fold_cb(row, is_leaf or is_expanded, desc.user_data)
 
         if is_leaf:
             return
@@ -368,28 +372,38 @@ def _on_row_clicked(sender: str, value: Any, desc: RowDescriptor):
         for child_row in get_foldable_child_rows(table, row):
             child_desc = _get_descriptor(child_row)
             if not child_desc:
+                # Not a foldable row, stop here
                 break
 
             if child_desc.level <= desc.level:
+                # This sibling is on the same or higher level, so no more children
                 break
 
             if child_desc.level > hide_level:
+                # Child is too far away, hide it
                 dpg.hide_item(child_row)
             else:
+                # Child is close to one of its siblings, show it
                 dpg.show_item(child_row)
-                if child_desc.node is not None:
-                    hide_level = 10000 if dpg.get_value(child_desc.node) else child_desc.level
+                hide_level = (
+                    10000
+                    if is_foldable_row_expanded(child_row)
+                    else child_desc.level
+                )
 
 
-def _on_lazy_node_clicked(sender: str, expanded: bool, desc: RowDescriptor):
+def _on_lazy_node_clicked(sender: str, app_data: Any, desc: RowDescriptor):
     row = desc.row
     table = desc.table
     anchor = get_next_foldable_row_sibling(table, row)
     indent_level = desc.level + 1
+    folded = not is_foldable_row_expanded(row)
 
-    if expanded:
+    dpg.set_item_label(desc.button, "-" if folded else "+")
+
+    if folded:
         with apply_row_indent(table, indent_level, row, until=anchor):
-            desc.callback(sender, anchor, desc.user_data)
+            desc.on_fold_cb(sender, anchor, desc.user_data)
     else:
         child_rows = list(get_foldable_child_rows(table, row))
 
