@@ -195,12 +195,6 @@ class PyBnkGui:
             tag=f"{tag}_context_menu",
         ):
             dpg.add_menu_item(
-                label="Add child",
-                callback=self.node_add_child,
-                tag=f"{tag}_context_add_child",
-            )
-            dpg.add_separator()
-            dpg.add_menu_item(
                 label="Cut",
                 callback=self.node_cut,
                 tag=f"{tag}_context_cut",
@@ -209,6 +203,12 @@ class PyBnkGui:
                 label="Copy",
                 callback=self.node_copy,
                 tag=f"{tag}_context_copy",
+            )
+            dpg.add_separator()
+            dpg.add_menu_item(
+                label="New child",
+                callback=self.node_new_child,
+                tag=f"{tag}_context_new_child",
             )
             dpg.add_menu_item(
                 label="Paste child",
@@ -399,11 +399,11 @@ class PyBnkGui:
         item, node = user_data
         self._on_node_selected(item, app_data, node)
 
-        if "children" in node:
-            dpg.show_item(f"{self.tag}_context_add_child")
+        if "children" in node: # TODO
+            dpg.show_item(f"{self.tag}_context_new_child")
             dpg.show_item(f"{self.tag}_context_paste_child")
         else:
-            dpg.hide_item(f"{self.tag}_context_add_child")
+            dpg.hide_item(f"{self.tag}_context_new_child")
             dpg.hide_item(f"{self.tag}_context_paste_child")
 
         dpg.set_item_pos(f"{self.tag}_context_menu", dpg.get_mouse_pos())
@@ -500,7 +500,7 @@ class PyBnkGui:
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
 
-    def node_add_child(self) -> None:
+    def node_new_child(self) -> None:
         tag = f"{self.tag}_add_child_to_{self.selected_node.id}"
         if dpg.does_item_exist(tag):
             dpg.show_item(tag)

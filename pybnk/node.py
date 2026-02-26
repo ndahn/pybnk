@@ -199,15 +199,11 @@ class Node:
     def __hash__(self):
         return self.id
 
-    def __contains__(self, path: Any) -> bool:
-        if not isinstance(path, str):
+    def __contains__(self, item: Any) -> bool:
+        if not isinstance(item, str):
             return False
 
-        for p in self.paths():
-            if p == path:
-                return True
-
-        return False
+        return (self.get(item, None) is not None)
 
     def __getitem__(self, path: str) -> Any:
         if not path:
