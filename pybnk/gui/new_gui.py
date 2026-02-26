@@ -50,6 +50,7 @@ class PyBnkGui:
 
         self._setup_menu()
         self._setup_content()
+        self._setup_context_menus()
 
     def _setup_menu(self) -> None:
         with dpg.menu_bar():
@@ -80,15 +81,15 @@ class PyBnkGui:
             with dpg.menu(label="Create"):
                 dpg.add_menu_item(
                     label="Simple Sound",
-                    callback=None, # TODO
+                    callback=None,  # TODO
                 )
                 dpg.add_menu_item(
                     label="Boss Track",
-                    callback=None, # TODO
+                    callback=None,  # TODO
                 )
                 dpg.add_menu_item(
                     label="Ambience Track",
-                    callback=None, # TODO
+                    callback=None,  # TODO
                 )
 
             with dpg.menu(label="Globals"):
@@ -100,7 +101,8 @@ class PyBnkGui:
                         label="About", callback=lambda: dpg.show_tool(dpg.mvTool_About)
                     )
                     dpg.add_menu_item(
-                        label="Metrics", callback=lambda: dpg.show_tool(dpg.mvTool_Metrics)
+                        label="Metrics",
+                        callback=lambda: dpg.show_tool(dpg.mvTool_Metrics),
                     )
                     dpg.add_menu_item(
                         label="Documentation",
@@ -175,12 +177,49 @@ class PyBnkGui:
                 with dpg.group(horizontal=True):
                     dpg.add_button(
                         label="Apply",
-                        callback=self.apply_json,
+                        callback=self.node_apply_json,
                     )
                     dpg.add_button(
                         label="Reset",
-                        callback=self.reset_json,
+                        callback=self.node_reset_json,
                     )
+
+    def _setup_context_menus(self) -> None:
+        tag = self.tag
+
+        with dpg.window(
+            popup=True,
+            show=False,
+            min_size=(50, 20),
+            tag=f"{tag}_context_menu",
+        ):
+            dpg.add_menu_item(
+                label="Add child",
+                callback=self.node_add_child,
+                tag=f"{tag}_context_add_child",
+            )
+            dpg.add_separator()
+            dpg.add_menu_item(
+                label="Cut",
+                callback=self.node_cut,
+                tag=f"{tag}_context_cut",
+            )
+            dpg.add_menu_item(
+                label="Copy",
+                callback=self.node_copy,
+                tag=f"{tag}_context_copy",
+            )
+            dpg.add_menu_item(
+                label="Paste",
+                callback=self.node_paste,
+                tag=f"{tag}_context_paste",
+            )
+            dpg.add_separator()
+            dpg.add_menu_item(
+                label="Delete",
+                callback=self.node_delete,
+                tag=f"{tag}_context_delete",
+            )
 
     def _set_component_highlight(self, widget: str, highlight: bool) -> None:
         if highlight:
@@ -235,13 +274,19 @@ class PyBnkGui:
         self.bnk = bnk
         tag = self.tag
 
-        def node_selected_helper(sender: str, app_data: Any, node: Node) -> None:
-            # Deselect previous selectable
-            if self.selected_root and dpg.does_item_exist(self.selected_root):
-                dpg.set_value(self.selected_root, False)
-            
-            self.selected_root = sender
-            self.on_node_selected(node)
+        def register_context_menu(tag: str, node: Node) -> None:
+            registry = f"{tag}_handlers"
+
+            if not dpg.does_item_exist(registry):
+                dpg.add_item_handler_registry(tag=registry)
+
+            dpg.add_item_clicked_handler(
+                dpg.mvMouseButton_Right,
+                callback=self.open_context_menu,
+                user_data=(tag, node),
+                parent=registry,
+            )
+            dpg.bind_item_handler_registry(tag, registry)
 
         def lazy_load_action_structure(
             sender: str, anchor: str, action: Action
@@ -259,13 +304,14 @@ class PyBnkGui:
                     with table_tree_leaf(
                         table=f"{tag}_events_table",
                         before=anchor,
-                    ):
+                    ) as row:
+                        register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
-                            callback=node_selected_helper, # TODO navigate to other instance?
+                            callback=self.on_node_selected,  # TODO navigate to other instance?
                             user_data=nid,
                         )
-                    
+
                     return
 
                 label = f"{node.type} ({node.id})"
@@ -274,12 +320,13 @@ class PyBnkGui:
                 if children:
                     with table_tree_node(
                         label,
-                        on_click_callback=node_selected_helper,
+                        on_click_callback=self.on_node_selected,
                         table=f"{tag}_events_table",
                         tag=sub_tag,
                         before=anchor,
                         user_data=nid,
-                    ):
+                    ) as row:
+                        register_context_menu(row.selectable, node)
                         for child_id in children:
                             delve(child_id)
                 else:
@@ -287,10 +334,11 @@ class PyBnkGui:
                         table=f"{tag}_events_table",
                         tag=sub_tag,
                         before=anchor,
-                    ):
+                    ) as row:
+                        register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
-                            callback=node_selected_helper,
+                            callback=self.on_node_selected,
                             tag=f"{tag}_node_{node.id}",
                             user_data=nid,
                         )
@@ -320,55 +368,52 @@ class PyBnkGui:
 
             with table_tree_node(
                 f"{name} ({event.id})",
-                on_click_callback=node_selected_helper,
+                on_click_callback=self.on_node_selected,
                 table=f"{tag}_events_table",
                 tag=f"{tag}_event_{event.id}",
                 user_data=event,
-            ):
+            ) as root_row:
+                register_context_menu(root_row.selectable, event)
                 for aid in event.actions:
                     # TODO Make actions the top level items and add a list of events associated with them?
                     action = Action(bnk[aid].dict)
-                    add_lazy_table_tree_node(
+                    action_row = add_lazy_table_tree_node(
                         f"{action.action_type.name} ({aid})",
                         lazy_load_action_structure,
-                        on_click_callback=node_selected_helper,
+                        on_click_callback=self.on_node_selected,
                         table=f"{tag}_events_table",
                         tag=f"{tag}_action_{aid}",
                         user_data=action,
                     )
+                    register_context_menu(action_row.selectable, action)
 
             if len(self.events) >= self.max_events:
                 break
 
         logger.info(f"Loaded {len(self.events)} events")
 
-    def regenerate(self) -> None:
-        if self.selected_node:
-            self.on_node_selected(self.selected_node)
+    def open_context_menu(
+        self, sender: str, app_data: Any, user_data: tuple[str, Node]
+    ) -> None:
+        item, node = user_data
+        self.on_node_selected(item, app_data, node)
 
-    def apply_json(self) -> None:
-        if not self.selected_node:
-            return
+        if "children" in node:
+            dpg.show_item(f"{self.tag}_context_add_child")
+        else:
+            dpg.hide_item(f"{self.tag}_context_add_child")
 
-        data_str = dpg.get_value(f"{self.tag}_json")
-        try:
-            data = json.loads(data_str)
-        except json.JSONDecodeError as e:
-            logger.error("Failed to parse json", exc_info=e)
-            # TODO show error to user
-            return
+        dpg.set_item_pos(f"{self.tag}_context_menu", dpg.get_mouse_pos())
+        dpg.show_item(f"{self.tag}_context_menu")
 
-        self.selected_node.update(data)
-        self.regenerate()
+    def on_node_selected(self, sender: str, app_data: Any, node: int | Node) -> None:
+        # Deselect previous selectable
+        if self.selected_root and dpg.does_item_exist(self.selected_root):
+            dpg.set_value(self.selected_root, False)
 
-    def reset_json(self) -> None:
-        value = ""
-        if self.selected_node:
-            value = self.selected_node.json()
-        dpg.set_value(f"{self.tag}_json", value)
-        dpg.bind_item_theme(f"{self.tag}_json", themes.item_default)
+        self.selected_root = sender
+        dpg.set_value(sender, True)
 
-    def on_node_selected(self, node: int | Node) -> None:
         if isinstance(node, int):
             node: Node = self.bnk[node]
 
@@ -396,7 +441,7 @@ class PyBnkGui:
         with dpg.group(parent=f"{self.tag}_attributes"):
             dpg.add_text(node.type)
             dpg.add_input_text(
-                label="Name", 
+                label="Name",
                 default_value=node.lookup_name("<?>"),
                 callback=update_name_and_id,
             )
@@ -423,14 +468,14 @@ class PyBnkGui:
                     prop.fset(node, new_value)
 
                 widget = create_widget(
-                    type(value), 
+                    type(value),
                     name,
                     set_property,
                     value,
                     readonly=readonly,
                     user_data=prop,
                 )
-                
+
                 if widget and doc:
                     with dpg.tooltip(dpg.last_item()):
                         dpg.add_text(doc.short_description)
@@ -438,6 +483,10 @@ class PyBnkGui:
             dpg.add_child_window(height=-30, border=False)
             dpg.add_button(label="Reset")
 
+    def regenerate(self) -> None:
+        if self.selected_node:
+            self.on_node_selected(self.selected_node)
+    
     def clear(self) -> None:
         self.bnk = None
         self.events.clear()
@@ -447,6 +496,43 @@ class PyBnkGui:
         dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
+
+    def node_add_child(sender: str, app_data: Any, user_data: Any) -> None:
+        pass
+    
+    def node_cut(sender: str, app_data: Any, user_data: Any) -> None:
+        pass
+    
+    def node_copy(sender: str, app_data: Any, user_data: Any) -> None:
+        pass
+    
+    def node_paste(sender: str, app_data: Any, user_data: Any) -> None:
+        pass
+    
+    def node_delete(sender: str, app_data: Any, user_data: Any) -> None:
+        pass
+    
+    def node_apply_json(self) -> None:
+        if not self.selected_node:
+            return
+
+        data_str = dpg.get_value(f"{self.tag}_json")
+        try:
+            data = json.loads(data_str)
+        except json.JSONDecodeError as e:
+            logger.error("Failed to parse json", exc_info=e)
+            # TODO show error to user
+            return
+
+        self.selected_node.update(data)
+        self.regenerate()
+
+    def node_reset_json(self) -> None:
+        value = ""
+        if self.selected_node:
+            value = self.selected_node.json()
+        dpg.set_value(f"{self.tag}_json", value)
+        dpg.bind_item_theme(f"{self.tag}_json", themes.item_default)
 
     def _open_create_node_dialog(self) -> None:
         tag = f"{self.tag}_create_node_dialog"

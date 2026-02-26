@@ -205,7 +205,7 @@ def table_tree_node(
     on_click_callback: Callable[[str, bool, Any], None] = None,
     on_fold_callback: Callable[[str, bool, RowDescriptor], None] = None,
     user_data: Any = None,
-) -> Generator[str, None, None]:
+) -> Generator[RowDescriptor, None, None]:
     if not table:
         table = dpg.top_container_stack()
 
@@ -252,7 +252,7 @@ def table_tree_node(
 
     try:
         dpg.set_item_user_data(table, cur_level + 1)
-        yield tag
+        yield descriptor
     finally:
         dpg.set_item_user_data(table, cur_level)
 
@@ -262,7 +262,7 @@ def table_tree_leaf(
     table: str = None,
     tag: str = 0,
     before: str = 0,
-) -> Generator[str, None, None]:
+) -> Generator[RowDescriptor, None, None]:
     if not table:
         table = dpg.top_container_stack()
 
@@ -283,7 +283,7 @@ def table_tree_leaf(
             user_data=descriptor,
             show=show,
         ) as row:
-            yield row
+            yield descriptor
     finally:
         children = dpg.get_item_children(row, slot=1)
         if children:
@@ -299,7 +299,7 @@ def add_lazy_table_tree_node(
     tag: str = 0,
     before: str = 0,
     user_data: Any,
-) -> str:
+) -> RowDescriptor:
     if not table:
         table = dpg.top_container_stack()
 
@@ -344,7 +344,7 @@ def add_lazy_table_tree_node(
                 user_data=user_data,
             )
 
-    return selectable
+    return descriptor
 
 
 def _on_row_clicked(sender: str, value: Any, desc: RowDescriptor):
