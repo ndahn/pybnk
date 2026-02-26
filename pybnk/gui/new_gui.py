@@ -1,6 +1,7 @@
 from typing import Any
 from importlib import resources
 import json
+import pyperclip
 from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
@@ -210,9 +211,9 @@ class PyBnkGui:
                 tag=f"{tag}_context_copy",
             )
             dpg.add_menu_item(
-                label="Paste",
-                callback=self.node_paste,
-                tag=f"{tag}_context_paste",
+                label="Paste child",
+                callback=self.node_paste_child,
+                tag=f"{tag}_context_paste_child",
             )
             dpg.add_separator()
             dpg.add_menu_item(
@@ -282,7 +283,7 @@ class PyBnkGui:
 
             dpg.add_item_clicked_handler(
                 dpg.mvMouseButton_Right,
-                callback=self.open_context_menu,
+                callback=self._open_context_menu,
                 user_data=(tag, node),
                 parent=registry,
             )
@@ -308,7 +309,7 @@ class PyBnkGui:
                         register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
-                            callback=self.on_node_selected,  # TODO navigate to other instance?
+                            callback=self._on_node_selected,  # TODO navigate to other instance?
                             user_data=nid,
                         )
 
@@ -320,7 +321,7 @@ class PyBnkGui:
                 if children:
                     with table_tree_node(
                         label,
-                        on_click_callback=self.on_node_selected,
+                        on_click_callback=self._on_node_selected,
                         table=f"{tag}_events_table",
                         tag=sub_tag,
                         before=anchor,
@@ -338,7 +339,7 @@ class PyBnkGui:
                         register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
-                            callback=self.on_node_selected,
+                            callback=self._on_node_selected,
                             tag=f"{tag}_node_{node.id}",
                             user_data=nid,
                         )
@@ -368,7 +369,7 @@ class PyBnkGui:
 
             with table_tree_node(
                 f"{name} ({event.id})",
-                on_click_callback=self.on_node_selected,
+                on_click_callback=self._on_node_selected,
                 table=f"{tag}_events_table",
                 tag=f"{tag}_event_{event.id}",
                 user_data=event,
@@ -380,7 +381,7 @@ class PyBnkGui:
                     action_row = add_lazy_table_tree_node(
                         f"{action.action_type.name} ({aid})",
                         lazy_load_action_structure,
-                        on_click_callback=self.on_node_selected,
+                        on_click_callback=self._on_node_selected,
                         table=f"{tag}_events_table",
                         tag=f"{tag}_action_{aid}",
                         user_data=action,
@@ -392,21 +393,23 @@ class PyBnkGui:
 
         logger.info(f"Loaded {len(self.events)} events")
 
-    def open_context_menu(
+    def _open_context_menu(
         self, sender: str, app_data: Any, user_data: tuple[str, Node]
     ) -> None:
         item, node = user_data
-        self.on_node_selected(item, app_data, node)
+        self._on_node_selected(item, app_data, node)
 
         if "children" in node:
             dpg.show_item(f"{self.tag}_context_add_child")
+            dpg.show_item(f"{self.tag}_context_paste_child")
         else:
             dpg.hide_item(f"{self.tag}_context_add_child")
+            dpg.hide_item(f"{self.tag}_context_paste_child")
 
         dpg.set_item_pos(f"{self.tag}_context_menu", dpg.get_mouse_pos())
         dpg.show_item(f"{self.tag}_context_menu")
 
-    def on_node_selected(self, sender: str, app_data: Any, node: int | Node) -> None:
+    def _on_node_selected(self, sender: str, app_data: Any, node: int | Node) -> None:
         # Deselect previous selectable
         if self.selected_root and dpg.does_item_exist(self.selected_root):
             dpg.set_value(self.selected_root, False)
@@ -485,7 +488,7 @@ class PyBnkGui:
 
     def regenerate(self) -> None:
         if self.selected_node:
-            self.on_node_selected(self.selected_node)
+            self._on_node_selected(self.selected_node)
     
     def clear(self) -> None:
         self.bnk = None
@@ -497,19 +500,48 @@ class PyBnkGui:
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
 
-    def node_add_child(sender: str, app_data: Any, user_data: Any) -> None:
-        pass
+    def node_add_child(self) -> None:
+        tag = f"{self.tag}_add_child_to_{self.selected_node.id}"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_node_created(node: WwiseNode) -> None:
+            # TODO add to soundbank
+            self.selected_node.add_child(node)
+            logger.info(f"Attached new node {node} to {self.selected_node}")
+
+        create_node_dialog(self.bnk, on_node_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
     
-    def node_cut(sender: str, app_data: Any, user_data: Any) -> None:
-        pass
+    def node_cut(self) -> None:
+        self.node_copy()
+        self.node_delete()
     
-    def node_copy(sender: str, app_data: Any, user_data: Any) -> None:
-        pass
+    def node_copy(self) -> None:
+        data = self.selected_node.json()
+        pyperclip.copy(data)
+        logger.info(f"Copied node {self.selected_node}")
     
-    def node_paste(sender: str, app_data: Any, user_data: Any) -> None:
-        pass
+    def node_paste_child(self) -> None:
+        try:
+            data = json.loads(pyperclip.paste())
+            node = Node.wrap(data)
+            if not isinstance(node, WwiseNode):
+                raise ValueError(f"Node {node} cannot be parented")
+            
+            self.selected_node.add_child(node)
+            # TODO add to soundbank
+        except (ValueError, json.JSONDecodeError) as e:
+            logger.error(f"Failed pasting node: {e}")
     
-    def node_delete(sender: str, app_data: Any, user_data: Any) -> None:
+    def node_delete(self) -> None:
+        # TODO find references to node in soundbank
+        # TODO show confirmation dialog if there is more than one reference to it
+        # TODO remove node from entire soundbank
         pass
     
     def node_apply_json(self) -> None:
@@ -542,7 +574,7 @@ class PyBnkGui:
             return
 
         def on_node_created(node: WwiseNode) -> None:
-            print(node)
+            print(node)  # TODO add node to soundbank
             pass
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
