@@ -399,7 +399,7 @@ class PyBnkGui:
         item, node = user_data
         self._on_node_selected(item, app_data, node)
 
-        if "children" in node: # TODO
+        if "children" in node:
             dpg.show_item(f"{self.tag}_context_new_child")
             dpg.show_item(f"{self.tag}_context_paste_child")
         else:
@@ -520,6 +520,7 @@ class PyBnkGui:
     def node_cut(self) -> None:
         self.node_copy()
         self.node_delete()
+        self.regenerate()
     
     def node_copy(self) -> None:
         data = self.selected_node.json()
@@ -527,23 +528,21 @@ class PyBnkGui:
         logger.info(f"Copied node {self.selected_node}")
     
     def node_paste_child(self) -> None:
-        try:
-            data = json.loads(pyperclip.paste())
-            node = Node.wrap(data)
-            if not isinstance(node, WwiseNode):
-                raise ValueError(f"Node {node} cannot be parented")
-            
-            self.bnk.add_nodes(node)
-            self.selected_node.add_child(node)
-        except (ValueError, json.JSONDecodeError) as e:
-            logger.error(f"Failed pasting node: {e}")
+        data = json.loads(pyperclip.paste())
+        node = Node.wrap(data)
+        if not isinstance(node, WwiseNode):
+            raise ValueError(f"Node {node} cannot be parented")
+        
+        self.bnk.add_nodes(node)
+        self.selected_node.add_child(node)
+        self.regenerate()
     
     def node_delete(self) -> None:
-        # TODO find references to node in soundbank
-        # TODO show confirmation dialog if there is more than one reference to it
-        # TODO remove node from entire soundbank
-        # TODO delete abandoned nodes
-        pass
+        if not self.selected_node:
+            return
+
+        self.bnk.delete_nodes(self.selected_node)
+        self.regenerate()
     
     def node_apply_json(self) -> None:
         if not self.selected_node:
@@ -576,8 +575,11 @@ class PyBnkGui:
             return
 
         def on_node_created(node: WwiseNode) -> None:
-            print(node)  # TODO add node to soundbank or just copy to clipboard?
-            pass
+            data = node.json()
+            pyperclip.copy(data)
+            logger.info(f"Copied new node {node} to clipboard")
+            # TODO notify user
+            # TODO add to soundbank?
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
 

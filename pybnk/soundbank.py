@@ -194,8 +194,13 @@ class Soundbank:
 
         self._regenerate_index_table()
 
-    def delete_nodes(self, *nodes: Node) -> None:
-        abandoned = set(n.id for n in nodes)
+    def delete_nodes(self, *nodes: int | Node) -> None:
+        abandoned = []
+        for n in nodes:
+            if not isinstance(n, Node):
+                n = self[n]
+            abandoned.append(n.id)
+
         for nid in abandoned:
             # Don't use `del self[nid]` as it will regenerate the index table on every delete
             idx = self._id2index[nid]
