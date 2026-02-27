@@ -11,6 +11,7 @@ import networkx as nx
 from pybnk.hash import calc_hash
 from pybnk.util import logger
 from pybnk.node import Node
+from pybnk.enums import reference_fields
 
 
 class Soundbank:
@@ -136,6 +137,9 @@ class Soundbank:
         return bnk
 
     def save(self, path: Path = None, backup: bool = True) -> None:
+        # Solve the dependency graph
+        self.hirc = self.solve()
+        self._regenerate_index_table()
         self.update_json()
 
         if not path:
@@ -171,6 +175,7 @@ class Soundbank:
 
             if "children" in node:
                 children: list = node["children/items"]
+                # Nodes must appear before any nodes referencing them
                 for child in children:
                     min_idx = max(min_idx, self._id2index[child])
 
@@ -179,7 +184,10 @@ class Soundbank:
 
         return min_idx
 
-    def add_nodes(self, nodes: list[Node]) -> int:
+    def add_nodes(self, nodes: Node | list[Node]) -> int:
+        if isinstance(nodes, Node):
+            nodes = [nodes]
+        
         idx = self.get_insertion_index(nodes)
 
         # NOTE not resolving the correct order of nodes, up to the caller for now
@@ -228,7 +236,75 @@ class Soundbank:
         self._regenerate_index_table()
         return idx
 
-    def get_hierarchy(self, entrypoint: int | Node) -> nx.DiGraph:
+    def solve(self) -> list[dict]:
+        g = self.get_full_tree()
+        new_hirc = []
+
+        if not nx.is_directed_acyclic_graph():
+            logger.warning("HIRC is not acyclic")
+        
+        # These will be appended at the very end
+        events: list[Node] = []
+        actions: list[Node] = []
+
+        # Reverse g so we get the children before their parents. This means that any objects
+        # with no references to other nodes (like Attenuations) will come at the very beginning.
+        # Since references must appear before the nodes referencing them this is exactly what
+        # we need.
+        for generation in nx.topological_generations(g.reverse()):
+            nodes: list[Node] = []
+
+            for nid in generation:
+                node = self[nid]
+                if node.type == "Event":
+                    events.append(node)
+                elif node.type == "Action":
+                    actions.append(node)
+                else:
+                    nodes.append(node)
+
+            # Sort by type first, then ID
+            nodes.sort(key=lambda n: f"{n.type} {n.id}")
+            new_hirc.extend(n.dict for n in nodes)
+
+        # Usually the actions follow the event referencing them, but this is much easier
+        events.sort(key=lambda n: n.id)
+        new_hirc.extend(n.dict for n in events)
+
+        actions.sort(key=lambda n: n.id)
+        new_hirc.extend(n.dict for n in actions)
+
+        return new_hirc
+
+    def get_references(self, node: int | Node) -> list[int]:
+        if isinstance(node, int):
+            node = self[node]
+
+        refs = []
+        for node_type, paths in reference_fields.items():
+            if node_type in ("*", node.type):
+                for p in paths:
+                    ref = node.get(p, None)
+                    if isinstance(ref, int) and ref > 0:
+                        refs.append(ref)
+
+        return refs
+
+    def get_full_tree(self) -> nx.DiGraph:
+        g = nx.DiGraph()
+
+        for node_dict in self.hirc:
+            node = Node(node_dict)
+            if node.id in g:
+                continue
+
+            g.add_node(node.id, type=node.type)
+            for ref in self.get_references(node):
+                g.add_edge(node.id, ref)
+
+        return g
+
+    def get_subtree(self, entrypoint: int | Node) -> nx.DiGraph:
         """Collects all descendant nodes from the specified entrypoint in a graph."""
         if isinstance(entrypoint, int):
             entrypoint = self[entrypoint]

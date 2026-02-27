@@ -293,7 +293,7 @@ class PyBnkGui:
             sender: str, anchor: str, action: Action
         ) -> None:
             entrypoint = bnk[action.target_id]
-            g = bnk.get_hierarchy(entrypoint)
+            g = bnk.get_subtree(entrypoint)
 
             def delve(nid: int) -> None:
                 node: Node = bnk[nid]
@@ -508,7 +508,7 @@ class PyBnkGui:
             return
 
         def on_node_created(node: WwiseNode) -> None:
-            # TODO add to soundbank
+            self.bnk.add_nodes(node)
             self.selected_node.add_child(node)
             logger.info(f"Attached new node {node} to {self.selected_node}")
 
@@ -533,8 +533,8 @@ class PyBnkGui:
             if not isinstance(node, WwiseNode):
                 raise ValueError(f"Node {node} cannot be parented")
             
+            self.bnk.add_nodes(node)
             self.selected_node.add_child(node)
-            # TODO add to soundbank
         except (ValueError, json.JSONDecodeError) as e:
             logger.error(f"Failed pasting node: {e}")
     
@@ -542,6 +542,7 @@ class PyBnkGui:
         # TODO find references to node in soundbank
         # TODO show confirmation dialog if there is more than one reference to it
         # TODO remove node from entire soundbank
+        # TODO delete abandoned nodes
         pass
     
     def node_apply_json(self) -> None:
@@ -553,7 +554,8 @@ class PyBnkGui:
             data = json.loads(data_str)
         except json.JSONDecodeError as e:
             logger.error("Failed to parse json", exc_info=e)
-            # TODO show error to user
+            # TODO show error to user, statusbar?
+            
             return
 
         self.selected_node.update(data)
@@ -574,7 +576,7 @@ class PyBnkGui:
             return
 
         def on_node_created(node: WwiseNode) -> None:
-            print(node)  # TODO add node to soundbank
+            print(node)  # TODO add node to soundbank or just copy to clipboard?
             pass
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)

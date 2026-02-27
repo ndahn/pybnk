@@ -125,8 +125,8 @@
             }
           },
           "children": {
-            "count": 1,
-            "items": [943663366]
+            "count": 0,
+            "items": []
           },
           "meter_info": {
             "grid_period": 1000.0,

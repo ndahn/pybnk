@@ -93,8 +93,8 @@
           }
         },
         "children": {
-          "count": 1,
-          "items": [518235052]
+          "count": 0,
+          "items": []
         },
         "meter_info": {
           "grid_period": 1000.0,
@@ -107,28 +107,9 @@
         "stinger_count": 0,
         "stingers": []
       },
-      "duration": 29000.0,
-      "marker_count": 3,
-      "markers": [
-        {
-          "id": 43573010,
-          "position": 0.0,
-          "string_length": 0,
-          "string": ""
-        },
-        {
-          "id": 3898567437,
-          "position": 27004.6818303407,
-          "string_length": 10,
-          "string": "LoopCheck"
-        },
-        {
-          "id": 1539036744,
-          "position": 28138.5416666667,
-          "string_length": 0,
-          "string": ""
-        }
-      ]
+      "duration": 0.0,
+      "marker_count": 0,
+      "markers": []
     }
   }
 }

@@ -7,7 +7,7 @@
   "body": {
     "Bus": {
       "initial_values": {
-        "override_bus_id": 3803692087,
+        "override_bus_id": 0,
         "device_share_set_id": 0,
         "bus_initial_params": {
           "prop_bundle": [
@@ -55,7 +55,7 @@
             "has_aux": true,
             "override_user_aux_sends": true,
             "unk4": 1,
-            "aux1": 1848941422,
+            "aux1": 0,
             "aux2": 0,
             "aux3": 0,
             "aux4": 0,
