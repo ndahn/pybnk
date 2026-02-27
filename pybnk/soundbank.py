@@ -72,7 +72,7 @@ class Soundbank:
         hirc: list[Node],
     ):
         self.bnk_dir = bnk_dir
-        self.json = json
+        self._json = json
         self.id = id
         self.hirc = hirc
 
@@ -109,20 +109,20 @@ class Soundbank:
 
         return wems
 
-    def update_json(self) -> None:
+    def _apply_hirc_to_json(self) -> None:
         """Update this soundbank's json with its current HIRC."""
-        sections = self.json["sections"]
+        sections = self._json["sections"]
         for sec in sections:
             if "HIRC" in sec["body"]:
                 sec["body"]["HIRC"]["objects"] = [n.dict for n in self.hirc]
                 break
 
     def copy(self, name: str, new_bnk_id: int = None) -> "Soundbank":
-        self.update_json()
+        self._apply_hirc_to_json()
         
         bnk = Soundbank(
             self.bnk_dir.parent / name,
-            copy.deepcopy(self.json),
+            copy.deepcopy(self._json),
             self.id,
             [n.copy() for n in self.hirc],
         )
@@ -138,9 +138,8 @@ class Soundbank:
 
     def save(self, path: Path = None, backup: bool = True) -> None:
         # Solve the dependency graph
-        self.hirc = self.solve()
-        self._regenerate_index_table()
-        self.update_json()
+        self.solve()
+        self._apply_hirc_to_json()
 
         if not path:
             path = self.bnk_dir
@@ -154,7 +153,7 @@ class Soundbank:
             shutil.copy(path, str(path) + ".bak")
 
         with path.open("w") as f:
-            json.dump(self.json, f, indent=2)
+            json.dump(self._json, f, indent=2)
 
     def new_id(self) -> int:
         while True:
@@ -184,59 +183,41 @@ class Soundbank:
 
         return min_idx
 
-    def add_nodes(self, nodes: Node | list[Node]) -> int:
-        if isinstance(nodes, Node):
-            nodes = [nodes]
-        
-        idx = self.get_insertion_index(nodes)
-
-        # NOTE not resolving the correct order of nodes, up to the caller for now
-        for i, node in enumerate(nodes):
-            if node.id in self._id2index:
-                raise ValueError(
-                    f"A node with ID {node.id} is already in the soundbank"
-                )
-
-            if node.id <= 0:
-                raise ValueError(f"Invalid ID {node.id}")
-
-            if node.parent <= 0:
-                raise ValueError(f"Invalid parent ID {node.parent}")
-
-            logger.info(f"Inserting new node {node} at {idx + i}")
-            self.hirc.insert(idx + i, node)
-
-        self._regenerate_index_table()
-        return idx
-
-    def add_event(self, event: Node, actions: Node | list[Node]) -> int:
-        if isinstance(actions, Node):
-            actions = [actions]
-
-        if event.id in self._id2index:
-            raise ValueError(f"Event {event} already exists")
-
-        for n in actions:
+    def add_nodes(self, *nodes: Node) -> None:
+        for n in nodes:
+            if n.id <= 0:
+                raise ValueError(f"Node {n} has invalid ID {n.id}")
             if n.id in self._id2index:
-                raise ValueError(
-                    f"A node with ID {n.id} is already in the soundbank"
-                )
-
-        # Events appear towards the end of the soundbank
-        first_event = self.query_one({"type": "Event"})
-        idx = self._id2index[first_event.id]
-
-        # TODO set event actions
-
-        logger.info(f"Inserting new event {event} with {len(actions)} actions at {idx}")
-        self.hirc.insert(idx, event)
-        for act in reversed(actions):
-            self.hirc.insert(idx, act)
+                raise ValueError(f"Soundbank already contains a node with ID {n.id}")
+            
+            self.hirc.append(n.dict)
 
         self._regenerate_index_table()
-        return idx
 
-    def solve(self) -> list[dict]:
+    def delete_nodes(self, *nodes: Node) -> None:
+        abandoned = set(n.id for n in nodes)
+        for nid in abandoned:
+            # Don't use `del self[nid]` as it will regenerate the index table on every delete
+            idx = self._id2index[nid]
+            del self.hirc[idx]
+
+        # Search for any nodes referencing the deleted nodes and clear those references
+        for node in self.hirc:
+            for path, ref in self.get_references(node):
+                if ref not in abandoned:
+                    continue
+
+                # Remove reference from an array
+                if path.endswith(":*"):
+                    parent_value: list[int] = node[path.rsplit("/", maxsplit=1)[0]]
+                    # Luckily the X_count fields don't matter to rewwise, otherwise we'd
+                    # have to update them here, too
+                    parent_value.remove(ref)
+                # Unset reference field
+                else:
+                    node[path] = 0
+
+    def solve(self) -> None:
         g = self.get_full_tree()
         new_hirc = []
 
@@ -274,9 +255,9 @@ class Soundbank:
         actions.sort(key=lambda n: n.id)
         new_hirc.extend(n.dict for n in actions)
 
-        return new_hirc
+        self._regenerate_index_table()
 
-    def get_references(self, node: int | Node) -> list[int]:
+    def get_references(self, node: int | Node) -> list[tuple[str, int]]:
         if isinstance(node, int):
             node = self[node]
 
@@ -286,7 +267,7 @@ class Soundbank:
                 for p in paths:
                     ref = node.get(p, None)
                     if isinstance(ref, int) and ref > 0:
-                        refs.append(ref)
+                        refs.append((p, ref))
 
         return refs
 
@@ -299,7 +280,7 @@ class Soundbank:
                 continue
 
             g.add_node(node.id, type=node.type)
-            for ref in self.get_references(node):
+            for _, ref in self.get_references(node):
                 g.add_edge(node.id, ref)
 
         return g
@@ -532,6 +513,20 @@ class Soundbank:
 
         idx = self._id2index[key]
         return self.hirc[idx]
+
+    def __delitem__(self, key: int | str | Node) -> None:
+        if isinstance(key, Node):
+            key = key.id
+        elif isinstance(key, str):
+            if key.startswith("#"):
+                key = int(key[1:])
+            else:
+                key = calc_hash(key)
+
+        idx = self._id2index.pop(key)
+        del self.hirc[idx]
+
+        self._regenerate_index_table()
 
     def __str__(self):
         return f"Soundbank (id={self.id}, bnk={self.name})"

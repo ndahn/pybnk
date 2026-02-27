@@ -107,8 +107,5 @@ def create_simple_sound(
     stop_action = Action.new_stop_action(bnk.new_id(), rsc.id)
     stop.add_action(stop_action)
 
-    bnk.add_nodes([rsc] + sounds)
-    bnk.add_event(play, play_action)
-    bnk.add_event(stop, stop_action)
-
+    bnk.add_nodes(rsc, *sounds, play, play_action, stop, stop_action)
     return ((play, stop), rsc, sounds)

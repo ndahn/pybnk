@@ -38,7 +38,7 @@ def copy_event(
             if action_bank_id == src_bnk.id:
                 params["bank_id"] = dst_bnk.id
 
-    dst_bnk.add_event(event, actions)
+    dst_bnk.add_nodes(event, *actions)
     return event
 
 
@@ -58,7 +58,7 @@ def copy_node_structure(
         if n_wems:
             wems.extend((nid, w) for w in n_wems)
     
-    dst_bnk.add_nodes(src_bnk[n].copy() for n in action_tree.nodes)
+    dst_bnk.add_nodes(*[src_bnk[n].copy() for n in action_tree.nodes])
 
     # Go upwards through the parents chain and see what needs to be transferred
     upchain = src_bnk.get_parent_chain(entrypoint)
@@ -87,7 +87,7 @@ def copy_node_structure(
         # will make the soundbank invalid
         up = src_bnk[up_id].copy()
         up["children/items"] = []
-        dst_bnk.add_nodes([up])
+        dst_bnk.add_nodes(up)
 
         up_child = up
 
@@ -197,10 +197,10 @@ def copy_structures_with_new_events(
 
     for entrypoint, wwise_dst in nodes.items():
         play_event, play_action = new_event(dst_bnk, f"Play_{wwise_dst}", entrypoint, "Play")
-        dst_bnk.add_event(play_event, play_action)
+        dst_bnk.add_nodes(play_event, play_action)
 
         stop_event, stop_action = new_event(dst_bnk, f"Stop_{wwise_dst}", entrypoint, "Stop")
-        dst_bnk.add_event(stop_event, stop_action)
+        dst_bnk.add_nodes(stop_event, stop_action)
 
         new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
         wems.extend(w for _, w in new_wems)

@@ -197,9 +197,6 @@ class Node:
         except KeyError:
             return False
 
-    def __hash__(self):
-        return self.id
-
     def __contains__(self, item: Any) -> bool:
         if not isinstance(item, str):
             return False
@@ -291,6 +288,9 @@ class Node:
             attr[parts[-1]] = val
         except KeyError as e:
             raise KeyError(f"Path '{path}' not found in node {self}") from e
+
+    def __hash__(self):
+        return self.id
 
     def __str__(self):
         return f"{self.type} ({self.id})"
