@@ -6,6 +6,7 @@ from collections import deque
 
 from pybnk.hash import calc_hash, lookup_table
 from pybnk.util import logger
+from pybnk.enums import reference_fields
 
 
 _undefined = object()
@@ -197,91 +198,138 @@ class Node:
         except KeyError:
             return False
 
+    def resolve_path(self, path: str) -> tuple[str, Any] | list[tuple[str, Any]]:
+        if not path:
+            raise ValueError("Empty path")
+
+        parts = path.split("/")
+
+        def bfs_search(
+            data: dict, target_key: str
+        ) -> Generator[tuple[list[str], dict], None, None]:
+            queue = deque([(data, [])])
+
+            while queue:
+                current, current_path = queue.popleft()
+
+                if isinstance(current, dict):
+                    if target_key in current:
+                        yield current_path, current
+
+                    for key, value in current.items():
+                        queue.append((value, current_path + [key]))
+
+                elif isinstance(current, list):
+                    for i, item in enumerate(current):
+                        queue.append((item, current_path + [str(i)]))
+
+        def delve(
+            obj: Any, key_index: int, resolved: list[str]
+        ) -> tuple[str, Any] | list[tuple[str, Any]]:
+            if key_index >= len(parts):
+                return ("/".join(resolved), obj)
+
+            key = parts[key_index]
+
+            if key == "*":
+                if not isinstance(obj, dict):
+                    raise KeyError(
+                        f"{path} resulted in '*' being applied on non-dict item"
+                    )
+
+                results = [
+                    delve(sub, key_index + 1, resolved + [k])
+                    for k, sub in obj.items()
+                    if sub
+                ]
+
+                if len(results) == 1:
+                    return results[0]
+
+                return results
+
+            elif key == "**":
+                if key_index >= len(parts):
+                    raise KeyError(f"'**' can not appear at the end ({path})")
+
+                if not isinstance(obj, dict):
+                    raise KeyError(
+                        f"{path} resulted in '**' being applied on non-dict item"
+                    )
+
+                next_key = parts[key_index + 1]
+                results = [
+                    delve(sub, key_index + 1, resolved + bfs_path)
+                    for bfs_path, sub in bfs_search(obj, next_key)
+                    if sub
+                ]
+
+                if len(results) == 1:
+                    return results[0]
+
+                return results
+
+            elif ":" in key:
+                key, idx = key.split(":")
+                obj = obj[key]
+
+                if not isinstance(obj, list):
+                    raise KeyError(
+                        f"{path} resulted in array access on a non-list item"
+                    )
+
+                if idx == "*":
+                    return [
+                        delve(item, key_index + 1, resolved + [f"{key}:{i}"])
+                        for i, item in enumerate(obj)
+                    ]
+                else:
+                    idx = int(idx)
+                    return delve(obj[idx], key_index + 1, resolved + [f"{key}:{idx}"])
+
+            else:
+                return delve(obj[key], key_index + 1, resolved + [key])
+
+        return delve(self.body, 0, [])
+
+    def get_references(self, include_unset: bool = False) -> list[tuple[str, int]]:
+        refs = []
+        for node_type, paths in reference_fields.items():
+            if node_type in ("*", self.type):
+                for path in paths:
+                    result = self.resolve_path(path)
+                    if isinstance(result, tuple):
+                        result = [result]
+
+                    for p, ref in result:
+                        if include_unset or (isinstance(ref, int) and ref > 0):
+                            refs.append((p, ref))
+
+        return refs
+
     def __contains__(self, item: Any) -> bool:
         if not isinstance(item, str):
             return False
 
-        return (self.get(item, None) is not None)
+        return self.get(item, None) is not None
 
     def __getitem__(self, path: str) -> Any | list[Any]:
         if not path:
             raise ValueError("Empty path")
 
         parts = path.split("/")
+        value = self.body
 
-        # Breadth first search to resolve ** wildcards
-        def bfs_search(data: dict, target_key: str) -> Generator[dict, None, None]:
-            queue = deque([data])
+        for key in parts:
+            value = value[key]
 
-            while queue:
-                current = queue.popleft()
-
-                if isinstance(current, dict):
-                    for key, value in current.items():
-                        if key == target_key:
-                            yield value
-                        queue.append(value)
-
-                elif isinstance(current, list):
-                    queue.extend(current)
-
-            return None
-
-        def delve(obj: Any, key_index: int) -> Any:
-            if key_index >= len(parts):
-                return obj
-            
-            key = parts[key_index]
-
-
-            # Simple wildcard, search all sub dicts of the current dict
-            if key == "*":
-                if not isinstance(obj, dict):
-                    raise KeyError(f"{path} resulted in '*' being applied on non-dict item")
-                
-                results = [delve(sub, key_index + 1) for sub in obj.values() if sub]
-                if len(results) == 1:
-                    return results[0]
-
-                return results
-            # Find matching keys at any depth
-            elif key == "**":
-                if key_index >= len(parts):
-                    raise KeyError(f"'**' can not appear at the end ({path})")
-
-                if not isinstance(obj, dict):
-                    raise KeyError(f"{path} resulted in '**' being applied on non-dict item")
-
-                next_key = parts[key_index + 1]
-                results = [delve(sub, key_index + 1) for sub in bfs_search(obj, next_key) if sub]
-                if len(results) == 1:
-                    return results[0]
-                
-                return results
-            # Search specific or all items in a list
-            elif ":" in key:
-                key, idx = key.split(":")
-                obj = obj[key]
-                if not isinstance(obj, list):
-                    raise KeyError(f"{path} resulted in array access on a non-list item")
-
-                if idx == "*":
-                    return [delve(item, key_index + 1) for item in obj]
-                else:
-                    idx = int(idx)
-                    return delve(obj[idx], key_index + 1)
-            # Just resolve the next path item on the current sub-dict
-            else:
-                return delve(obj[key], key_index + 1)
-
-        return delve(self.body, 0)
+        return value
 
     def __setitem__(self, path: str, val: Any) -> None:
         try:
             parts = path.split("/")
             attr = self.body
 
-            # Note: does not support wildcards like __getitem__
             for sub in parts[:-1]:
                 attr = attr[sub]
 

@@ -208,18 +208,18 @@ class Soundbank:
 
         # Search for any nodes referencing the deleted nodes and clear those references
         for node in self.hirc:
-            for path, ref in self.get_references(node):
+            for path, ref in node.get_references(node):
                 if ref not in abandoned:
                     continue
 
                 # Remove reference from an array
-                if path.endswith(":*"):
+                if ":" in path.rsplit("/", maxsplit=1)[-1]:
                     parent_value: list[int] = node[path.rsplit("/", maxsplit=1)[0]]
-                    # Luckily the X_count fields don't matter to rewwise, otherwise we'd
-                    # have to update them here, too
+                    # Luckily the X_count fields don't matter to rewwise,
+                    # otherwise we'd have to update them here, too
                     parent_value.remove(ref)
-                # Unset reference field
                 else:
+                    # Unset reference field
                     node[path] = 0
 
         self._regenerate_index_table()
@@ -228,12 +228,20 @@ class Soundbank:
         g = self.get_full_tree()
         indices = set()
 
+        forbidden_types = {
+            "ActorMixer",
+            "Attenuation",
+            "Bus",
+            "EffectCustom",
+            "Event",
+        }
+
         while True:
             # Collect non-event nodes with no references to them
             orphans = [
                 nid
                 for nid, tp in g.nodes.data("type")
-                if tp != "Event" and g.in_degree(nid) == 0
+                if tp not in forbidden_types and g.in_degree(nid) == 0
             ]
             if not orphans:
                 break
@@ -296,31 +304,15 @@ class Soundbank:
 
         self._regenerate_index_table()
 
-    def get_references(self, node: int | Node) -> list[tuple[str, int]]:
-        if isinstance(node, int):
-            node = self[node]
-
-        refs = []
-        for node_type, paths in reference_fields.items():
-            if node_type in ("*", node.type):
-                for p in paths:
-                    ref = node.get(p, None)
-                    if isinstance(ref, int) and ref > 0:
-                        refs.append((p, ref))
-
-        return refs
-
     def get_full_tree(self) -> nx.DiGraph:
         g = nx.DiGraph()
 
         for node in self.hirc:
-            print(node._attr)
-            if node.id in g:
-                continue
-
             g.add_node(node.id, type=node.type)
-            for _, ref in self.get_references(node):
-                g.add_edge(node.id, ref)
+            references = node.get_references(node)
+            if references:
+                for _, ref in references:
+                    g.add_edge(node.id, ref)
 
         return g
 
