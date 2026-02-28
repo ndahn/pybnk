@@ -79,22 +79,25 @@ class PyBnkGui:
                     callback=self._repack_soundbank,
                 )
 
+            with dpg.menu(label="Edit"):
+                dpg.add_menu_item(
+                    label="Delete orphans",
+                    callback=self._bank_delete_orphans,
+                )
+
             with dpg.menu(label="Create"):
                 dpg.add_menu_item(
                     label="Simple Sound",
-                    callback=None,  # TODO
+                    callback=self._open_simple_sound_dialog,
                 )
                 dpg.add_menu_item(
                     label="Boss Track",
-                    callback=None,  # TODO
+                    callback=self._open_boss_track_dialog,
                 )
                 dpg.add_menu_item(
                     label="Ambience Track",
-                    callback=None,  # TODO
+                    callback=self._open_ambience_track_dialog,
                 )
-
-            with dpg.menu(label="Globals"):
-                pass
 
             with dpg.menu(label="Help"):
                 with dpg.menu(label="dearpygui"):
@@ -269,10 +272,11 @@ class PyBnkGui:
 
     def _load_soundbank(self, path: str) -> None:
         logger.info(f"Loading soundbank {path}")
-        bnk = Soundbank.load(path)
+        self.bnk = Soundbank.load(path)
+        self.regenerate()
 
-        self.clear()
-        self.bnk = bnk
+    def _create_root_entry(self, event: Event) -> None:
+        bnk = self.bnk
         tag = self.tag
 
         def register_context_menu(tag: str, node: Node) -> None:
@@ -346,9 +350,37 @@ class PyBnkGui:
 
             delve(entrypoint.id)
 
-        events = list(bnk.query({"type": "Event"}))
+        self.events[event.id] = event
+        name = event.lookup_name("<?>")
+
+        with table_tree_node(
+            f"{name} ({event.id})",
+            on_click_callback=self._on_node_selected,
+            table=f"{tag}_events_table",
+            tag=f"{tag}_event_{event.id}",
+            user_data=event,
+        ) as root_row:
+            register_context_menu(root_row.selectable, event)
+            for aid in event.actions:
+                # TODO Make actions the top level items and add a list of events associated with them?
+                action = Action(bnk[aid].dict)
+                action_row = add_lazy_table_tree_node(
+                    f"{action.action_type.name} ({aid})",
+                    lazy_load_action_structure,
+                    on_click_callback=self._on_node_selected,
+                    table=f"{tag}_events_table",
+                    tag=f"{tag}_action_{aid}",
+                    user_data=action,
+                )
+                register_context_menu(action_row.selectable, action)
+
+    def regenerate(self) -> None:
+        self.clear()
+        self.events.clear()
+        
+        events = list(self.bnk.query({"type": "Event"}))
         dpg.set_value(
-            f"{tag}_events_count",
+            f"{self.tag}_events_count",
             f"Showing {min(self.max_events, len(events))}/{len(events)} events",
         )
 
@@ -357,37 +389,14 @@ class PyBnkGui:
 
             # TODO make this filter configurable
             for aid in event.actions:
-                action = Action(bnk[aid].dict)
+                action = Action(self.bnk[aid].dict)
                 if action.action_type == ActionType.PLAY:
                     break
             else:
                 # Not a play action
                 continue
-
-            self.events[event.id] = event
-            name = event.lookup_name("<?>")
-
-            with table_tree_node(
-                f"{name} ({event.id})",
-                on_click_callback=self._on_node_selected,
-                table=f"{tag}_events_table",
-                tag=f"{tag}_event_{event.id}",
-                user_data=event,
-            ) as root_row:
-                register_context_menu(root_row.selectable, event)
-                for aid in event.actions:
-                    # TODO Make actions the top level items and add a list of events associated with them?
-                    action = Action(bnk[aid].dict)
-                    action_row = add_lazy_table_tree_node(
-                        f"{action.action_type.name} ({aid})",
-                        lazy_load_action_structure,
-                        on_click_callback=self._on_node_selected,
-                        table=f"{tag}_events_table",
-                        tag=f"{tag}_action_{aid}",
-                        user_data=action,
-                    )
-                    register_context_menu(action_row.selectable, action)
-
+            
+            self._create_root_entry(event)
             if len(self.events) >= self.max_events:
                 break
 
@@ -415,15 +424,17 @@ class PyBnkGui:
             dpg.set_value(self.selected_root, False)
 
         self.selected_root = sender
-        dpg.set_value(sender, True)
+        if sender is not None:
+            dpg.set_value(sender, True)
 
         if isinstance(node, int):
             node: Node = self.bnk[node]
 
-        node = node.cast()
-        self.selected_node = node
+        if isinstance(node, Node):
+            node = node.cast()
+            dpg.set_value(f"{self.tag}_json", node.json())
 
-        dpg.set_value(f"{self.tag}_json", node.json())
+        self.selected_node = node
         self._set_component_highlight(f"{self.tag}_json", False)
         self._create_attribute_widgets()
 
@@ -443,11 +454,13 @@ class PyBnkGui:
 
         with dpg.group(parent=f"{self.tag}_attributes"):
             dpg.add_text(node.type)
-            dpg.add_input_text(
-                label="Name",
-                default_value=node.lookup_name("<?>"),
-                callback=update_name_and_id,
-            )
+            if node.type == "Event":
+                dpg.add_input_text(
+                    label="Name",
+                    default_value=node.lookup_name("<?>"),
+                    callback=update_name_and_id,
+                )
+            
             dpg.add_input_text(
                 label="Hash",
                 default_value=str(node.id),
@@ -486,19 +499,19 @@ class PyBnkGui:
             dpg.add_child_window(height=-30, border=False)
             dpg.add_button(label="Reset")
 
-    def regenerate(self) -> None:
-        if self.selected_node:
-            self._on_node_selected(self.selected_node)
+    def regenerate_attributes(self) -> None:
+        self._on_node_selected(self.selected_root, True, self.selected_node)
     
     def clear(self) -> None:
-        self.bnk = None
-        self.events.clear()
-
         tag = self.tag
         dpg.delete_item(f"{tag}_events_table", children_only=True, slot=1)
         dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
+
+    def _bank_delete_orphans(self) -> None:
+        self.bnk.delete_orphans()
+        self.regenerate()
 
     def node_new_child(self) -> None:
         tag = f"{self.tag}_add_child_to_{self.selected_node.id}"
@@ -511,6 +524,8 @@ class PyBnkGui:
             self.bnk.add_nodes(node)
             self.selected_node.add_child(node)
             logger.info(f"Attached new node {node} to {self.selected_node}")
+            # TODO no need to regenerate everything
+            self.regenerate()
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
 
@@ -518,23 +533,32 @@ class PyBnkGui:
         center_window(tag)
     
     def node_cut(self) -> None:
+        # TODO copy hierarchy?
         self.node_copy()
         self.node_delete()
+        logger.info(f"Cut node {self.selected_node} to clipboard")
+        self._on_node_selected(None, False, None)
         self.regenerate()
     
     def node_copy(self) -> None:
+        # TODO copy hierarchy?
         data = self.selected_node.json()
         pyperclip.copy(data)
-        logger.info(f"Copied node {self.selected_node}")
+        logger.info(f"Copied node {self.selected_node} to clipboard")
     
     def node_paste_child(self) -> None:
         data = json.loads(pyperclip.paste())
         node = Node.wrap(data)
         if not isinstance(node, WwiseNode):
             raise ValueError(f"Node {node} cannot be parented")
+
+        if node.id in self.bnk:
+            node.id = self.bnk.new_id()
+            logger.warning(f"ID of pasted node already exists, assigned new ID {node.id}")
         
         self.bnk.add_nodes(node)
         self.selected_node.add_child(node)
+        logger.info(f"Pasted node {node} from clipboard as child of {self.selected_node}")
         self.regenerate()
     
     def node_delete(self) -> None:
@@ -542,6 +566,8 @@ class PyBnkGui:
             return
 
         self.bnk.delete_nodes(self.selected_node)
+        logger.info(f"Deleted node {self.selected_node} and all its children")
+        self._on_node_selected(None, False, None)
         self.regenerate()
     
     def node_apply_json(self) -> None:
@@ -558,7 +584,8 @@ class PyBnkGui:
             return
 
         self.selected_node.update(data)
-        self.regenerate()
+        # TODO might have new/different references, regenerate all children
+        self.regenerate_attributes()
 
     def node_reset_json(self) -> None:
         value = ""
@@ -582,6 +609,54 @@ class PyBnkGui:
             # TODO add to soundbank?
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_simple_sound_dialog(self) -> None:
+        tag = f"{self.tag}_create_simple_sound_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_sound_created(nodes: list[Node]) -> None:
+            self.bnk.add_nodes(nodes)
+            logger.info(f"Added new sound {nodes[0].lookup_name()} ({nodes[0].id})")
+
+        create_simple_sound_dialog(self.bnk, on_sound_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+    
+    def _open_boss_track_dialog(self) -> None:
+        tag = f"{self.tag}_create_boss_track_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_boss_track_created(nodes: list[Node]) -> None:
+            self.bnk.add_nodes(nodes)
+            logger.info(f"Added new boss track {nodes[0].lookup_name()} ({nodes[0].id})")
+
+        create_boss_track_dialog(self.bnk, on_boss_track_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+    
+    def _open_ambience_track_dialog(self) -> None:
+        tag = f"{self.tag}_create_ambience_track_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_ambience_track_created(nodes: list[Node]) -> None:
+            self.bnk.add_nodes(nodes)
+            logger.info(f"Added new ambience track {nodes[0].lookup_name()} ({nodes[0].id})")
+
+        create_ambience_track_dialog(self.bnk, on_ambience_track_created, tag=tag)
 
         dpg.split_frame()
         center_window(tag)

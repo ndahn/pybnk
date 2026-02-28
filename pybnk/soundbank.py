@@ -26,7 +26,7 @@ class Soundbank:
         else:
             json_path = bnk_path / "soundbank.json"
             bnk_path = bnk_path
-        
+
         with json_path.open() as f:
             bnk_json: dict = json.load(f)
 
@@ -119,7 +119,7 @@ class Soundbank:
 
     def copy(self, name: str, new_bnk_id: int = None) -> "Soundbank":
         self._apply_hirc_to_json()
-        
+
         bnk = Soundbank(
             self.bnk_dir.parent / name,
             copy.deepcopy(self._json),
@@ -189,8 +189,8 @@ class Soundbank:
                 raise ValueError(f"Node {n} has invalid ID {n.id}")
             if n.id in self._id2index:
                 raise ValueError(f"Soundbank already contains a node with ID {n.id}")
-            
-            self.hirc.append(n.dict)
+
+            self.hirc.append(n)
 
         self._regenerate_index_table()
 
@@ -222,13 +222,47 @@ class Soundbank:
                 else:
                     node[path] = 0
 
+        self._regenerate_index_table()
+
+    def delete_orphans(self, cascade: bool = True) -> None:
+        g = self.get_full_tree()
+        indices = set()
+
+        while True:
+            # Collect non-event nodes with no references to them
+            orphans = [
+                nid
+                for nid, tp in g.nodes.data("type")
+                if tp != "Event" and g.in_degree(nid) == 0
+            ]
+            if not orphans:
+                break
+
+            indices.update(self._id2index[n] for n in orphans)
+            g.remove_nodes_from(orphans)
+
+            # Check if new orphans appeared in the graph from the removal of the
+            # discovered orphans
+            if not cascade:
+                break
+
+        # Clear the hirc
+        orphan_nodes = [str(self.hirc[i]) for i in indices]
+        logger.info(
+            f"The following {len(indices)} nodes have been orphaned (cascade={cascade}):\n{'  \n'.join(orphan_nodes)}"
+        )
+        self.hirc = [x for i, x in enumerate(self.hirc) if i not in indices]
+        self._regenerate_index_table()
+
+        logger.info(f"Found and deleted {len(indices)} orphans")
+
     def solve(self) -> None:
         g = self.get_full_tree()
         new_hirc = []
 
         if not nx.is_directed_acyclic_graph():
             logger.warning("HIRC is not acyclic")
-        
+
         # These will be appended at the very end
         events: list[Node] = []
         actions: list[Node] = []
@@ -279,8 +313,8 @@ class Soundbank:
     def get_full_tree(self) -> nx.DiGraph:
         g = nx.DiGraph()
 
-        for node_dict in self.hirc:
-            node = Node(node_dict)
+        for node in self.hirc:
+            print(node._attr)
             if node.id in g:
                 continue
 
