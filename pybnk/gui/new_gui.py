@@ -19,6 +19,7 @@ from pybnk.gui.table_tree_nodes import (
     add_lazy_table_tree_node,
 )
 from pybnk.gui.create_node_dialog import create_node_dialog
+from pybnk.gui.create_simple_sound_dialog import create_simple_sound_dialog
 
 
 def dpg_init():
