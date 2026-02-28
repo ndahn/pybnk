@@ -9,7 +9,7 @@ from pybnk import Soundbank, Node
 from pybnk.types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
-from pybnk.gui.helpers import create_widget, center_window
+from pybnk.gui.helpers import create_widget, center_window, create_properties_table
 from pybnk.gui.style import init_themes, themes
 from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.localization import Localization, English
@@ -378,7 +378,7 @@ class PyBnkGui:
     def regenerate(self) -> None:
         self.clear()
         self.events.clear()
-        
+
         events = list(self.bnk.query({"type": "Event"}))
         dpg.set_value(
             f"{self.tag}_events_count",
@@ -396,7 +396,7 @@ class PyBnkGui:
             else:
                 # Not a play action
                 continue
-            
+
             self._create_root_entry(event)
             if len(self.events) >= self.max_events:
                 break
@@ -453,6 +453,12 @@ class PyBnkGui:
             node.id = new_name
             dpg.set_value(f"{self.tag}_attr_hash", str(node.id))
 
+        def on_properties_changed(
+            sender: str, properties: dict[str, float], node: WwiseNode
+        ) -> None:
+            for key, val in properties.items():
+                node.set_property(key, val)
+
         with dpg.group(parent=f"{self.tag}_attributes"):
             dpg.add_text(node.type)
             if node.type == "Event":
@@ -461,7 +467,7 @@ class PyBnkGui:
                     default_value=node.lookup_name("<?>"),
                     callback=update_name_and_id,
                 )
-            
+
             dpg.add_input_text(
                 label="Hash",
                 default_value=str(node.id),
@@ -497,12 +503,19 @@ class PyBnkGui:
                     with dpg.tooltip(dpg.last_item()):
                         dpg.add_text(doc.short_description)
 
+            if isinstance(node, WwiseNode):
+                create_properties_table(
+                    node.properties,
+                    on_properties_changed,
+                    user_data=node,
+                )
+
             dpg.add_child_window(height=-30, border=False)
             dpg.add_button(label="Reset")
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self.selected_root, True, self.selected_node)
-    
+
     def clear(self) -> None:
         tag = self.tag
         dpg.delete_item(f"{tag}_events_table", children_only=True, slot=1)
@@ -532,7 +545,7 @@ class PyBnkGui:
 
         dpg.split_frame()
         center_window(tag)
-    
+
     def node_cut(self) -> None:
         # TODO copy hierarchy?
         self.node_copy()
@@ -540,13 +553,13 @@ class PyBnkGui:
         logger.info(f"Cut node {self.selected_node} to clipboard")
         self._on_node_selected(None, False, None)
         self.regenerate()
-    
+
     def node_copy(self) -> None:
         # TODO copy hierarchy?
         data = self.selected_node.json()
         pyperclip.copy(data)
         logger.info(f"Copied node {self.selected_node} to clipboard")
-    
+
     def node_paste_child(self) -> None:
         data = json.loads(pyperclip.paste())
         node = Node.wrap(data)
@@ -555,13 +568,17 @@ class PyBnkGui:
 
         if node.id in self.bnk:
             node.id = self.bnk.new_id()
-            logger.warning(f"ID of pasted node already exists, assigned new ID {node.id}")
-        
+            logger.warning(
+                f"ID of pasted node already exists, assigned new ID {node.id}"
+            )
+
         self.bnk.add_nodes(node)
         self.selected_node.add_child(node)
-        logger.info(f"Pasted node {node} from clipboard as child of {self.selected_node}")
+        logger.info(
+            f"Pasted node {node} from clipboard as child of {self.selected_node}"
+        )
         self.regenerate()
-    
+
     def node_delete(self) -> None:
         if not self.selected_node:
             return
@@ -570,7 +587,7 @@ class PyBnkGui:
         logger.info(f"Deleted node {self.selected_node} and all its children")
         self._on_node_selected(None, False, None)
         self.regenerate()
-    
+
     def node_apply_json(self) -> None:
         if not self.selected_node:
             return
@@ -581,7 +598,7 @@ class PyBnkGui:
         except json.JSONDecodeError as e:
             logger.error("Failed to parse json", exc_info=e)
             # TODO show error to user, statusbar?
-            
+
             return
 
         self.selected_node.update(data)
@@ -629,7 +646,7 @@ class PyBnkGui:
 
         dpg.split_frame()
         center_window(tag)
-    
+
     def _open_boss_track_dialog(self) -> None:
         tag = f"{self.tag}_create_boss_track_dialog"
         if dpg.does_item_exist(tag):
@@ -639,13 +656,15 @@ class PyBnkGui:
 
         def on_boss_track_created(nodes: list[Node]) -> None:
             self.bnk.add_nodes(nodes)
-            logger.info(f"Added new boss track {nodes[0].lookup_name()} ({nodes[0].id})")
+            logger.info(
+                f"Added new boss track {nodes[0].lookup_name()} ({nodes[0].id})"
+            )
 
         create_boss_track_dialog(self.bnk, on_boss_track_created, tag=tag)
 
         dpg.split_frame()
         center_window(tag)
-    
+
     def _open_ambience_track_dialog(self) -> None:
         tag = f"{self.tag}_create_ambience_track_dialog"
         if dpg.does_item_exist(tag):
@@ -655,7 +674,9 @@ class PyBnkGui:
 
         def on_ambience_track_created(nodes: list[Node]) -> None:
             self.bnk.add_nodes(nodes)
-            logger.info(f"Added new ambience track {nodes[0].lookup_name()} ({nodes[0].id})")
+            logger.info(
+                f"Added new ambience track {nodes[0].lookup_name()} ({nodes[0].id})"
+            )
 
         create_ambience_track_dialog(self.bnk, on_ambience_track_created, tag=tag)
 

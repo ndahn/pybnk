@@ -38,6 +38,23 @@ SourceType: TypeAlias = Literal["Embedded", "Streaming", "PrefetchStreaming"]
 PluginType: TypeAlias = Literal["VORBIS", "PCM"]
 
 
+property_defaults = {
+    "Volume": -3.0,
+    "PriorityDistanceOffset": -49.0,
+    "UserAuxSendVolume0": -96.0,
+    "UserAuxSendVolume1": -96.0,
+    "UserAuxSendVolume2": -96.0,
+    "UserAuxSendVolume3": -96.0,
+    "GameAuxSendVolume": -6.0,
+    "CenterPCT": 50.0,
+    "AttenuationID": 0,
+    "Priority": 20.0,
+    "LPF": 20.0,
+    "HPF": 35.0,
+    "Pitch": -500.0,
+}
+
+
 reference_fields = {
     "*": [
         "**/node_base_params/override_bus_id",

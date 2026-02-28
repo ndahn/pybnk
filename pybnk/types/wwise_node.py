@@ -1,5 +1,6 @@
 from pybnk.node import Node
 from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
+from pybnk.util import logger
 
 
 class WwiseNode(Node):
@@ -9,15 +10,27 @@ class WwiseNode(Node):
     """
 
     @property
-    def properties(self) -> list[dict]:
+    def properties(self) -> dict[str, float]:
         """Initial property values.
 
         Returns
         -------
-        list[Any]
-            List of property initial values.
+        dict[str, float]
+            Dict of property initial values.
         """
-        return self["node_base_params/node_initial_params/prop_initial_values"]
+        node_properties = self["node_base_params/node_initial_params/prop_initial_values"]
+        # Much easier to manage
+        properties = {}
+
+        for d in node_properties:
+            if len(d) != 1:
+                logger.error(f"Don't know how to handle property {d}")
+                continue
+
+            key = next(k for k in d.keys())
+            properties[key] = d[key]
+
+        return properties
 
     def get_property(self, prop_name: str, default: float = None) -> float:
         """Get a property value by name.
@@ -34,10 +47,7 @@ class WwiseNode(Node):
         float
             Property value, or default if not found.
         """
-        for prop_dict in self.properties:
-            if prop_name in prop_dict:
-                return prop_dict[prop_name]
-        return default
+        return self.properties.get(prop_name, default)
 
     def set_property(self, prop_name: str, value: float) -> None:
         """Set a property value by name.
@@ -52,13 +62,14 @@ class WwiseNode(Node):
             Property value to set.
         """
         # Try to find and update existing property
-        for prop_dict in self.properties:
+        node_properties = self["node_base_params/node_initial_params/prop_initial_values"]
+        for prop_dict in node_properties:
             if prop_name in prop_dict:
                 prop_dict[prop_name] = value
                 return
 
         # Property doesn't exist, add it
-        self.properties.append({prop_name: value})
+        node_properties.append({prop_name: value})
 
     def remove_property(self, prop_name: str) -> bool:
         """Remove a property by name.
@@ -73,7 +84,7 @@ class WwiseNode(Node):
         bool
             True if property was removed, False if not found.
         """
-        prop_values = self.properties
+        prop_values = self["node_base_params/node_initial_params/prop_initial_values"]
         for i, prop_dict in enumerate(prop_values):
             if prop_name in prop_dict:
                 prop_values.pop(i)
