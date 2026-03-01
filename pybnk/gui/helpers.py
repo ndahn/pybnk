@@ -77,7 +77,7 @@ def create_properties_table(
 ) -> None:
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
-    
+
     property_keys = list(property_defaults.keys())
     current_properties = dict(properties)
 
@@ -99,11 +99,10 @@ def create_properties_table(
         row = dpg.get_item_parent(sender)
         siblings = dpg.get_item_children(row, slot=1)
         value_widget = siblings[1]
-        old_key = next(
-            k for k, combo in row_widgets.items() if combo[0] == sender
-        )
+        old_key = next(k for k, combo in row_widgets.items() if combo[0] == sender)
+        current_properties.pop(old_key)
 
-        val = current_properties.pop(old_key)
+        val = property_defaults[new_key]
         current_properties[new_key] = val
         row_widgets[new_key] = row_widgets.pop(old_key)
         dpg.configure_item(value_widget, default_value=val)
@@ -144,12 +143,12 @@ def create_properties_table(
             combo_id = dpg.add_combo(
                 items=get_available_keys(exclude=prop),
                 default_value=prop,
-                width=150,
+                width=-1,
                 callback=on_prop_type_changed,
             )
             value_id = dpg.add_input_double(
                 default_value=val,
-                width=150,
+                width=-1,
                 callback=on_prop_value_changed,
             )
             remove_id = dpg.add_button(label="-", callback=on_remove_clicked)
@@ -165,9 +164,19 @@ def create_properties_table(
     dpg.add_spacer(height=5)
     dpg.add_text("Properties")
 
-    with dpg.table(header_row=False, policy=dpg.mvTable_SizingFixedFit, tag=tag):
-        dpg.add_table_column(label="Property", width_stretch=True, init_width_or_weight=100)
-        dpg.add_table_column(label="Value", width_stretch=True, init_width_or_weight=100)
+    with dpg.table(
+        header_row=False,
+        policy=dpg.mvTable_SizingFixedFit,
+        borders_outerH=True,
+        borders_outerV=True,
+        tag=tag,
+    ):
+        dpg.add_table_column(
+            label="Property", width_stretch=True, init_width_or_weight=100
+        )
+        dpg.add_table_column(
+            label="Value", width_stretch=True, init_width_or_weight=100
+        )
         dpg.add_table_column(label="", width_fixed=True)
         for prop, val in current_properties.items():
             add_row(prop, val)
