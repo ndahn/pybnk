@@ -1,12 +1,14 @@
 from typing import Any, Callable
 import inspect
 import builtins
+from pathlib import Path
 from dataclasses import dataclass
 from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk.util import logger
 from pybnk.enums import property_defaults
+from pybnk.gui.file_dialog import open_file_dialog
 
 
 def create_widget(
@@ -69,8 +71,8 @@ def create_widget(
 
 
 def create_properties_table(
-    properties: dict[str, Any],
-    on_value_changed: Callable[[dict[str, Any]], None],
+    initial_properties: dict[str, Any],
+    on_value_changed: Callable[[str, dict[str, Any], Any], None],
     *,
     tag: str | int = 0,
     user_data: Any = None,
@@ -79,7 +81,7 @@ def create_properties_table(
         tag = dpg.generate_uuid()
 
     property_keys = list(property_defaults.keys())
-    current_properties = dict(properties)
+    current_properties = dict(initial_properties)
 
     def get_available_keys(exclude: str | None = None) -> list[str]:
         used = set(current_properties.keys())
@@ -182,7 +184,73 @@ def create_properties_table(
             add_row(prop, val)
         add_footer()
 
+
+def create_filepaths_table(
+    initial_paths: list[Path],
+    on_value_changed: Callable[[str, list[Path], Any], None],
+    *,
+    title: str = "Files",
+    filetypes: dict[str, str] = None,
+    tag: str | int = 0,
+    user_data: Any = None,
+) -> None:
+    if tag in (None, 0, ""):
+        tag = dpg.generate_uuid()
+    
+    current_paths: list[Path] = list(initial_paths)
+
+    def refresh_table() -> None:
+        dpg.delete_item(tag, children_only=True, slot=1)
+        for path in current_paths:
+            add_row(path)
+        add_footer()
+
+    def on_remove_clicked(sender: int) -> None:
+        idx = next(i for i, ids in enumerate(row_widgets) if ids[1] == sender)
+        current_paths.pop(idx)
+        row_widgets.pop(idx)
+        refresh_table()
+        on_value_changed(tag, list(current_paths), user_data)
+
+    def on_add_clicked() -> None:
+        result = open_file_dialog(filetypes=filetypes)
+        if not result:
+            return
+
+        path = Path(result)
+        current_paths.append(path)
+        refresh_table()
+        on_value_changed(tag, list(current_paths), user_data)
+
+    def add_row(path: Path) -> None:
+        with dpg.table_row(parent=tag):
+            text_id = dpg.add_text(path.name)
+            remove_id = dpg.add_button(label="-", callback=on_remove_clicked)
+            row_widgets.append((text_id, remove_id))
+
+    def add_footer() -> None:
+        with dpg.table_row(parent=tag):
+            dpg.add_button(label="+ Add File", callback=on_add_clicked)
+
+    row_widgets: list[tuple[int, int]] = []
+
+    # The actual widgets
     dpg.add_spacer(height=5)
+    dpg.add_text(title)
+
+    with dpg.table(
+        header_row=False,
+        policy=dpg.mvTable_SizingFixedFit,
+        borders_outerH=True,
+        borders_outerV=True,
+        tag=tag,
+    ):
+        dpg.add_table_column(label="File")
+        dpg.add_table_column(label="")
+
+        for path in current_paths:
+            add_row(path)
+        add_footer()
 
 
 @dataclass

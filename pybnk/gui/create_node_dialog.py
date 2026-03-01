@@ -90,6 +90,7 @@ def create_node_dialog(
         with dpg.child_window(auto_resize_y=True, tag=f"{tag}_node_args"):
             pass
 
+        dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):

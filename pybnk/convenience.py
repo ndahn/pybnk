@@ -61,8 +61,8 @@ def create_simple_sound(
     event_name: str,
     wems: list[Path] | Path,
     actor_mixer: Node,
-    volume: float = -3.0,
     avoid_repeats: bool = False,
+    properties: dict[str, float] = None,
 ) -> tuple[tuple[Event, Event], RandomSequenceContainer, list[Sound]]:
     """Create a new sound structure with one or more sounds in a RandomSequenceContainer controlled by a start and stop event.
 
@@ -76,10 +76,10 @@ def create_simple_sound(
         Audio files to add.
     actor_mixer : Node
         The ActorMixer to attach the new RandomSequenceContainer to.
-    volume : float, optional
-        Volume to set on the container.
     avoid_repeats : bool, optional
         If True the container will avoid playing the same sound twice in a row.
+    properties : dict[str, float], optional
+        Properties to apply to the RandomSequenceContainer.
 
     Returns
     -------
@@ -90,7 +90,9 @@ def create_simple_sound(
         wems = [wems]
 
     rsc = RandomSequenceContainer.new(bnk, mode=0, loop_count=1, parent_id=actor_mixer.id)
-    rsc.volume = volume
+    if properties:
+        for key, val in properties.items():
+            rsc.set_property(key, val)
     rsc.avoid_repeats = avoid_repeats
 
     sounds = []
