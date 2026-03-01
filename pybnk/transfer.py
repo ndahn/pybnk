@@ -1,5 +1,5 @@
 from pybnk import Soundbank, Node, calc_hash
-from pybnk.convenience import new_event
+from pybnk.types import Event, Action
 from pybnk.wem import import_wems
 from pybnk.util import format_hierarchy, logger
 
@@ -57,15 +57,14 @@ def copy_node_structure(
     for nid, n_wems in action_tree.nodes.data("wems"):
         if n_wems:
             wems.extend((nid, w) for w in n_wems)
-    
+
     dst_bnk.add_nodes(*[src_bnk[n].copy() for n in action_tree.nodes])
 
     # Go upwards through the parents chain and see what needs to be transferred
     upchain = src_bnk.get_parent_chain(entrypoint)
-    upchain_str = "\n".join([
-        f" ⤷ {up_id} ({src_bnk[up_id].type})"
-        for up_id in reversed(upchain)
-    ])
+    upchain_str = "\n".join(
+        [f" ⤷ {up_id} ({src_bnk[up_id].type})" for up_id in reversed(upchain)]
+    )
     logger.info(f"\nThe parent chain consists of the following nodes:\n{upchain_str}\n")
 
     up_child = entrypoint
@@ -93,10 +92,7 @@ def copy_node_structure(
 
     # Collect additional referenced items
     extras = src_bnk.find_related_objects(action_tree.nodes)
-    extras_str = "\n".join([
-        f" - {nid} ({src_bnk[nid].type})"
-        for nid in extras
-    ])
+    extras_str = "\n".join([f" - {nid} ({src_bnk[nid].type})" for nid in extras])
     logger.info(f"\nThe following extra items were collected:\n{extras_str}\n")
 
     for oid in extras:
@@ -183,7 +179,7 @@ def copy_wwise_events(
 
     # Copy WEMs
     copy_wems(src_bnk, dst_bnk, wems)
-    
+
     # Yay!
     logger.info("Done. Yay!")
 
@@ -196,12 +192,19 @@ def copy_structures_with_new_events(
     wems = []
 
     for entrypoint, wwise_dst in nodes.items():
-        play_event, play_action = new_event(dst_bnk, f"Play_{wwise_dst}", entrypoint, "Play")
-        dst_bnk.add_nodes(play_event, play_action)
+        play_event = Event.new(f"Play_{wwise_dst}")
+        play_action = Action.new_play_action(
+            dst_bnk.new_id(), f"Stop_{wwise_dst}", bank_id=dst_bnk.id
+        )
+        play_action.target_id = entrypoint.id
+        play_event.add_action(play_action)
 
-        stop_event, stop_action = new_event(dst_bnk, f"Stop_{wwise_dst}", entrypoint, "Stop")
-        dst_bnk.add_nodes(stop_event, stop_action)
+        stop_event = Event.new(f"Stop_{wwise_dst}")
+        stop_action = Action.new_stop_action(dst_bnk.new_id(), f"Stop_{wwise_dst}")
+        stop_action.target_id = entrypoint.id
+        stop_event.add_action(stop_action)
 
+        dst_bnk.add_nodes(play_event, play_action, stop_event, stop_action)
         new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
         wems.extend(w for _, w in new_wems)
 
@@ -216,6 +219,6 @@ def copy_structures_with_new_events(
 
     # Copy WEMs
     copy_wems(src_bnk, dst_bnk, wems)
-    
+
     # Yay!
     logger.info("Done. Yay!")

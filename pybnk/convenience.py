@@ -1,57 +1,8 @@
-from typing import Any, Literal
-from importlib import resources
-import json
 from pathlib import Path
 
 from pybnk import Soundbank, Node
-from pybnk.hash import calc_hash
 from pybnk.types import Event, Action, RandomSequenceContainer, Sound
 from pybnk.util import logger
-
-
-def new_from_template(nid: int, template: str, attr: dict[str, Any] = None) -> Node:
-    import pybnk
-
-    if not template.endswith(".json"):
-        template += ".json"
-
-    template_txt = resources.read_text(pybnk, "resources/templates/" + template)
-    template_dict = json.loads(template_txt)
-    node = Node(template_dict)
-    node.id = nid
-
-    if attr:
-        for path, value in attr.items():
-            node[path] = value
-
-    return node
-
-
-def new_event(
-    bnk: Soundbank,
-    name: str,
-    node: Node | int,
-    action_type: Literal["Play", "Stop"],
-    action_attr: dict[str, Any] = None,
-) -> tuple[Node, Node]:
-    if isinstance(node, Node):
-        node = node.id
-
-    # TODO use class methods instead
-    action = new_from_template(
-        bnk.new_id(),
-        f"Action_{action_type}",
-        {"external_id": node} | (action_attr or {}),
-    )
-
-    # Only set for play actions?
-    if action_type == "Play":
-        action[f"params/{action_type}/bank_id"] = bnk.id
-
-    event = new_from_template(bnk.new_id(), "Event", {"actions": [action.id]})
-    event.id = calc_hash(name)
-
-    return (event, action)
 
 
 def create_simple_sound(
