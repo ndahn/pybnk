@@ -4,8 +4,9 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
-from pybnk.types import Event
+from pybnk.types import Event, ActorMixer
 from pybnk.gui import style
+from pybnk.gui.select_node_dialog import select_node_of_type
 from pybnk.gui.helpers import create_properties_table, create_filepaths_table
 from pybnk.enums import property_defaults
 
@@ -33,7 +34,13 @@ def create_simple_sound_dialog(
         h = calc_hash(new_name)
         dpg.set_value(f"{tag}_hash", str(h))
 
-    def on_properties_changed(sender: str, new_properties: dict[str, float], user_data: Any) -> None:
+    def on_amx_selected(sender: str, amx: ActorMixer, user_data: Any) -> None:
+        if amx:
+            dpg.set_value(f"{tag}_actor_mixer", amx.id)
+
+    def on_properties_changed(
+        sender: str, new_properties: dict[str, float], user_data: Any
+    ) -> None:
         properties.clear()
         properties.update(new_properties)
 
@@ -41,7 +48,9 @@ def create_simple_sound_dialog(
         wem_paths.clear()
         wem_paths.extend(paths)
 
-    def show_message(msg: str, level: Literal["info", "warning", "error"] = "error") -> None:
+    def show_message(
+        msg: str, level: Literal["info", "warning", "error"] = "error"
+    ) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
@@ -116,14 +125,14 @@ def create_simple_sound_dialog(
         # Actor mixer selector
         with dpg.group(horizontal=True):
             dpg.add_input_text(
-                default_value="0",
-                decimal=True,
-                tag=f"{tag}_actor_mixer"
+                default_value="0", decimal=True, tag=f"{tag}_actor_mixer"
             )
             dpg.add_button(
                 arrow=True,
                 direction=dpg.mvDir_Right,
-                callback=None,  # select_actor_mixer,
+                callback=lambda s, a, u: select_node_of_type(
+                    bnk, ActorMixer, on_amx_selected
+                ),
             )
             dpg.add_text("Actor Mixer")
 
@@ -154,3 +163,5 @@ def create_simple_sound_dialog(
                 label="Cancel",
                 callback=lambda: dpg.delete_item(window),
             )
+
+    return tag
