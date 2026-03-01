@@ -1,4 +1,4 @@
-from typing import Any, Iterator, Generator
+from typing import Any, Iterator, Generator, TypeAlias
 from importlib import resources
 import json
 import copy
@@ -10,6 +10,7 @@ from pybnk.enums import reference_fields
 
 
 _undefined = object()
+NodeLike: TypeAlias = "Node | int | str"
 
 
 class Node:

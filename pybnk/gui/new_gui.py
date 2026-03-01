@@ -1,6 +1,7 @@
 from typing import Any
 from importlib import resources
 import json
+from collections import deque
 import pyperclip
 from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
@@ -476,13 +477,21 @@ class PyBnkGui:
                 tag=f"{self.tag}_attr_hash",
             )
 
-            properties = {
-                name: prop
-                for name, prop in node.__class__.__dict__.items()
-                if isinstance(prop, property)
-            }
+            # Find all exposed python properties, including those from base classes
+            properties = {}
+            todo = deque([node.__class__])
+            while todo:
+                c = todo.popleft()
+                for name, prop in c.__dict__.items():
+                    if name in ("id", "type", "parent"):
+                        continue
+                    if isinstance(prop, property):
+                        properties.setdefault(name, prop)
+
+                todo.extend(c.__bases__)
 
             for name, prop in properties.items():
+                # TODO get type from type hint instead
                 value = prop.fget(node)
                 readonly = prop.fset is None
                 doc = doc_parse(prop.__doc__)

@@ -1,5 +1,5 @@
-from pybnk.node import Node
-from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
+from pybnk.node import Node, NodeLike
+from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType, VirtualQueueBehavior
 from pybnk.util import logger
 
 
@@ -95,82 +95,6 @@ class WwiseNode(Node):
         """Remove all initial property values."""
         self["node_base_params/node_initial_params/prop_initial_values"] = []
 
-    # Convenience properties for common parameters
-    @property
-    def volume(self) -> float:
-        """Volume in dB.
-
-        Returns
-        -------
-        float
-            Volume offset in dB (default 0.0 if not set).
-        """
-        return self.get_property("Volume", 0.0)
-
-    @volume.setter
-    def volume(self, value: float) -> None:
-        self.set_property("Volume", value)
-
-    @property
-    def pitch(self) -> float:
-        """Pitch in cents.
-
-        Returns
-        -------
-        float
-            Pitch offset in cents (default 0.0 if not set).
-        """
-        return self.get_property("Pitch", 0.0)
-
-    @pitch.setter
-    def pitch(self, value: float) -> None:
-        self.set_property("Pitch", value)
-
-    @property
-    def lowpass_filter(self) -> float:
-        """Low-pass filter value.
-
-        Returns
-        -------
-        float
-            LPF value (default 0.0 if not set).
-        """
-        return self.get_property("LPF", 0.0)
-
-    @lowpass_filter.setter
-    def lowpass_filter(self, value: float) -> None:
-        self.set_property("LPF", value)
-
-    @property
-    def highpass_filter(self) -> float:
-        """High-pass filter value.
-
-        Returns
-        -------
-        float
-            HPF value (default 0.0 if not set).
-        """
-        return self.get_property("HPF", 0.0)
-
-    @highpass_filter.setter
-    def highpass_filter(self, value: float) -> None:
-        self.set_property("HPF", value)
-
-    @property
-    def attenuation_id(self) -> int:
-        """Attenuation ID reference.
-
-        Returns
-        -------
-        int
-            Attenuation node ID (default 0 if not set).
-        """
-        return int(self.get_property("AttenuationID", 0))
-
-    @attenuation_id.setter
-    def attenuation_id(self, value: int) -> None:
-        self.set_property("AttenuationID", float(value))
-
     @property
     def max_instances(self) -> int:
         """Maximum number of concurrent instances.
@@ -202,7 +126,7 @@ class WwiseNode(Node):
         self["node_base_params/adv_settings_params/use_virtual_behavior"] = value
 
     @property
-    def virtual_queue_behavior(self) -> str:
+    def virtual_queue_behavior(self) -> VirtualQueueBehavior:
         """Virtual voice queue behavior.
 
         Returns
@@ -213,7 +137,7 @@ class WwiseNode(Node):
         return self["node_base_params/adv_settings_params/virtual_queue_behavior"]
 
     @virtual_queue_behavior.setter
-    def virtual_queue_behavior(self, value: str) -> None:
+    def virtual_queue_behavior(self, value: VirtualQueueBehavior) -> None:
         self["node_base_params/adv_settings_params/virtual_queue_behavior"] = value
 
     @property
@@ -230,6 +154,14 @@ class WwiseNode(Node):
     @has_aux.setter
     def has_aux(self, value: bool) -> None:
         self["node_base_params/aux_params/has_aux"] = value
+
+    @property
+    def override_bus(self) -> NodeLike:
+        return self["node_base_params/override_bus_id"]
+
+    @override_bus.setter
+    def override_bus(self, bus_id: NodeLike) -> None:
+        self["node_base_params/override_bus_id"] = bus_id
 
     def get_aux_bus(self, index: int) -> int:
         """Get an auxiliary bus ID by index.

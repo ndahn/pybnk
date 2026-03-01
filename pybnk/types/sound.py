@@ -116,18 +116,18 @@ class Sound(WwiseNode):
         self["bank_source_data/plugin"] = value
 
     @property
-    def source_type(self) -> str:
+    def source_type(self) -> SourceType:
         """Source type.
 
         Returns
         -------
-        str
+ SourceTyper
             Source type (e.g., 'Embedded', 'Streamed').
         """
         return self["bank_source_data/source_type"]
 
     @source_type.setter
-    def source_type(self, value: str) -> None:
+    def source_type(self, value: SourceType) -> None:
         self["bank_source_data/source_type"] = value
 
     @property

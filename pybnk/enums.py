@@ -36,6 +36,7 @@ ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
 CurveType: TypeAlias = Literal["Linear", "SCurve", "Log1", "Log3", "Sine", "Constant"]
 SourceType: TypeAlias = Literal["Embedded", "Streaming", "PrefetchStreaming"]
 PluginType: TypeAlias = Literal["VORBIS", "PCM"]
+VirtualQueueBehavior: TypeAlias = Literal["Resume", "PlayFromElapsedTime", "PlayFromBeginning"]
 
 
 property_defaults = {

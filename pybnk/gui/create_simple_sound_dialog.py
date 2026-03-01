@@ -15,7 +15,7 @@ def create_simple_sound_dialog(
     bnk: Soundbank,
     callback: Callable[[Event, Event], None],
     *,
-    default_name: str = "s123456789",
+    default_name: str = "s100200300",
     title: str = "Create Simple Sound",
     tag: str = None,
 ) -> str:

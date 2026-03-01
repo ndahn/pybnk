@@ -1,4 +1,5 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal, get_args, get_origin
+from enum import Enum
 import inspect
 import builtins
 from pathlib import Path
@@ -6,6 +7,7 @@ from dataclasses import dataclass
 from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
+from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
 from pybnk.gui.file_dialog import open_file_dialog
@@ -65,9 +67,60 @@ def create_widget(
             parent=parent,
             tag=tag,
         )
-    # TODO literals and enums
-    # TODO lists
-    # TODO dicts
+    # TODO do this nicer
+    elif vtype is Enum:
+        def on_change(sender: str, app_data: str, user_data: Any) -> None:
+            print(app_data)
+            # TODO
+
+        items = [v.name for v in vtype]
+
+        return dpg.add_combo(
+            items,
+            default_value=default or items[0],
+            callback=on_change,
+            readonly=readonly,
+            enabled=not readonly,
+            user_data=user_data,
+            parent=parent,
+            tag=tag,
+        )
+    elif get_origin(vtype) is Literal:
+        def on_change(sender: str, app_data: str, user_data: Any) -> None:
+            print(app_data)
+            # TODO
+
+        items = get_args(vtype)
+
+        return dpg.add_combo(
+            items,
+            default_value=default or items[0],
+            callback=on_change,
+            readonly=readonly,
+            enabled=not readonly,
+            user_data=user_data,
+            parent=parent,
+            tag=tag,
+        )
+    elif vtype is NodeLike:
+        if isinstance(default, Node):
+            default = default.id
+
+        def on_change(sender: str, app_data: str, user_data: Any) -> None:
+            print(app_data)
+            # TODO
+
+        return dpg.add_input_text(
+            label=label,
+            default_value=default or vtype(),
+            decimal=True,
+            callback=None, # TODO
+            readonly=readonly,
+            enabled=not readonly,
+            user_data=user_data,
+            parent=parent,
+            tag=tag,
+        )
 
 
 def create_properties_table(
