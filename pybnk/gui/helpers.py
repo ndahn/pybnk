@@ -113,7 +113,7 @@ def create_properties_table(
         on_value_changed(tag, dict(current_properties), user_data)
 
     def on_prop_value_changed(sender: int, new_val: float) -> None:
-        for key, (_, value_id) in row_widgets.items():
+        for key, (_, value_id, _) in row_widgets.items():
             if value_id == sender:
                 current_properties[key] = new_val
                 break
@@ -196,7 +196,7 @@ def create_filepaths_table(
 ) -> None:
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
-    
+
     current_paths: list[Path] = list(initial_paths)
 
     def refresh_table() -> None:
@@ -224,7 +224,12 @@ def create_filepaths_table(
 
     def add_row(path: Path) -> None:
         with dpg.table_row(parent=tag):
-            text_id = dpg.add_text(path.name)
+            text_id = dpg.add_input_text(
+                default_value=f"{path.parent.name}/{path.name}",
+                enabled=False,
+                readonly=True,
+                width=-1,
+            )
             remove_id = dpg.add_button(label="-", callback=on_remove_clicked)
             row_widgets.append((text_id, remove_id))
 
@@ -245,7 +250,7 @@ def create_filepaths_table(
         borders_outerV=True,
         tag=tag,
     ):
-        dpg.add_table_column(label="File")
+        dpg.add_table_column(label="File", width_stretch=True, init_width_or_weight=100)
         dpg.add_table_column(label="")
 
         for path in current_paths:

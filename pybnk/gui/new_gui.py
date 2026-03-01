@@ -638,9 +638,9 @@ class PyBnkGui:
             dpg.focus_item(tag)
             return
 
-        def on_sound_created(nodes: list[Node]) -> None:
-            self.bnk.add_nodes(nodes)
-            logger.info(f"Added new sound {nodes[0].lookup_name()} ({nodes[0].id})")
+        def on_sound_created(play_evt: Event, stop_evt: Event) -> None:
+            logger.info(f"Added new sound {play_evt.lookup_name()} ({play_evt.id})")
+            self.regenerate()
 
         create_simple_sound_dialog(self.bnk, on_sound_created, tag=tag)
 

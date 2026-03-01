@@ -1,18 +1,18 @@
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 from pathlib import Path
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
-from pybnk.types import WwiseNode
+from pybnk.types import Event
 from pybnk.gui import style
-from pybnk.gui.helpers import create_widget, create_properties_table, create_filepaths_table
+from pybnk.gui.helpers import create_properties_table, create_filepaths_table
 from pybnk.enums import property_defaults
 
 
 def create_simple_sound_dialog(
     bnk: Soundbank,
-    callback: Callable[[list[WwiseNode]], None],
+    callback: Callable[[Event, Event], None],
     *,
     default_name: str = "s123456789",
     title: str = "Create Simple Sound",
@@ -41,9 +41,44 @@ def create_simple_sound_dialog(
         wem_paths.clear()
         wem_paths.extend(paths)
 
+    def show_message(msg: str, level: Literal["info", "warning", "error"] = "error") -> None:
+        if not msg:
+            dpg.hide_item(f"{tag}_notification")
+            return
+
+        if level == "error":
+            color = style.red
+        elif level == "warning":
+            color = style.yellow
+        else:
+            color = style.blue
+
+        dpg.configure_item(
+            f"{tag}_notification",
+            default_value=msg,
+            color=color,
+            show=True,
+        )
+
     def on_okay() -> None:
         name = dpg.get_value(f"{tag}_name")
-        nodes = create_simple_sound(
+        if not name:
+            show_message("Name not specified")
+            return
+
+        amx = int(dpg.get_value(f"{tag}_actor_mixer"))
+        if amx <= 0:
+            show_message("ActorMixer not specified")
+            return
+
+        if not wem_paths:
+            show_message("No sounds specified")
+            return
+
+        show_message(None)
+        avoid_repeats = dpg.get_value(f"{tag}_avoid_repeats")
+
+        (play_evt, stop_evt), _, _ = create_simple_sound(
             bnk,
             name,
             wem_paths,
@@ -51,7 +86,9 @@ def create_simple_sound_dialog(
             avoid_repeats=avoid_repeats,
             properties=properties,
         )
-        # TODO callback
+
+        callback(play_evt, stop_evt)
+        dpg.delete_item(window)
 
     with dpg.window(
         label=title,
@@ -97,6 +134,9 @@ def create_simple_sound_dialog(
             tag=f"{tag}_avoid_repeats",
         )
 
+        # Properties
+        create_properties_table(properties, on_properties_changed)
+
         # WEMs
         create_filepaths_table(
             wem_paths,
@@ -104,9 +144,6 @@ def create_simple_sound_dialog(
             title="WEMs",
             filetypes={"WEM Sounds": "*.wem"},
         )
-
-        # Properties
-        create_properties_table(properties, on_properties_changed)
 
         dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)

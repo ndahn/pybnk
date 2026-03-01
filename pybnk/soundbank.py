@@ -183,6 +183,12 @@ class Soundbank:
 
         return min_idx
 
+    def get(self, nid: int | str, default: Any = None) -> Node:
+        try:
+            return self[nid]
+        except (KeyError, IndexError):
+            return default
+
     def add_nodes(self, *nodes: Node) -> None:
         for n in nodes:
             if n.id <= 0:

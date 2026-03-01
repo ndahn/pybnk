@@ -6,11 +6,10 @@ from pathlib import Path
 from pybnk import Soundbank, Node
 from pybnk.hash import calc_hash
 from pybnk.types import Event, Action, RandomSequenceContainer, Sound
+from pybnk.util import logger
 
 
-def new_from_template(
-    nid: int, template: str, attr: dict[str, Any] = None
-) -> Node:
+def new_from_template(nid: int, template: str, attr: dict[str, Any] = None) -> Node:
     import pybnk
 
     if not template.endswith(".json"):
@@ -38,6 +37,7 @@ def new_event(
     if isinstance(node, Node):
         node = node.id
 
+    # TODO use class methods instead
     action = new_from_template(
         bnk.new_id(),
         f"Action_{action_type}",
@@ -48,9 +48,7 @@ def new_event(
     if action_type == "Play":
         action[f"params/{action_type}/bank_id"] = bnk.id
 
-    event = new_from_template(
-        bnk.new_id(), "Event", {"actions": [action.id]}
-    )
+    event = new_from_template(bnk.new_id(), "Event", {"actions": [action.id]})
     event.id = calc_hash(name)
 
     return (event, action)
@@ -60,7 +58,7 @@ def create_simple_sound(
     bnk: Soundbank,
     event_name: str,
     wems: list[Path] | Path,
-    actor_mixer: Node,
+    actor_mixer: int | Node,
     avoid_repeats: bool = False,
     properties: dict[str, float] = None,
 ) -> tuple[tuple[Event, Event], RandomSequenceContainer, list[Sound]]:
@@ -74,7 +72,7 @@ def create_simple_sound(
         Base name of the new events.
     wems : list[Path] | Path
         Audio files to add.
-    actor_mixer : Node
+    actor_mixer : int | Node
         The ActorMixer to attach the new RandomSequenceContainer to.
     avoid_repeats : bool, optional
         If True the container will avoid playing the same sound twice in a row.
@@ -89,7 +87,12 @@ def create_simple_sound(
     if isinstance(wems, Path):
         wems = [wems]
 
-    rsc = RandomSequenceContainer.new(bnk, mode=0, loop_count=1, parent_id=actor_mixer.id)
+    rsc = RandomSequenceContainer.new(
+        bnk.new_id(),
+        avoid_repeats=avoid_repeats,
+        loop_count=1,
+        parent=actor_mixer,
+    )
     if properties:
         for key, val in properties.items():
             rsc.set_property(key, val)
@@ -110,4 +113,22 @@ def create_simple_sound(
     stop.add_action(stop_action)
 
     bnk.add_nodes(rsc, *sounds, play, play_action, stop, stop_action)
+
+    # Add the RSC to the actor mixer
+    if isinstance(actor_mixer, int):
+        if actor_mixer == 0:
+            logger.warning(
+                f"No ActorMixer specified for RSC {rsc.id} of new sound {event_name}"
+            )
+        else:
+            amx_node = bnk.get(actor_mixer)
+            if not amx_node:
+                logger.warning(
+                    f"ActorMixer {actor_mixer} not found in soundbank {bnk}. If it is part of another soundbank, make sure to add the RSC's ID ({rsc.id}) to its children!"
+                )
+            else:
+                amx_node.cast().add_child(rsc)
+    elif isinstance(actor_mixer, Node):
+        actor_mixer.cast().add_child(rsc)
+
     return ((play, stop), rsc, sounds)

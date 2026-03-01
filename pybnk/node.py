@@ -122,7 +122,8 @@ class Node:
     @property
     def parent(self) -> int:
         """ID of a node's parent node."""
-        # NOTE: some nodes like buses don't have a direct_parent_id
+        # TODO: some nodes like buses don't have a direct_parent_id
+        # TODO some nodes like MusicRandomSequenceContainer have their base params at a deeper level
         return self.get("node_base_params/direct_parent_id", None)
 
     @parent.setter
@@ -191,11 +192,22 @@ class Node:
 
             raise e
 
-    def set(self, path: str, value: Any) -> bool:
+    def set(self, path: str, value: Any, create: bool = False) -> bool:
         try:
             self[path] = value
             return True
         except KeyError:
+            if create:
+                obj: dict = self.body
+                parts = path.split("/")
+                for p in parts[:-1]:
+                    obj = obj.setdefault(p, {})
+                    if not isinstance(obj, dict):
+                        raise ValueError(f"Tried to set new path, but {p} already exists")
+
+                obj[-1] = value
+                return True
+
             return False
 
     def resolve_path(self, path: str) -> tuple[str, Any] | list[tuple[str, Any]]:
