@@ -6,9 +6,9 @@ from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
 from pybnk.types import Event, ActorMixer
 from pybnk.gui import style
-from pybnk.gui.select_node_dialog import select_node_of_type
 from pybnk.gui.helpers import create_properties_table, create_filepaths_table
 from pybnk.enums import property_defaults
+from .select_node_dialog import select_node_of_type
 
 
 def create_simple_sound_dialog(

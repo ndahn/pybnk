@@ -15,15 +15,16 @@ from pybnk.enums import ActionType
 from pybnk.gui.helpers import create_widget, center_window, create_properties_table
 from pybnk.gui import style
 from pybnk.gui.style import init_themes, themes
-from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.localization import Localization, English
 from pybnk.gui.table_tree_nodes import (
     table_tree_node,
     table_tree_leaf,
     add_lazy_table_tree_node,
 )
-from pybnk.gui.create_node_dialog import create_node_dialog
-from pybnk.gui.create_simple_sound_dialog import create_simple_sound_dialog
+from pybnk.gui.dialogs.create_node_dialog import create_node_dialog
+from pybnk.gui.dialogs.file_dialog import open_file_dialog, save_file_dialog
+from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dialog
+from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 
 
 def dpg_init():
@@ -126,6 +127,12 @@ class PyBnkGui:
                 dpg.add_menu_item(
                     label="Ambience Track",
                     callback=self._open_ambience_track_dialog,
+                )
+
+            with dpg.menu(label="Tools"):
+                dpg.add_menu_item(
+                    label="Calc Hash",
+                    callback=self._open_calc_hash_dialog,
                 )
 
             with dpg.menu(label="Help"):
@@ -752,6 +759,24 @@ class PyBnkGui:
             )
 
         create_ambience_track_dialog(self.bnk, on_ambience_track_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_calc_hash_dialog(self) -> None:
+        tag = f"{self.tag}_calc_hash_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        def on_ambience_track_created(nodes: list[Node]) -> None:
+            self.bnk.add_nodes(nodes)
+            logger.info(
+                f"Added new ambience track {nodes[0].lookup_name()} ({nodes[0].id})"
+            )
+
+        calc_hash_dialog(tag=tag)
 
         dpg.split_frame()
         center_window(tag)

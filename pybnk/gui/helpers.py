@@ -10,7 +10,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
-from pybnk.gui.file_dialog import open_file_dialog
+from pybnk.gui.dialogs.file_dialog import open_file_dialog
 
 
 def create_widget(
