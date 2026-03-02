@@ -21,6 +21,7 @@ light_red = (255, 112, 119)
 
 
 class themes:
+    notification_frame = None
     item_default = None
     item_blue = None
 
@@ -90,6 +91,11 @@ def init_themes():
     dpg.bind_theme(global_theme)
 
     # Additional themes
+    with dpg.theme() as themes.notification_frame:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 7, 0, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 4, 4, category=dpg.mvThemeCat_Core)
+
     with dpg.theme() as themes.item_default:
         with dpg.theme_component(dpg.mvAll):
             dpg.add_theme_color(dpg.mvThemeCol_Text, (255, 255, 255), category=dpg.mvThemeCat_Core)

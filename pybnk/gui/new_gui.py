@@ -1,5 +1,7 @@
-from typing import Any
+from typing import Any, Type
+import sys
 from importlib import resources
+import logging
 import json
 from collections import deque
 import pyperclip
@@ -11,6 +13,7 @@ from pybnk.types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.helpers import create_widget, center_window, create_properties_table
+from pybnk.gui import style
 from pybnk.gui.style import init_themes, themes
 from pybnk.gui.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.localization import Localization, English
@@ -54,6 +57,30 @@ class PyBnkGui:
         self._setup_menu()
         self._setup_content()
         self._setup_context_menus()
+
+        class LogHandler(logging.Handler):
+            def emit(this, record: logging.LogRecord):
+                if record.levelno >= logging.ERROR:
+                    color = style.red
+                elif record.levelno >= logging.WARNING:
+                    color = style.yellow
+                else:
+                    color = style.blue
+
+                self.show_notification(record.message, color)
+
+        sys.excepthook = self._handle_exception
+        logger.addHandler(LogHandler())
+
+    def _handle_exception(
+        self, exc_type: Type[Exception], exc_value: Exception, exc_traceback
+    ) -> None:
+        if issubclass(exc_type, KeyboardInterrupt):
+            dpg.stop_dearpygui()
+            return
+
+        self.show_notification(str(exc_value), style.red)
+        raise exc_value
 
     def _setup_menu(self) -> None:
         with dpg.menu_bar():
@@ -190,6 +217,19 @@ class PyBnkGui:
                         callback=self.node_reset_json,
                     )
 
+        with dpg.window(
+            popup=True,
+            no_move=True,
+            no_saved_settings=True,
+            show=False,
+            min_size=(10, 10),
+            tag=f"{tag}_notification_window",
+        ):
+            with dpg.group(width=-1):
+                dpg.add_text("TEST", color=style.red, tag=f"{tag}_notification_text")
+
+        dpg.bind_item_theme(f"{tag}_notification_window", themes.notification_frame)
+
     def _setup_context_menus(self) -> None:
         tag = self.tag
 
@@ -226,6 +266,21 @@ class PyBnkGui:
                 callback=self.node_delete,
                 tag=f"{tag}_context_delete",
             )
+
+    def show_notification(
+        self, msg: str, color: tuple[int, int, int, int] = style.red
+    ) -> None:
+        w = dpg.get_viewport_width() - 6
+        h = dpg.get_viewport_height() - dpg.get_item_height(
+            f"{self.tag}_notification_window"
+        )
+        # Note: since this is a popup there's no need for a timer to hide it
+        dpg.configure_item(
+            f"{self.tag}_notification_window", show=True, pos=(-5, h), min_size=(w, 10)
+        )
+        dpg.configure_item(
+            f"{self.tag}_notification_text", default_value=msg, color=color
+        )
 
     def _set_component_highlight(self, widget: str, highlight: bool) -> None:
         if highlight:
