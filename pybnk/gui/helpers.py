@@ -1,5 +1,5 @@
-from typing import Any, Callable, Literal, get_args, get_origin
-from enum import Enum
+from typing import Any, Callable, Literal, Type, get_args, get_origin
+from enum import Enum, IntFlag
 import inspect
 import builtins
 from pathlib import Path
@@ -14,113 +14,256 @@ from pybnk.gui.file_dialog import open_file_dialog
 
 
 def create_widget(
-    vtype: type,
+    value_type: type,
     label: str,
-    callback: Callable[[str, Any, Any], Any],
-    default: Any = None,
+    callback: Callable[[str, Any, Any], None],
     *,
+    default: Any = None,
+    choices: list[str | tuple[str | Any]] = None,
     readonly: bool = False,
-    user_data: Any = None,
+    flags_as_int: bool = False,
+    accept_on_enter: bool = False,
     parent: str = 0,
     tag: str = 0,
-) -> None:
-    if vtype is bool:
-        return dpg.add_checkbox(
-            label=label,
-            default_value=default or vtype(),
-            callback=callback,
-            enabled=not readonly,
-            user_data=user_data,
-            parent=parent,
-            tag=tag,
-        )
-    elif vtype is int:
-        return dpg.add_input_int(
-            label=label,
-            default_value=default or vtype(),
-            callback=callback,
-            readonly=readonly,
-            enabled=not readonly,
-            user_data=user_data,
-            parent=parent,
-            tag=tag,
-        )
-    elif vtype is float:
-        return dpg.add_input_float(
-            label=label,
-            default_value=default or vtype(),
-            callback=callback,
-            readonly=readonly,
-            enabled=not readonly,
-            user_data=user_data,
-            parent=parent,
-            tag=tag,
-        )
-    elif vtype is str:
-        return dpg.add_input_text(
-            label=label,
-            default_value=default or vtype(),
-            callback=callback,
-            readonly=readonly,
-            enabled=not readonly,
-            user_data=user_data,
-            parent=parent,
-            tag=tag,
-        )
-    # TODO do this nicer
-    elif vtype is Enum:
-        def on_change(sender: str, app_data: str, user_data: Any) -> None:
-            print(app_data)
-            # TODO
+    user_data: Any = None,
+    **kwargs,
+) -> str:
+    if tag in (None, 0, ""):
+        tag = dpg.generate_uuid()
 
-        items = [v.name for v in vtype]
+    if isinstance(value_type, type) and issubclass(value_type, IntFlag):
+        if flags_as_int:
+            value_type = int
+        else:
+            # We have specific support for flags already
+            return create_flag_checkboxes(
+                value_type,
+                callback,
+                readonly=readonly,
+                base_tag=tag,
+                parent=parent,
+                active_flags=default if default is not None else 0,
+                user_data=user_data,
+            )
 
-        return dpg.add_combo(
+    # Support enums by extracting their choices
+    if isinstance(value_type, type) and issubclass(value_type, Enum):
+        choices = [(v.name, v.value) for v in value_type]
+        if default is not None and not isinstance(default, str):
+            default = value_type(default).name
+
+    # If choices is provided we treat this as a Literal
+    if choices:
+        orig_callback = callback
+        items = [x[0] if isinstance(x, tuple) else x for x in choices]
+
+        def new_callback(sender: str, data: str, cb_user_data: Any):
+            # Find the selected item in the original choices list
+            index = items.index(data)
+            selected = choices[index]
+
+            # If a tuple was provided the first element is only a label,
+            # the actual value is in the second element
+            if isinstance(selected, tuple):
+                selected = selected[1]
+
+            orig_callback(sender, selected, user_data)
+
+        value_type = Literal[tuple(items)]
+        callback = new_callback
+
+    # The simple types
+    type_origin = get_origin(value_type)
+    if type_origin == Literal:
+        choices = get_args(value_type)
+        items = [str(c) for c in choices]
+
+        if default in choices:
+            default = items[choices.index(default)]
+
+        dpg.add_combo(
             items,
-            default_value=default or items[0],
-            callback=on_change,
-            readonly=readonly,
+            label=label,
+            default_value=default if default is not None else "",
             enabled=not readonly,
-            user_data=user_data,
+            callback=callback,
             parent=parent,
             tag=tag,
+            **kwargs,
+            user_data=user_data,
         )
-    elif get_origin(vtype) is Literal:
-        def on_change(sender: str, app_data: str, user_data: Any) -> None:
-            print(app_data)
-            # TODO
-
-        items = get_args(vtype)
-
-        return dpg.add_combo(
-            items,
-            default_value=default or items[0],
-            callback=on_change,
+    elif value_type is int:
+        dpg.add_input_int(
+            label=label,
+            default_value=int(default) if default is not None else 0,
             readonly=readonly,
             enabled=not readonly,
-            user_data=user_data,
+            callback=callback,
+            on_enter=accept_on_enter,
             parent=parent,
             tag=tag,
+            user_data=user_data,
+            **kwargs,
         )
-    elif vtype is NodeLike:
+    elif value_type is float:
+        dpg.add_input_float(
+            label=label,
+            default_value=float(default) if default is not None else 0.0,
+            readonly=readonly,
+            enabled=not readonly,
+            callback=callback,
+            on_enter=accept_on_enter,
+            parent=parent,
+            tag=tag,
+            user_data=user_data,
+            **kwargs,
+        )
+    elif value_type is bool:
+        dpg.add_checkbox(
+            label=label,
+            default_value=bool(default) if default is not None else False,
+            enabled=not readonly,
+            callback=callback,
+            parent=parent,
+            tag=tag,
+            user_data=user_data,
+            **kwargs,
+        )
+    elif not type_origin and value_type in (type(None), str):
+        dpg.add_input_text(
+            label=label,
+            default_value=str(default) if default is not None else "",
+            readonly=readonly,
+            enabled=not readonly,
+            callback=callback,
+            on_enter=accept_on_enter,
+            parent=parent,
+            tag=tag,
+            user_data=user_data,
+            **kwargs,
+        )
+    elif value_type is NodeLike:
         if isinstance(default, Node):
             default = default.id
 
-        def on_change(sender: str, app_data: str, user_data: Any) -> None:
-            print(app_data)
+        def select_node() -> None:
             # TODO
+            pass
 
-        return dpg.add_input_text(
-            label=label,
-            default_value=default or vtype(),
-            decimal=True,
-            callback=None, # TODO
+        with dpg.group(horizontal=True, parent=parent):
+            dpg.add_input_text(
+                default_value=default or "0",
+                decimal=True,
+                readonly=readonly,
+                enabled=not readonly,
+                user_data=user_data,
+                tag=tag,
+            )
+            dpg.add_button(
+                arrow=True,
+                direction=dpg.mvDir_Right,
+                callback=select_node,
+            )
+            dpg.add_text(label)
+    else:
+        raise ValueError(f"Could not handle type {value_type} for {label}")
+
+    return tag
+
+
+def create_flag_checkboxes(
+    flag_type: Type[IntFlag],
+    callback: Callable[[str, int, Any], None],
+    *,
+    readonly: bool = False,
+    base_tag: str = 0,
+    parent: str = 0,
+    active_flags: int = 0,
+    user_data: Any = None,
+) -> str:
+    if base_tag in (None, 0, ""):
+        base_tag = dpg.generate_uuid()
+
+    zero_name = flag_type(0).name or "DISABLED"
+
+    def on_flag_changed(sender: str, checked: bool, flag: IntFlag):
+        nonlocal active_flags
+
+        if checked:
+            # Checking 0 will disable all other flags
+            if flag == 0:
+                active_flags = flag_type(0)
+            else:
+                active_flags |= flag
+        else:
+            # Prevent disabling 0
+            if flag == 0:
+                dpg.set_value(f"{base_tag}_{zero_name}", True)
+                return
+
+            active_flags &= ~flag
+
+        # Flags are not required to have a 0 mapping
+        if dpg.does_item_exist(f"{base_tag}_{zero_name}"):
+            # 0 disables all other flags and enables 0
+            if active_flags == 0:
+                for flag in flag_type:
+                    dpg.set_value(f"{base_tag}_{flag.name}", False)
+                dpg.set_value(f"{base_tag}_{zero_name}", True)
+            # 0 is disabled by any other flag
+            else:
+                dpg.set_value(f"{base_tag}_{zero_name}", False)
+
+        dpg.set_value(f"{base_tag}_numeric", active_flags)
+
+        if callback:
+            callback(base_tag, active_flags, user_data)
+
+    def set_from_int(sender: str, new_value: int, user_data: Any):
+        new_flags = flag_type(new_value)
+        for flag in flag_type:
+            active = flag in new_flags
+            if flag.value == 0 and new_flags > 0:
+                active = False
+
+            dpg.set_value(f"{base_tag}_{flag.name}", active)
+            on_flag_changed(sender, active, flag)
+
+    if not isinstance(active_flags, flag_type):
+        try:
+            active_flags = flag_type(active_flags)
+        except ValueError:
+            logger.error(
+                f"{active_flags} is not valid for flag type {flag_type.__name__}"
+            )
+            active_flags = 0
+
+    with dpg.group(parent=parent, tag=base_tag):
+        dpg.add_input_int(
+            default_value=active_flags,
+            callback=set_from_int,
             readonly=readonly,
             enabled=not readonly,
-            user_data=user_data,
-            parent=parent,
-            tag=tag,
+            tag=f"{base_tag}_numeric",
         )
+
+        for flag in flag_type:
+            if flag == 0:
+                # 0 is in every flag
+                active = active_flags == 0
+            else:
+                active = flag in active_flags
+
+            dpg.add_checkbox(
+                default_value=active,
+                callback=on_flag_changed,
+                enabled=not readonly,
+                label=flag.name,
+                tag=f"{base_tag}_{flag.name}",
+                user_data=flag,
+            )
+
+    return base_tag
 
 
 def create_properties_table(

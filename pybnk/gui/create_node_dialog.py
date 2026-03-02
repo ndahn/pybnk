@@ -35,8 +35,6 @@ def create_node_dialog(
         spec = get_function_spec(type_class.new, None)
         node_args.clear()
 
-        print("###", spec)
-
         dpg.delete_item(f"{tag}_node_args", children_only=True, slot=1)
 
         for name, arg in spec.items():
@@ -48,7 +46,7 @@ def create_node_dialog(
                 arg.type,
                 name,
                 set_arg,
-                arg.default,
+                default=arg.default,
                 user_data=name,
                 parent=f"{tag}_node_args",
                 tag=f"{tag}_arg_{name}",

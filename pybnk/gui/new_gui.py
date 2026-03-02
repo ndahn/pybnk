@@ -218,8 +218,9 @@ class PyBnkGui:
                     )
 
         with dpg.window(
-            popup=True,
+            no_title_bar=True,
             no_move=True,
+            no_close=True,
             no_saved_settings=True,
             show=False,
             min_size=(10, 10),
@@ -229,6 +230,11 @@ class PyBnkGui:
                 dpg.add_text("TEST", color=style.red, tag=f"{tag}_notification_text")
 
         dpg.bind_item_theme(f"{tag}_notification_window", themes.notification_frame)
+
+        with dpg.handler_registry():
+            dpg.add_mouse_click_handler(
+                callback=lambda s, a, u: dpg.hide_item(f"{tag}_notification_window")
+            )
 
     def _setup_context_menus(self) -> None:
         tag = self.tag
@@ -331,6 +337,7 @@ class PyBnkGui:
         logger.info(f"Loading soundbank {path}")
         self.bnk = Soundbank.load(path)
         self.regenerate()
+        logger.info(f"Loaded {len(self.events)} events")
 
     def _create_root_entry(self, event: Event) -> None:
         bnk = self.bnk
@@ -457,8 +464,6 @@ class PyBnkGui:
             if len(self.events) >= self.max_events:
                 break
 
-        logger.info(f"Loaded {len(self.events)} events")
-
     def _open_context_menu(
         self, sender: str, app_data: Any, user_data: tuple[str, Node]
     ) -> None:
@@ -533,7 +538,7 @@ class PyBnkGui:
             )
 
             # Find all exposed python properties, including those from base classes
-            properties = {}
+            properties: dict[str, property] = {}
             todo = deque([node.__class__])
             while todo:
                 c = todo.popleft()
@@ -546,22 +551,26 @@ class PyBnkGui:
                 todo.extend(c.__bases__)
 
             for name, prop in properties.items():
-                # TODO get type from type hint instead
+                value_type = prop.fget.__annotations__["return"]
                 value = prop.fget(node)
                 readonly = prop.fset is None
                 doc = doc_parse(prop.__doc__)
 
                 def set_property(sender: str, new_value: Any, prop: property):
                     prop.fset(node, new_value)
+                    self.node_reset_json()
 
-                widget = create_widget(
-                    type(value),
-                    name,
-                    set_property,
-                    value,
-                    readonly=readonly,
-                    user_data=prop,
-                )
+                try:
+                    widget = create_widget(
+                        value_type,
+                        name,
+                        set_property,
+                        default=value,
+                        readonly=readonly,
+                        user_data=prop,
+                    )
+                except Exception:
+                    continue
 
                 if widget and doc:
                     with dpg.tooltip(dpg.last_item()):
