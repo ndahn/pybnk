@@ -27,6 +27,18 @@ from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dia
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 
 
+# TODO locate external tools
+# TODO boss music
+# TODO ambience
+# TODO mass transfer
+# TODO convert audio files
+# TODO edit globals (buses, actor mixers, attenuations)
+# TODO setup RTCPs
+# TODO streaming audio
+# TODO action graph visualization
+# TODO localizations
+
+
 def dpg_init():
     with dpg.font_registry():
         import pybnk
@@ -133,6 +145,14 @@ class PyBnkGui:
                 dpg.add_menu_item(
                     label="Calc Hash",
                     callback=self._open_calc_hash_dialog,
+                )
+                dpg.add_menu_item(
+                    label="Mass Transfer",
+                    callback=None,  # TODO self._open_mass_transfer_dialog,
+                )
+                dpg.add_menu_item(
+                    label="Convert Audio Files",
+                    callback=None,  # TODO self._open_convert_audio_files_dialog,
                 )
 
             with dpg.menu(label="Help"):
@@ -262,6 +282,7 @@ class PyBnkGui:
                 callback=self.node_copy,
                 tag=f"{tag}_context_copy",
             )
+            # TODO copy/paste hierarchy
             dpg.add_separator()
             dpg.add_menu_item(
                 label="New child",
@@ -627,7 +648,6 @@ class PyBnkGui:
         center_window(tag)
 
     def node_cut(self) -> None:
-        # TODO copy hierarchy?
         self.node_copy()
         self.node_delete()
         logger.info(f"Cut node {self.selected_node} to clipboard")
@@ -635,7 +655,6 @@ class PyBnkGui:
         self.regenerate()
 
     def node_copy(self) -> None:
-        # TODO copy hierarchy?
         data = self.selected_node.json()
         pyperclip.copy(data)
         logger.info(f"Copied node {self.selected_node} to clipboard")
@@ -676,14 +695,11 @@ class PyBnkGui:
         try:
             data = json.loads(data_str)
         except json.JSONDecodeError as e:
-            logger.error("Failed to parse json", exc_info=e)
-            # TODO show error to user, statusbar?
-
-            return
+            raise ValueError("Failed to parse json") from e
 
         self.selected_node.update(data)
-        # TODO might have new/different references, regenerate all children
-        self.regenerate_attributes()
+        # TODO keep selected open
+        self.regenerate()
 
     def node_reset_json(self) -> None:
         value = ""
@@ -703,8 +719,7 @@ class PyBnkGui:
             data = node.json()
             pyperclip.copy(data)
             logger.info(f"Copied new node {node} to clipboard")
-            # TODO notify user
-            # TODO add to soundbank?
+            # TODO what to do with created node? Replace with create action/event
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
 
@@ -769,12 +784,6 @@ class PyBnkGui:
             dpg.show_item(tag)
             dpg.focus_item(tag)
             return
-
-        def on_ambience_track_created(nodes: list[Node]) -> None:
-            self.bnk.add_nodes(nodes)
-            logger.info(
-                f"Added new ambience track {nodes[0].lookup_name()} ({nodes[0].id})"
-            )
 
         calc_hash_dialog(tag=tag)
 
