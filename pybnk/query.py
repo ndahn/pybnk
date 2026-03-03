@@ -186,8 +186,13 @@ def _parse_query(query_string: str) -> _Condition:
 
 
 def _match_value(actual_value: str, search_value: str) -> bool:
+    if actual_value is None:
+        return False
+    
     if search_value == "*":
-        return actual_value is not None
+        return True
+
+    actual_value = str(actual_value)
 
     if search_value.startswith("~"):
         fuzzy_term = search_value[1:]

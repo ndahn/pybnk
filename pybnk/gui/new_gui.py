@@ -78,6 +78,7 @@ class PyBnkGui:
         self._setup_menu()
         self._setup_content()
         self._setup_context_menus()
+        self._set_bnk_menus_enabled(False)
 
         class LogHandler(logging.Handler):
             def emit(this, record: logging.LogRecord):
@@ -167,10 +168,12 @@ class PyBnkGui:
                 dpg.add_menu_item(
                     label="Mass Transfer",
                     callback=None,  # TODO self._open_mass_transfer_dialog,
+                    enabled=False,  # TODO
                 )
                 dpg.add_menu_item(
                     label="Convert Audio Files",
                     callback=None,  # TODO self._open_convert_audio_files_dialog,
+                    enabled=False,  # TODO
                 )
 
             with dpg.menu(label="Help"):
@@ -206,7 +209,7 @@ class PyBnkGui:
                         callback=lambda: dpg.show_tool(dpg.mvTool_Stack),
                     )
 
-    def _activate_bnk_menus(self, enabled: bool) -> None:
+    def _set_bnk_menus_enabled(self, enabled: bool) -> None:
         for subtag in [
             "_menu_file_save",
             "_menu_file_save_as",
@@ -222,12 +225,6 @@ class PyBnkGui:
     def _setup_content(self) -> None:
         tag = self.tag
 
-        def filter_events(sender: str, filt: str, user_data: Any) -> None:
-            self._regenerate_events_list(filt)
-
-        def filter_globals(sender: str, filt: str, user_data: Any) -> None:
-            self._regenerate_globals_list(filt)
-
         with dpg.group(horizontal=True):
             with dpg.child_window(
                 horizontal_scrollbar=False,
@@ -241,7 +238,7 @@ class PyBnkGui:
                         dpg.add_input_text(
                             hint="Filter...",
                             width=-1,
-                            callback=filter_events,
+                            callback=self._regenerate_events_list,
                             tag=f"{tag}_events_filter",
                         )
                         dpg.add_text("Showing 0 events", tag=f"{tag}_events_count")
@@ -258,7 +255,7 @@ class PyBnkGui:
                         dpg.add_input_text(
                             hint="Filter...",
                             width=-1,
-                            callback=filter_globals,
+                            callback=self._regenerate_globals_list,
                             tag=f"{tag}_globals_filter",
                         )
                         dpg.add_text("Showing 0 globals", tag=f"{tag}_globals_count")
@@ -492,7 +489,7 @@ class PyBnkGui:
                 unpack_soundbank(bnk2json, path)
 
             self._load_soundbank(path)
-            self._activate_bnk_menus(True)
+            self._set_bnk_menus_enabled(True)
             self.config.add_recent_file(path)
             self.config.save()
 
@@ -597,19 +594,28 @@ class PyBnkGui:
                     )
                     register_context_menu(child_row.selectable, child)
                 else:
-                    with table_tree_leaf(table, tag=f"{table}_node_{ref_id}"):
-                        dpg.add_selectable(
-                            label=f"[External] ({ref_id})",
-                            callback=None,
-                        )
+                    pass
+                    # TODO throws an exception for some reason?
+                    # with table_tree_leaf(table, tag=f"{table}_node_{ref_id}"):
+                    #     dpg.add_selectable(
+                    #         label=f"[External] ({ref_id})",
+                    #         callback=None,
+                    #     )
 
     def regenerate(self) -> None:
-        self.clear()
+        dpg.delete_item(f"{self.tag}_attributes", children_only=True, slot=1)
+        dpg.set_value(f"{self.tag}_json", "")
+
         self._regenerate_events_list()
         self._regenerate_globals_list()
 
-    def _regenerate_events_list(self, filt: str = None) -> None:
+    def _regenerate_events_list(self) -> None:
+        filt: str = dpg.get_value(f"{self.tag}_events_filter")
+        dpg.delete_item(f"{self.tag}_events_table", children_only=True, slot=1)
         self.event_map.clear()
+
+        # TODO this is wrong
+        # For every event traverse its graph and check if any of its children should be shown
         events = list(self.bnk.query(f"type=Event {filt or ''}"))
         dpg.set_value(
             f"{self.tag}_events_count",
@@ -632,9 +638,12 @@ class PyBnkGui:
             if len(self.event_map) >= self.max_list_nodes:
                 break
 
-    def _regenerate_globals_list(self, filt: str = None) -> None:
-        # TODO filter
+    def _regenerate_globals_list(self) -> None:
+        filt: str = dpg.get_value(f"{self.tag}_globals_filter")
+        dpg.delete_item(f"{self.tag}_globals_table", children_only=True, slot=1)
         self.globals_map.clear()
+        
+        # TODO filter
         global_nodes = [
             n
             for n in self.bnk.hirc
@@ -803,15 +812,6 @@ class PyBnkGui:
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
-
-    def clear(self) -> None:
-        tag = self.tag
-        dpg.set_value(f"{tag}_events_filter", "")
-        dpg.delete_item(f"{tag}_events_table", children_only=True, slot=1)
-        dpg.set_value(f"{tag}_globals_filter", "")
-        dpg.delete_item(f"{tag}_globals_table", children_only=True, slot=1)
-        dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
-        dpg.set_value(f"{tag}_json", "")
 
     def _bank_delete_orphans(self) -> None:
         self.bnk.delete_orphans()
