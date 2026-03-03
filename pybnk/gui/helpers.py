@@ -10,7 +10,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
-from pybnk.gui.dialogs.file_dialog import open_file_dialog
+from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
 from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
 
 
@@ -365,7 +365,6 @@ def create_properties_table(
     row_widgets: dict[str, tuple[int, int, int]] = {}
 
     # The actual widgets
-    dpg.add_spacer(height=5)
     dpg.add_text("Properties")
 
     with dpg.table(
@@ -415,12 +414,11 @@ def create_filepaths_table(
         on_value_changed(tag, list(current_paths), user_data)
 
     def on_add_clicked() -> None:
-        result = open_file_dialog(filetypes=filetypes)
+        result = open_multiple_dialog(title=title, filetypes=filetypes)
         if not result:
             return
 
-        path = Path(result)
-        current_paths.append(path)
+        current_paths.extend(Path(p) for p in result)
         refresh_table()
         on_value_changed(tag, list(current_paths), user_data)
 
@@ -437,12 +435,11 @@ def create_filepaths_table(
 
     def add_footer() -> None:
         with dpg.table_row(parent=tag):
-            dpg.add_button(label="+ Add File", callback=on_add_clicked)
+            dpg.add_button(label="+ Add Files", callback=on_add_clicked)
 
     row_widgets: list[tuple[int, int]] = []
 
     # The actual widgets
-    dpg.add_spacer(height=5)
     dpg.add_text(title)
 
     with dpg.table(

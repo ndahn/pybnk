@@ -3,7 +3,6 @@ import sys
 from importlib import resources
 import logging
 import json
-from pathlib import Path
 from collections import deque
 import pyperclip
 from docstring_parser import parse as doc_parse
@@ -29,6 +28,7 @@ from pybnk.gui.dialogs.new_wwise_event_dialog import new_wwise_event_dialog
 from pybnk.gui.dialogs.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dialog
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
+from pybnk.gui.dialogs.convert_wav_dialog import convert_wav_dialog
 
 
 # TODO filters
@@ -172,8 +172,7 @@ class PyBnkGui:
                 )
                 dpg.add_menu_item(
                     label="Convert Audio Files",
-                    callback=None,  # TODO self._open_convert_audio_files_dialog,
-                    enabled=False,  # TODO
+                    callback=self._open_convert_audio_files_dialog,
                 )
 
             with dpg.menu(label="Help"):
@@ -404,50 +403,6 @@ class PyBnkGui:
         else:
             dpg.bind_item_theme(widget, themes.item_default)
 
-    def locate_bnk2json(self) -> str:
-        if not self.config.bnk2json_exe or not Path(self.config.bnk2json_exe).is_file():
-            bnk2json_exe = open_file_dialog(
-                title="Locate bnk2json.exe", filetypes={"bnk2json": "bnk2json.exe"}
-            )
-            if not bnk2json_exe:
-                raise ValueError("bnk2json is required for (re-)packing soundbanks")
-
-            self.config.bnk2json_exe = bnk2json_exe
-            self.config.save()
-
-        return self.config.bnk2json_exe
-
-    def locate_wwise(self) -> str:
-        if not self.config.wwise_exe or not Path(self.config.wwise_exe).is_file():
-            wwise_exe = open_file_dialog(
-                title="Locate WwiseConsole.exe",
-                filetypes={"WwiseConsole": "WwiseConsole.exe"},
-            )
-            if not wwise_exe:
-                raise ValueError("WwiseConsole is required for converting to WEM")
-
-            self.config.wwise_exe = wwise_exe
-            self.config.save()
-
-        return self.config.wwise_exe
-
-    def locate_vgmstream(self) -> str:
-        if (
-            not self.config.vgmstream_exe
-            or not Path(self.config.vgmstream_exe).is_file()
-        ):
-            vgmstream_exe = open_file_dialog(
-                title="Locate vgmstream-cli.exe",
-                filetypes={"vgmstream-cli": "vgmstream-cli.exe"},
-            )
-            if not vgmstream_exe:
-                raise ValueError("vgmstream-cli is required for converting WEMs")
-
-            self.config.vgmstream_exe = vgmstream_exe
-            self.config.save()
-
-        return self.config.wwise_exe
-
     def _save_soundbank(self) -> None:
         if not self.bnk:
             return
@@ -471,7 +426,7 @@ class PyBnkGui:
         if not self.bnk:
             return
 
-        bnk2json = self.locate_bnk2json()
+        bnk2json = self.config.locate_bnk2json()
         repack_soundbank(bnk2json, self.bnk.bnk_dir)
 
     def _open_soundbank(self) -> None:
@@ -485,7 +440,7 @@ class PyBnkGui:
         )
         if path:
             if path.endswith(".bnk"):
-                bnk2json = self.locate_bnk2json()
+                bnk2json = self.config.locate_bnk2json()
                 unpack_soundbank(bnk2json, path)
 
             self._load_soundbank(path)
@@ -801,6 +756,7 @@ class PyBnkGui:
                         dpg.add_text(doc.short_description)
 
             if isinstance(node, WwiseNode):
+                dpg.add_spacer(height=5)
                 create_properties_table(
                     node.properties,
                     on_properties_changed,
@@ -1026,6 +982,18 @@ class PyBnkGui:
             return
 
         calc_hash_dialog(tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_convert_audio_files_dialog(self) -> None:
+        tag = f"{self.tag}_calc_hash_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        convert_wav_dialog(self.config, None, tag=tag)
 
         dpg.split_frame()
         center_window(tag)

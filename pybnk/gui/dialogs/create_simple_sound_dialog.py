@@ -137,14 +137,16 @@ def create_simple_sound_dialog(
         )
 
         # Properties
+        dpg.add_spacer(height=5)
         create_properties_table(properties, on_properties_changed)
 
         # WEMs
+        dpg.add_spacer(height=5)
         create_filepaths_table(
             wem_paths,
             on_wems_changed,
             title="WEMs",
-            filetypes={"WEM Sounds": "*.wem"},
+            filetypes={"Wwise Audio (.wem)": "*.wem"},
         )
 
         dpg.add_separator()

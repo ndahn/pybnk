@@ -51,8 +51,8 @@ class Localization:
     # File dialog
     openfile_source_bank: str = "Select source soundbank"
     openfile_dest_bank: str = "Select destination soundbank"
-    soundbank_files: str = "Soundbank files"
-    json_files: str = "JSON files"
+    soundbank_files: str = "Soundbanks (.bnk)"
+    json_files: str = "JSON (.json)"
     all_files: str = "All files"
     
     # General UI

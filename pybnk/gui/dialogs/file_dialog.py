@@ -37,6 +37,57 @@ def open_file_dialog(
     return ret
 
 
+def open_multiple_dialog(
+    *,
+    title: str = None,
+    default_dir: str = None,
+    filetypes: dict[str, str] = None,
+) -> list[str]:
+    global _dialog_open
+    if _dialog_open:
+        return
+
+    _dialog_open = True
+
+    if not title:
+        title = ("Select files to load",)
+
+    if not default_dir:
+        default_dir = os.path.dirname(sys.argv[0])
+
+    ret = crossfiledialog.open_multiple(
+        title=title,
+        start_dir=default_dir,
+        filter=filetypes,
+    )
+    _dialog_open = False
+
+    return ret
+
+
+def choose_folder(
+    *,
+    title: str = None,
+    default_dir: str = None,
+) -> str:
+    global _dialog_open
+    if _dialog_open:
+        return
+
+    _dialog_open = True
+
+    if not title:
+        title = ("Select files to load",)
+
+    if not default_dir:
+        default_dir = os.path.dirname(sys.argv[0])
+
+    ret = crossfiledialog.choose_folder(title=title, start_dir=default_dir)
+    _dialog_open = False
+
+    return ret
+
+
 def save_file_dialog(
     *,
     title: str = None,
@@ -47,7 +98,7 @@ def save_file_dialog(
     global _dialog_open
     if _dialog_open:
         return
-        
+
     _dialog_open = True
 
     if not title:
@@ -56,7 +107,6 @@ def save_file_dialog(
     if not default_dir:
         default_dir = os.path.dirname(sys.argv[0])
 
-    # dpg file dialog sucks, so we use the native one instead
     # TODO default_file and filetypes not supported
     ret = crossfiledialog.save_file(
         title=title,
@@ -64,5 +114,5 @@ def save_file_dialog(
     )
 
     _dialog_open = False
-    
+
     return ret

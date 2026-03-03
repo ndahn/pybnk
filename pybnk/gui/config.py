@@ -2,7 +2,10 @@ import sys
 from os import path
 import yaml
 import inspect
+from pathlib import Path
 from dataclasses import dataclass, field, asdict
+
+from pybnk.gui.dialogs.file_dialog import open_file_dialog
 
 
 @dataclass
@@ -33,6 +36,50 @@ class Config:
 
         with open(config_path, "w") as f:
             yaml.safe_dump(asdict(self), f)
+
+    def locate_bnk2json(self) -> str:
+        if not self.bnk2json_exe or not Path(self.bnk2json_exe).is_file():
+            bnk2json_exe = open_file_dialog(
+                title="Locate bnk2json.exe", filetypes={"bnk2json.exe": "bnk2json.exe"}
+            )
+            if not bnk2json_exe:
+                raise ValueError("bnk2json not found")
+
+            self.bnk2json_exe = bnk2json_exe
+            self.save()
+
+        return self.bnk2json_exe
+
+    def locate_wwise(self) -> str:
+        if not self.wwise_exe or not Path(self.wwise_exe).is_file():
+            wwise_exe = open_file_dialog(
+                title="Locate WwiseConsole.exe",
+                filetypes={"WwiseConsole.exe": "WwiseConsole.exe"},
+            )
+            if not wwise_exe:
+                raise ValueError("WwiseConsole not found")
+
+            self.wwise_exe = wwise_exe
+            self.save()
+
+        return self.wwise_exe
+
+    def locate_vgmstream(self) -> str:
+        if (
+            not self.vgmstream_exe
+            or not Path(self.vgmstream_exe).is_file()
+        ):
+            vgmstream_exe = open_file_dialog(
+                title="Locate vgmstream-cli.exe",
+                filetypes={"vgmstream-cli.exe": "vgmstream-cli.exe"},
+            )
+            if not vgmstream_exe:
+                raise ValueError("vgmstream-cli not found")
+
+            self.vgmstream_exe = vgmstream_exe
+            self.save()
+
+        return self.wwise_exe
 
 
 _config: Config = None
