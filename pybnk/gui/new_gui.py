@@ -31,7 +31,7 @@ from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dia
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 
 
-# TODO locate external tools
+# TODO filters
 # TODO boss music
 # TODO ambience
 # TODO mass transfer
@@ -115,26 +115,29 @@ class PyBnkGui:
                     label="Save",
                     shortcut="ctrl-s",
                     callback=self._save_soundbank,
+                    tag=f"{self.tag}_menu_file_save",
                 )
                 dpg.add_menu_item(
                     label="Save As...",
                     shortcut="ctrl-shift-s",
                     callback=self._save_soundbank_as,
+                    tag=f"{self.tag}_menu_file_save_as",
                 )
                 dpg.add_separator()
                 dpg.add_menu_item(
                     label="Repack",
                     shortcut="f4",
                     callback=self._repack_soundbank,
+                    tag=f"{self.tag}_menu_file_repack",
                 )
 
-            with dpg.menu(label="Edit"):
+            with dpg.menu(label="Soundbank", tag=f"{self.tag}_menu_edit"):
                 dpg.add_menu_item(
                     label="Delete orphans",
                     callback=self._bank_delete_orphans,
                 )
 
-            with dpg.menu(label="Create"):
+            with dpg.menu(label="Create", tag=f"{self.tag}_menu_create"):
                 dpg.add_menu_item(
                     label="New Wwise Event",
                     callback=self._open_new_wwise_event_dialog,
@@ -147,10 +150,12 @@ class PyBnkGui:
                 dpg.add_menu_item(
                     label="Boss Track",
                     callback=self._open_boss_track_dialog,
+                    enabled=False,  # TODO
                 )
                 dpg.add_menu_item(
                     label="Ambience Track",
                     callback=self._open_ambience_track_dialog,
+                    enabled=False,  # TODO
                 )
 
             with dpg.menu(label="Tools"):
@@ -200,6 +205,19 @@ class PyBnkGui:
                         callback=lambda: dpg.show_tool(dpg.mvTool_Stack),
                     )
 
+    def _activate_bnk_menus(self, enabled: bool) -> None:
+        for subtag in [
+            "_menu_file_save",
+            "_menu_file_save_as",
+            "_menu_file_repack",
+            "_menu_edit",
+            "_menu_create",
+        ]:
+            if enabled:
+                dpg.enable_item(f"{self.tag}{subtag}")
+            else:
+                dpg.disable_item(f"{self.tag}{subtag}")
+
     def _setup_content(self) -> None:
         tag = self.tag
 
@@ -211,19 +229,35 @@ class PyBnkGui:
                 autosize_y=True,
                 tag=f"{tag}_events_window",
             ):
-                dpg.add_input_text(
-                    hint="Filter...", width=-1, tag=f"{tag}_events_filter"
-                )
-                dpg.add_text("Showing 0 events", tag=f"{tag}_events_count")
-                with dpg.table(
-                    no_host_extendX=True,
-                    resizable=True,
-                    borders_innerV=True,
-                    policy=dpg.mvTable_SizingFixedFit,
-                    header_row=False,
-                    tag=f"{tag}_events_table",
-                ):
-                    dpg.add_table_column(label="Node", width_stretch=True)
+                with dpg.tab_bar():
+                    with dpg.tab(label="Play"):
+                        dpg.add_input_text(
+                            hint="Filter...", width=-1, tag=f"{tag}_events_filter"
+                        )
+                        dpg.add_text("Showing 0 events", tag=f"{tag}_events_count")
+                        with dpg.table(
+                            no_host_extendX=True,
+                            resizable=True,
+                            borders_innerV=True,
+                            policy=dpg.mvTable_SizingFixedFit,
+                            header_row=False,
+                            tag=f"{tag}_events_table",
+                        ):
+                            dpg.add_table_column(label="Node", width_stretch=True)
+                    with dpg.tab(label="Globals"):
+                        dpg.add_input_text(
+                            hint="Filter...", width=-1, tag=f"{tag}_globals_filter"
+                        )
+                        dpg.add_text("Showing 0 globals", tag=f"{tag}_globals_count")
+                        with dpg.table(
+                            no_host_extendX=True,
+                            resizable=True,
+                            borders_innerV=True,
+                            policy=dpg.mvTable_SizingFixedFit,
+                            header_row=False,
+                            tag=f"{tag}_globals_table",
+                        ):
+                            dpg.add_table_column(label="Node", width_stretch=True)
 
             dpg.add_child_window(
                 autosize_y=True,
@@ -440,6 +474,7 @@ class PyBnkGui:
                 unpack_soundbank(bnk2json, path)
             
             self._load_soundbank(path)
+            self._activate_bnk_menus(True)
             self.config.add_recent_file(path)
             self.config.save()
 
@@ -719,6 +754,7 @@ class PyBnkGui:
         dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
         dpg.set_value(f"{tag}_json", "")
         dpg.set_value(f"{tag}_events_filter", "")
+        dpg.set_value(f"{tag}_globals_filter", "")
 
     def _bank_delete_orphans(self) -> None:
         self.bnk.delete_orphans()
