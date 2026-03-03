@@ -1,8 +1,8 @@
 from typing import Any, Type
 import sys
-from importlib import resources
 import logging
 import json
+from pathlib import Path
 from collections import deque
 import pyperclip
 from docstring_parser import parse as doc_parse
@@ -20,7 +20,7 @@ from pybnk.gui.helpers import (
     common_loading_indicator,
 )
 from pybnk.gui import style
-from pybnk.gui.style import init_themes, themes
+from pybnk.gui.style import themes
 from pybnk.gui.localization import Localization, English
 from pybnk.gui.table_tree_nodes import (
     table_tree_node,
@@ -31,7 +31,11 @@ from pybnk.gui.table_tree_nodes import (
 from pybnk.gui.dialogs.about_dialog import about_dialog
 from pybnk.gui.dialogs.create_node_dialog import create_node_dialog
 from pybnk.gui.dialogs.new_wwise_event_dialog import new_wwise_event_dialog
-from pybnk.gui.dialogs.file_dialog import open_file_dialog, save_file_dialog
+from pybnk.gui.dialogs.file_dialog import (
+    open_file_dialog,
+    save_file_dialog,
+    choose_folder,
+)
 from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dialog
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
@@ -47,22 +51,7 @@ from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 # TODO localizations
 
 
-def dpg_init():
-    with dpg.font_registry():
-        import pybnk
-
-        resource_file = resources.files(pybnk).joinpath(
-            "resources/NotoSansMonoCJKsc-Regular.otf"
-        )
-        with resources.path(pybnk, resource_file) as path:
-            with dpg.font(str(path), 18) as default_font:
-                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
-                dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Simplified_Common)
-
-        dpg.bind_font(default_font)
-
-
-class PyBnkGui:
+class BanksOfYonder:
     def __init__(self, tag: str = None):
         if tag is None:
             tag = dpg.generate_uuid()
@@ -136,6 +125,11 @@ class PyBnkGui:
                     shortcut="f4",
                     callback=self._repack_soundbank,
                     tag=f"{self.tag}_menu_file_repack",
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
+                    label="Create Empty Soundbank",
+                    callback=self._create_empty_soundbank,
                 )
 
             with dpg.menu(label="Soundbank", tag=f"{self.tag}_menu_edit"):
@@ -451,6 +445,18 @@ class PyBnkGui:
         finally:
             dpg.delete_item(loading)
 
+    def _create_empty_soundbank(self) -> None:
+        path = choose_folder(title="Choose Empty Directory")
+        if path:
+            path = Path(path)
+            empty = not bool(next(path.iterdir(), None))
+            if not empty:
+                logger.error("Directory not empty")
+                return
+
+            bnk = Soundbank.create_empty_soundbank(path, path.name)
+            self._load_soundbank(bnk.bnk_dir)
+
     def _open_soundbank(self) -> None:
         lang = self.language
         path = open_file_dialog(
@@ -461,29 +467,32 @@ class PyBnkGui:
             },
         )
         if path:
-            if path.endswith(".bnk"):
-                logger.info(f"Unpacking soundbank {path}")
-                loading = common_loading_indicator("Unpacking...")
-                try:
-                    bnk2json = self.config.locate_bnk2json()
-                    unpack_soundbank(bnk2json, path)
-                finally:
-                    dpg.delete_item(loading)
+            self._load_soundbank(Path(path))
 
-            logger.info(f"Loading soundbank {path}")
-            loading = common_loading_indicator("Loading soundbank...")
+    def _load_soundbank(self, path: Path) -> None:
+        if path.name.endswith(".bnk"):
+            logger.info(f"Unpacking soundbank {path}")
+            loading = common_loading_indicator("Unpacking...")
             try:
-                self.bnk = Soundbank.load(path)
-                self.config.add_recent_file(path)
-                self.config.save()
-
-                self.regenerate()
-                self._set_bnk_menus_enabled(True)
-                logger.info(
-                    f"Loaded soundbank {self.bnk.name} with {len(self.event_map)} events"
-                )
+                bnk2json = self.config.locate_bnk2json()
+                unpack_soundbank(bnk2json, path)
             finally:
                 dpg.delete_item(loading)
+
+        logger.info(f"Loading soundbank {path}")
+        loading = common_loading_indicator("Loading soundbank...")
+        try:
+            self.bnk = Soundbank.load(path)
+            self.config.add_recent_file(path)
+            self.config.save()
+
+            self.regenerate()
+            self._set_bnk_menus_enabled(True)
+            logger.info(
+                f"Loaded soundbank {self.bnk.name} with {len(self.event_map)} events"
+            )
+        finally:
+            dpg.delete_item(loading)
 
     def _create_root_entry(self, node: Event, table: str) -> None:
         bnk = self.bnk
@@ -1040,20 +1049,3 @@ class PyBnkGui:
 
         dpg.split_frame()
         center_window(tag)
-
-
-if __name__ == "__main__":
-    dpg.create_context()
-    dpg_init()
-    init_themes()
-    dpg.create_viewport(title="PyBnk", width=1100, height=700)
-
-    with dpg.window() as main_window:
-        app = PyBnkGui()
-
-    dpg.set_primary_window(main_window, True)
-
-    dpg.setup_dearpygui()
-    dpg.show_viewport()
-    dpg.start_dearpygui()
-    dpg.destroy_context()

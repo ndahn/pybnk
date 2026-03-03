@@ -1,0 +1,33 @@
+from dearpygui import dearpygui as dpg
+
+from pybnk.util import resource_path
+from pybnk.gui.style import init_themes
+from pybnk.gui.new_gui import BanksOfYonder
+
+
+def dpg_init():
+    with dpg.font_registry():
+        with resource_path("NotoSansMonoCJKsc-Regular.otf") as path:
+            with dpg.font(str(path), 18) as default_font:
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+                dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Simplified_Common)
+
+        dpg.bind_font(default_font)
+
+    init_themes()
+
+
+if __name__ == "__main__":
+    dpg.create_context()
+    dpg_init()
+    dpg.create_viewport(title="Banks of Yonder", width=1100, height=700)
+
+    with dpg.window() as main_window:
+        app = BanksOfYonder()
+
+    dpg.set_primary_window(main_window, True)
+
+    dpg.setup_dearpygui()
+    dpg.show_viewport()
+    dpg.start_dearpygui()
+    dpg.destroy_context()

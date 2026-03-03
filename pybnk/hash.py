@@ -1,5 +1,6 @@
 from pathlib import Path
-from importlib import resources
+
+from pybnk.util import resource_data
 
 
 def calc_hash(input: str) -> int:
@@ -21,11 +22,8 @@ def calc_hash(input: str) -> int:
 
 
 def load_lookup_table(path: Path = None) -> dict[int, str]:
-    import pybnk
-
     if not path:
-        path = "resources/wwise_ids.txt"
-        keys = resources.files(pybnk).joinpath(path).read_text()
+        keys = resource_data("wwise_ids.txt")
     else:
         keys = [x.strip() for x in path.read_text().splitlines()]
 

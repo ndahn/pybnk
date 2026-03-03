@@ -5,11 +5,10 @@ from collections import deque
 import json
 import copy
 import shutil
-from importlib import resources
 import networkx as nx
 
 from pybnk.hash import calc_hash
-from pybnk.util import logger
+from pybnk.util import logger, resource_data
 from pybnk.node import Node
 from pybnk.query import query_nodes
 
@@ -50,12 +49,10 @@ class Soundbank:
 
     @classmethod
     def create_empty_soundbank(path: Path | str, name: str) -> "Soundbank":
-        import pybnk
-
         if not path.is_dir():
             raise ValueError(f"{path} is not a directory")
 
-        bnk = json.loads(resources.read_text(pybnk, "resources/empty_soundbank.json"))
+        bnk = json.loads(resource_data("empty_soundbank.json"))
         name_hash = calc_hash(name)
         bnk["sections"][0]["body"]["BKHD"]["bank_id"] = name_hash
 

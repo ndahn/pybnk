@@ -1,11 +1,10 @@
 from typing import Any, Iterator, Generator, TypeAlias
-from importlib import resources
 import json
 import copy
 from collections import deque
 
 from pybnk.hash import calc_hash, lookup_table
-from pybnk.util import logger
+from pybnk.util import logger, resource_data
 from pybnk.enums import reference_fields
 
 
@@ -16,13 +15,10 @@ NodeLike: TypeAlias = "Node | int | str"
 class Node:
     @classmethod
     def load_template(cls, template: str) -> dict:
-        import pybnk
-
         if not template.endswith(".json"):
             template += ".json"
-
-        path = "resources/templates/" + template
-        template_txt = resources.files(pybnk).joinpath(path).read_text()
+        
+        template_txt = resource_data("templates/" + template)
         return json.loads(template_txt)
 
     @classmethod

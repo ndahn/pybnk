@@ -1,4 +1,6 @@
-from typing import Any, TYPE_CHECKING
+from typing import Any, IO, Literal, TYPE_CHECKING
+from contextlib import AbstractContextManager
+from importlib import resources
 from pathlib import Path
 import logging
 import subprocess
@@ -12,6 +14,29 @@ if TYPE_CHECKING:
 logger = logging.getLogger("pybnk")
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
+
+
+def resource_data(resource_path: str, binary: bool = False) -> str | bytes:
+    import pybnk
+
+    res = resources.files(pybnk).joinpath("resources/" + resource_path)
+    if binary:
+        return res.read_bytes()
+    return res.read_text()
+
+
+def resource_file(resource_path: str, binary: bool = False) -> IO[str]:
+    import pybnk
+
+    res = resources.files(pybnk).joinpath("resources/" + resource_path)
+    return res.open(mode="rb" if binary else "r")
+
+
+def resource_path(resource_path: str) -> AbstractContextManager[Path, Literal[False]]:
+    import pybnk
+
+    res = resources.files(pybnk).joinpath("resources/" + resource_path)
+    return resources.path(pybnk, res)
 
 
 def unpack_soundbank(bnk2json_exe: Path, bnk_path: Path) -> Path:

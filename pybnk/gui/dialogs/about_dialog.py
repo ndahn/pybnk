@@ -3,6 +3,7 @@ import sys
 from dearpygui import dearpygui as dpg
 import webbrowser
 
+from pybnk.util import resource_path
 from pybnk.gui import style
 
 
@@ -14,10 +15,8 @@ def about_dialog(*, tag: str = None, **window_args) -> str:
 
     if not dpg.does_item_exist("pybnk_splash"):
         with dpg.texture_registry():
-            root = os.path.dirname(sys.argv[0])
-            # TODO create proper main, remove relative offset
-            splash_img = os.path.abspath(os.path.join(root, "../..", "docs/images/misty_cliffs.jpg"))
-            w, h, ch, data = dpg.load_image(splash_img)
+            with resource_path("misty_cliffs.jpg") as img_path:
+                w, h, ch, data = dpg.load_image(str(img_path))
             dpg.add_static_texture(w, h, data, tag="pybnk_splash")
 
     with dpg.window(
