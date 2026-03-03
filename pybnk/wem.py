@@ -9,7 +9,6 @@ from pydub import AudioSegment, silence
 
 from pybnk import Soundbank
 from pybnk.util import logger
-from pybnk.external import get_wwise, get_vgmstream_cli
 
 
 def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
@@ -92,12 +91,11 @@ def trim_silence(
 
 
 def wav2wem(
+    wwise_exe: Path,
     waves: list[Path] | Path,
     out_dir: Path = None,
     conversion: Literal["PCM", "Vorbis Quality High"] = "Vorbis Quality High",
 ) -> Path:
-    wwise = get_wwise()
-
     if isinstance(waves, Path):
         waves = [waves]
 
@@ -131,12 +129,12 @@ def wav2wem(
     # Create a wwise project if it doesn't exist yet
     wproj_path = wav_dir / "pybnk/pybnk.wproj"
     if not wproj_path.is_file():
-        subprocess.check_call([wwise, "create-new-project", str(wproj_path), "--quiet"])
+        subprocess.check_call([str(wwise_exe), "create-new-project", str(wproj_path), "--quiet"])
 
     # Convert the wav files by passing the wsources list to wwise
     subprocess.check_call(
         [
-            wwise,
+            str(wwise_exe),
             "convert-external-source",
             str(wproj_path),
             "--source-file",
@@ -159,9 +157,7 @@ def wav2wem(
     return Path(out_dir)
 
 
-def wem2wav(wems: list[Path] | Path, out_dir: Path = None,) -> None:
-    vgmstream = get_vgmstream_cli()
-
+def wem2wav(vgmstream_exe: Path, wems: list[Path] | Path, out_dir: Path = None,) -> None:
     if isinstance(wems, Path):
         wems = [wems]
 
@@ -177,7 +173,7 @@ def wem2wav(wems: list[Path] | Path, out_dir: Path = None,) -> None:
 
             subprocess.check_call(
                 [
-                    vgmstream,
+                    str(vgmstream_exe),
                     "-o",
                     wem.parent / wem.stem + ".wav",
                     str(wem),

@@ -5,8 +5,6 @@ import subprocess
 import shutil
 import networkx as nx
 
-from pybnk.external import get_rewwise
-
 if TYPE_CHECKING:
     from pybnk import Soundbank
 
@@ -16,23 +14,19 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 
-def unpack_soundbank(bnk_path: Path) -> Path:
-    rewwise_exe = get_rewwise()
-
+def unpack_soundbank(bnk2json_exe: Path, bnk_path: Path) -> Path:
     logger.info(f"Unpacking soundbank {bnk_path.name}")
-    subprocess.check_call([rewwise_exe, str(bnk_path)])
+    subprocess.check_call([str(bnk2json_exe), str(bnk_path)])
 
     return bnk_path.parent / bnk_path.stem / "soundbank.json"
 
 
-def repack_soundbank(bnk_dir: Path) -> Path:
-    rewwise_exe = get_rewwise()
-
+def repack_soundbank(bnk2json_exe: Path, bnk_dir: Path) -> Path:
     if bnk_dir.name == "sounbank.json":
         bnk_dir = bnk_dir.parent
 
     logger.info(f"Repacking soundbank {bnk_dir.stem}")
-    subprocess.check_call([rewwise_exe, str(bnk_dir)])
+    subprocess.check_call([str(bnk2json_exe), str(bnk_dir)])
 
     # Rename the backup and new soundbank to make things a little easier for the user
     old_file = bnk_dir.parent / bnk_dir.stem + ".bnk"

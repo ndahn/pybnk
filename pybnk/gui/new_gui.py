@@ -3,6 +3,7 @@ import sys
 from importlib import resources
 import logging
 import json
+from pathlib import Path
 from collections import deque
 import pyperclip
 from docstring_parser import parse as doc_parse
@@ -12,6 +13,7 @@ from pybnk import Soundbank, Node
 from pybnk.types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
+from pybnk.gui.config import Config, load_config
 from pybnk.gui.helpers import create_widget, center_window, create_properties_table
 from pybnk.gui import style
 from pybnk.gui.style import init_themes, themes
@@ -69,6 +71,8 @@ class PyBnkGui:
         self._selected_root: str = None
         self._selected_node: Node = None
         self._selected_node_backup: str = None
+
+        self.config: Config = load_config()
 
         self._setup_menu()
         self._setup_content()
@@ -356,6 +360,45 @@ class PyBnkGui:
         else:
             dpg.bind_item_theme(widget, themes.item_default)
 
+    def locate_bnk2json(self) -> str:
+        if not self.config.bnk2json_exe or not Path(self.config.bnk2json_exe).is_file():
+            bnk2json_exe = open_file_dialog(
+                title="Locate bnk2json.exe", filetypes={"bnk2json": "bnk2json.exe"}
+            )
+            if not bnk2json_exe:
+                raise ValueError("bnk2json is required for (re-)packing soundbanks")
+
+            self.config.bnk2json_exe = bnk2json_exe
+            self.config.save()
+
+        return self.config.bnk2json_exe
+
+    def locate_wwise(self) -> str:
+        if not self.config.wwise_exe or not Path(self.config.wwise_exe).is_file():
+            wwise_exe = open_file_dialog(
+                title="Locate WwiseConsole.exe", filetypes={"WwiseConsole": "WwiseConsole.exe"}
+            )
+            if not wwise_exe:
+                raise ValueError("WwiseConsole is required for converting to WEM")
+
+            self.config.wwise_exe = wwise_exe
+            self.config.save()
+
+        return self.config.wwise_exe
+
+    def locate_vgmstream(self) -> str:
+        if not self.config.vgmstream_exe or not Path(self.config.vgmstream_exe).is_file():
+            vgmstream_exe = open_file_dialog(
+                title="Locate vgmstream-cli.exe", filetypes={"vgmstream-cli": "vgmstream-cli.exe"}
+            )
+            if not vgmstream_exe:
+                raise ValueError("vgmstream-cli is required for converting WEMs")
+
+            self.config.vgmstream_exe = vgmstream_exe
+            self.config.save()
+
+        return self.config.wwise_exe
+
     def _save_soundbank(self) -> None:
         if not self.bnk:
             return
@@ -379,7 +422,8 @@ class PyBnkGui:
         if not self.bnk:
             return
 
-        repack_soundbank(self.bnk.bnk_dir)
+        bnk2json = self.locate_bnk2json()
+        repack_soundbank(bnk2json, self.bnk.bnk_dir)
 
     def _open_soundbank(self) -> None:
         lang = self.language
@@ -392,8 +436,12 @@ class PyBnkGui:
         )
         if path:
             if path.endswith(".bnk"):
-                unpack_soundbank(path)
+                bnk2json = self.locate_bnk2json()
+                unpack_soundbank(bnk2json, path)
+            
             self._load_soundbank(path)
+            self.config.add_recent_file(path)
+            self.config.save()
 
     def _load_soundbank(self, path: str) -> None:
         logger.info(f"Loading soundbank {path}")
