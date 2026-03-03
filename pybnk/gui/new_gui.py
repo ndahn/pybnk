@@ -222,6 +222,12 @@ class PyBnkGui:
     def _setup_content(self) -> None:
         tag = self.tag
 
+        def filter_events(sender: str, filt: str, user_data: Any) -> None:
+            self._regenerate_events_list(filt)
+
+        def filter_globals(sender: str, filt: str, user_data: Any) -> None:
+            self._regenerate_globals_list(filt)
+
         with dpg.group(horizontal=True):
             with dpg.child_window(
                 horizontal_scrollbar=False,
@@ -233,7 +239,10 @@ class PyBnkGui:
                 with dpg.tab_bar():
                     with dpg.tab(label="Play"):
                         dpg.add_input_text(
-                            hint="Filter...", width=-1, tag=f"{tag}_events_filter"
+                            hint="Filter...",
+                            width=-1,
+                            callback=filter_events,
+                            tag=f"{tag}_events_filter",
                         )
                         dpg.add_text("Showing 0 events", tag=f"{tag}_events_count")
                         with dpg.table(
@@ -247,7 +256,10 @@ class PyBnkGui:
                             dpg.add_table_column(label="Node", width_stretch=True)
                     with dpg.tab(label="Globals"):
                         dpg.add_input_text(
-                            hint="Filter...", width=-1, tag=f"{tag}_globals_filter"
+                            hint="Filter...",
+                            width=-1,
+                            callback=filter_globals,
+                            tag=f"{tag}_globals_filter",
                         )
                         dpg.add_text("Showing 0 globals", tag=f"{tag}_globals_count")
                         with dpg.table(
@@ -589,7 +601,8 @@ class PyBnkGui:
         self._regenerate_events_list()
         self._regenerate_globals_list()
 
-    def _regenerate_events_list(self) -> None:
+    def _regenerate_events_list(self, filt: str = None) -> None:
+        # TODO filter
         self.event_map.clear()
         events = list(self.bnk.query({"type": "Event"}))
         dpg.set_value(
@@ -614,7 +627,8 @@ class PyBnkGui:
             if len(self.event_map) >= self.max_list_nodes:
                 break
 
-    def _regenerate_globals_list(self) -> None:
+    def _regenerate_globals_list(self, filt: str = None) -> None:
+        # TODO filter
         self.globals_map.clear()
         global_nodes = [
             n
