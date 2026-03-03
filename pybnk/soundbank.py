@@ -11,7 +11,7 @@ import networkx as nx
 from pybnk.hash import calc_hash
 from pybnk.util import logger
 from pybnk.node import Node
-from pybnk.enums import reference_fields
+from pybnk.query import query_nodes
 
 
 class Soundbank:
@@ -103,7 +103,8 @@ class Soundbank:
 
     def wems(self) -> list[int]:
         wems = []
-        for sound in self.query({"type": "Sound"}):
+        # TODO not covering music tracks
+        for sound in self.query("type=Sound"):
             wid = sound["bank_source_data/media_information/source_id"]
             wems.append(wid)
 
@@ -129,7 +130,7 @@ class Soundbank:
 
         if new_bnk_id is not None:
             bnk.id = new_bnk_id
-            for action in bnk.query({"type": "Action"}):
+            for action in bnk.query("type=Action"):
                 bid = action.get("params/bank_id", None)
                 if bid == self.id:
                     action["params/bank_id"] = new_bnk_id
@@ -394,26 +395,14 @@ class Soundbank:
 
         return upchain
 
-    def query(self, conditions: dict[str, Any]) -> Generator[Node, None, None]:
-        for node in self.hirc:
-            for path, val in conditions.items():
-                if path == "type":
-                    if node.type != val:
-                        break
-                elif path in ("id", "hash"):
-                    if node.id != val:
-                        break
-                elif node[path] != val:
-                    break
-            else:
-                # Node matched all conditions
-                yield node
-
-    def query_one(self, conditions: dict[str, Any], default: Any = None) -> Node:
-        return next(self.query(conditions), default)
+    def query(self, query: str) -> Generator[Node, None, None]:
+        yield from query_nodes(self.hirc, query)
+        
+    def query_one(self, query: str, default: Any = None) -> Node:
+        return next(self.query(query), default)
 
     def find_events(self, event_type: str = "Play") -> Generator[Node, None, None]:
-        events = list(self.query({"type": "Event"}))
+        events = list(self.query("type=Event"))
         for evt in events:
             for aid in evt["actions"]:
                 action = self[aid]

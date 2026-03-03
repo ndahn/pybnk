@@ -28,10 +28,7 @@ def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
 
         sound_nodes = list(
             bnk.query(
-                {
-                    "type": "Sound",
-                    "bank_source_data/media_information/source_id": wem_id,
-                }
+                f"type=Sound bank_source_data/media_information/source_id={wem_id}"
             )
         )
 
@@ -129,7 +126,9 @@ def wav2wem(
     # Create a wwise project if it doesn't exist yet
     wproj_path = wav_dir / "pybnk/pybnk.wproj"
     if not wproj_path.is_file():
-        subprocess.check_call([str(wwise_exe), "create-new-project", str(wproj_path), "--quiet"])
+        subprocess.check_call(
+            [str(wwise_exe), "create-new-project", str(wproj_path), "--quiet"]
+        )
 
     # Convert the wav files by passing the wsources list to wwise
     subprocess.check_call(
@@ -157,7 +156,11 @@ def wav2wem(
     return Path(out_dir)
 
 
-def wem2wav(vgmstream_exe: Path, wems: list[Path] | Path, out_dir: Path = None,) -> None:
+def wem2wav(
+    vgmstream_exe: Path,
+    wems: list[Path] | Path,
+    out_dir: Path = None,
+) -> None:
     if isinstance(wems, Path):
         wems = [wems]
 

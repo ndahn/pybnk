@@ -85,7 +85,7 @@ def select_node_of_type(
     tag: str = 0,
     user_data: Any = None,
 ) -> str:
-    candidates = list(bnk.query({"type": node_type.__name__}))
+    candidates = list(bnk.query(f"type={node_type.__name__}"))
 
     def get_nodes(filt: str) -> list[_T]:
         if not filt:

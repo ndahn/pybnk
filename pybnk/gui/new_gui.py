@@ -602,9 +602,8 @@ class PyBnkGui:
         self._regenerate_globals_list()
 
     def _regenerate_events_list(self, filt: str = None) -> None:
-        # TODO filter
         self.event_map.clear()
-        events = list(self.bnk.query({"type": "Event"}))
+        events = list(self.bnk.query(f"type=Event {filt or ''}"))
         dpg.set_value(
             f"{self.tag}_events_count",
             f"Showing {min(self.max_list_nodes, len(events))}/{len(events)} events",

@@ -120,6 +120,9 @@ class Node:
         else:
             raise ValueError(f"Invalid node ID {id}")
 
+    def get_name(self) -> str:
+        return self._attr["id"].get("String")
+
     @property
     def parent(self) -> int:
         """ID of a node's parent node."""
@@ -142,7 +145,7 @@ class Node:
             path, old_parent = self.resolve_path("node_base_params/direct_parent_id")
             if old_parent > 0 and parent > 0 and parent != old_parent:
                 logger.warning(f"Node {self} is being assigned new parent {parent}")
-            
+
             self[path] = parent
         except Exception:
             raise ValueError(f"{self} is not a parentable node")
@@ -211,14 +214,18 @@ class Node:
                 for p in parts[:-1]:
                     obj = obj.setdefault(p, {})
                     if not isinstance(obj, dict):
-                        raise ValueError(f"Tried to set new path, but {p} already exists")
+                        raise ValueError(
+                            f"Tried to set new path, but {p} already exists"
+                        )
 
                 obj[-1] = value
                 return True
 
             return False
 
-    def resolve_path(self, path: str) -> tuple[str, Any] | list[tuple[str, Any]]:
+    def resolve_path(
+        self, path: str, default: Any = _undefined
+    ) -> list[tuple[str, Any]]:
         if not path:
             raise ValueError("Empty path")
 
@@ -263,9 +270,6 @@ class Node:
                     if sub
                 ]
 
-                if len(results) == 1:
-                    return results[0]
-
                 return results
 
             elif key == "**":
@@ -283,9 +287,6 @@ class Node:
                     for bfs_path, sub in bfs_search(obj, next_key)
                     if sub
                 ]
-
-                if len(results) == 1:
-                    return results[0]
 
                 return results
 
@@ -310,7 +311,13 @@ class Node:
             else:
                 return delve(obj[key], key_index + 1, resolved + [key])
 
-        return delve(self.body, 0, [])
+        try:
+            return delve(self.body, 0, [])
+        except KeyError as e:
+            if default != _undefined:
+                return default
+
+            raise e
 
     def get_references(self, include_unset: bool = False) -> list[tuple[str, int]]:
         refs = []
@@ -318,9 +325,6 @@ class Node:
             if node_type in ("*", self.type):
                 for path in paths:
                     result = self.resolve_path(path)
-                    if isinstance(result, tuple):
-                        result = [result]
-
                     for p, ref in result:
                         if include_unset or (isinstance(ref, int) and ref > 0):
                             refs.append((p, ref))
