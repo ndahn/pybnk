@@ -11,6 +11,7 @@ from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
 from pybnk.gui.dialogs.file_dialog import open_file_dialog
+from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
 
 
 def create_widget(
@@ -142,17 +143,22 @@ def create_widget(
             user_data=user_data,
             **kwargs,
         )
-    elif value_type is NodeLike:
+    elif value_type is NodeLike or issubclass(value_type, Node):
         if isinstance(default, Node):
             default = default.id
+        
+        if default is None:
+            default = "0"
+
+        default = str(default)
 
         def select_node() -> None:
-            # TODO
+            select_node_dialog()  # TODO needs soundbank
             pass
 
         with dpg.group(horizontal=True, parent=parent):
             dpg.add_input_text(
-                default_value=default or "0",
+                default_value=default,
                 decimal=True,
                 readonly=readonly,
                 enabled=not readonly,

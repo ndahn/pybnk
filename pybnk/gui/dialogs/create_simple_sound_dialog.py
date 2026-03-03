@@ -1,4 +1,4 @@
-from typing import Any, Callable, Literal
+from typing import Any, Callable
 from pathlib import Path
 from dearpygui import dearpygui as dpg
 
@@ -49,18 +49,11 @@ def create_simple_sound_dialog(
         wem_paths.extend(paths)
 
     def show_message(
-        msg: str, level: Literal["info", "warning", "error"] = "error"
+        msg: str, color: tuple[int, int, int, int] = style.red
     ) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
-
-        if level == "error":
-            color = style.red
-        elif level == "warning":
-            color = style.yellow
-        else:
-            color = style.blue
 
         dpg.configure_item(
             f"{tag}_notification",

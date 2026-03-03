@@ -35,6 +35,9 @@ def create_simple_sound(
     Node
         _description_
     """
+    if f"Play_{event_name}" in bnk:
+        raise ValueError(f"Wwise event 'Play_{event_name}' already exists")
+
     if isinstance(wems, Path):
         wems = [wems]
 
