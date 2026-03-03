@@ -2,6 +2,7 @@ from typing import Any, Callable, Literal, Type, get_args, get_origin
 from enum import Enum, IntFlag
 import inspect
 import builtins
+from importlib import resources
 from pathlib import Path
 from dataclasses import dataclass
 from docstring_parser import parse as doc_parse
@@ -13,6 +14,15 @@ from pybnk.enums import property_defaults
 from pybnk.gui import style
 from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
 from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
+
+
+def read_resource(resource_path: str, binary: bool = False) -> str | bytes:
+    import pybnk
+
+    res = resources.files(pybnk).joinpath("resources/" + resource_path)
+    if binary:
+        return res.read_bytes()
+    return res.read_text()
 
 
 def create_widget(
@@ -542,6 +552,6 @@ def common_loading_indicator(
             dpg.add_loading_indicator(color=color)
             with dpg.group():
                 dpg.add_spacer(height=5)
-                dpg.add_text(label)
+                dpg.add_text(label, tag=f"{dialog}_label")
 
     return dialog

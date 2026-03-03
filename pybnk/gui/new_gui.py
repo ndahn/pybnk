@@ -13,7 +13,12 @@ from pybnk.node_types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.config import Config, load_config
-from pybnk.gui.helpers import create_widget, center_window, create_properties_table, common_loading_indicator
+from pybnk.gui.helpers import (
+    create_widget,
+    center_window,
+    create_properties_table,
+    common_loading_indicator,
+)
 from pybnk.gui import style
 from pybnk.gui.style import init_themes, themes
 from pybnk.gui.localization import Localization, English
@@ -23,12 +28,13 @@ from pybnk.gui.table_tree_nodes import (
     add_lazy_table_tree_node,
     set_foldable_row_status,
 )
+from pybnk.gui.dialogs.about_dialog import about_dialog
 from pybnk.gui.dialogs.create_node_dialog import create_node_dialog
 from pybnk.gui.dialogs.new_wwise_event_dialog import new_wwise_event_dialog
 from pybnk.gui.dialogs.file_dialog import open_file_dialog, save_file_dialog
 from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dialog
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
-from pybnk.gui.dialogs.convert_wav_dialog import convert_wav_dialog
+from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
 # TODO filters
@@ -171,7 +177,7 @@ class PyBnkGui:
                 )
                 dpg.add_menu_item(
                     label="Convert Audio Files",
-                    callback=self._open_convert_audio_files_dialog,
+                    callback=self._open_convert_wavs_dialog,
                 )
 
             with dpg.menu(label="Help"):
@@ -206,6 +212,10 @@ class PyBnkGui:
                         label="Stack Tool",
                         callback=lambda: dpg.show_tool(dpg.mvTool_Stack),
                     )
+                dpg.add_menu_item(
+                    label="About",
+                    callback=self._open_about_dialog,
+                )
 
     def _set_bnk_menus_enabled(self, enabled: bool) -> None:
         for subtag in [
@@ -386,9 +396,11 @@ class PyBnkGui:
         self, msg: str, color: tuple[int, int, int, int] = style.red
     ) -> None:
         w = dpg.get_viewport_width() - 8
-        h = dpg.get_viewport_height() - dpg.get_item_height(
-            f"{self.tag}_notification_window"
-        ) - 35
+        h = (
+            dpg.get_viewport_height()
+            - dpg.get_item_height(f"{self.tag}_notification_window")
+            - 35
+        )
         # Note: since this is a popup there's no need for a timer to hide it
         dpg.configure_item(
             f"{self.tag}_notification_window", show=True, pos=(4, h), min_size=(w, 10)
@@ -464,10 +476,12 @@ class PyBnkGui:
                 self.bnk = Soundbank.load(path)
                 self.config.add_recent_file(path)
                 self.config.save()
-                
+
                 self.regenerate()
                 self._set_bnk_menus_enabled(True)
-                logger.info(f"Loaded soundbank {self.bnk.name} with {len(self.event_map)} events")
+                logger.info(
+                    f"Loaded soundbank {self.bnk.name} with {len(self.event_map)} events"
+                )
             finally:
                 dpg.delete_item(loading)
 
@@ -505,7 +519,7 @@ class PyBnkGui:
                         table=table,
                         before=anchor,
                     ) as row:
-                        #register_context_menu(row.selectable, node)
+                        # register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
                             callback=self._on_node_selected,  # TODO navigate to other instance?
@@ -614,7 +628,7 @@ class PyBnkGui:
         filt: str = dpg.get_value(f"{self.tag}_globals_filter")
         dpg.delete_item(f"{self.tag}_globals_table", children_only=True, slot=1)
         self.globals_map.clear()
-        
+
         # TODO filter
         global_nodes = [
             n
@@ -1003,14 +1017,26 @@ class PyBnkGui:
         dpg.split_frame()
         center_window(tag)
 
-    def _open_convert_audio_files_dialog(self) -> None:
+    def _open_convert_wavs_dialog(self) -> None:
+        tag = f"{self.tag}_convert_wavs_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        convert_wavs_dialog(self.config, None, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_about_dialog(self) -> None:
         tag = f"{self.tag}_calc_hash_dialog"
         if dpg.does_item_exist(tag):
             dpg.show_item(tag)
             dpg.focus_item(tag)
             return
 
-        convert_wav_dialog(self.config, None, tag=tag)
+        about_dialog(tag=tag)
 
         dpg.split_frame()
         center_window(tag)

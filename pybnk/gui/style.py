@@ -24,6 +24,8 @@ class themes:
     notification_frame = None
     item_default = None
     item_blue = None
+    link_button = None
+    no_padding = None
 
 
 def init_themes():
@@ -105,3 +107,15 @@ def init_themes():
         with dpg.theme_component(dpg.mvAll):
             dpg.add_theme_color(dpg.mvThemeCol_Text, (27, 151, 234), category=dpg.mvThemeCat_Core)
             dpg.add_theme_color(dpg.mvThemeCol_Border, (27, 151, 234), category=dpg.mvThemeCat_Core)
+
+    with dpg.theme() as themes.link_button:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_color(dpg.mvThemeCol_Text, (3, 4, 94), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_Button, (0, 0, 0, 0), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255, 40), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255, 80), category=dpg.mvThemeCat_Core)
+
+    with dpg.theme() as themes.no_padding:
+        with dpg.theme_component(dpg.mvAll):
+            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 0, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 0, 0, category=dpg.mvThemeCat_Core)

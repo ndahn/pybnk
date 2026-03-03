@@ -5,12 +5,12 @@ from dearpygui import dearpygui as dpg
 from pybnk.gui import style
 from pybnk.gui.config import Config
 from pybnk.gui.dialogs.file_dialog import choose_folder
-from pybnk.gui.helpers import create_filepaths_table
+from pybnk.gui.helpers import create_filepaths_table, common_loading_indicator
 from pybnk.util import logger
 from pybnk.wem import wav2wem, trim_silence, set_volume, create_prefetch_snippet
 
 
-def convert_wav_dialog(
+def convert_wavs_dialog(
     config: Config,
     callback: Callable[[list[Path]], None] = None,
     *,
@@ -28,7 +28,7 @@ def convert_wav_dialog(
 
         wav_paths.clear()
         wav_paths.extend(paths)
-        
+
         if paths and output_dir is None:
             output_dir = paths[0].parent
             dpg.set_value(f"{tag}_output_dir", str(output_dir))
@@ -36,17 +36,12 @@ def convert_wav_dialog(
     def choose_output_dir() -> None:
         nonlocal output_dir
 
-        ret = choose_folder(
-            title="Select output directory",
-            default_dir=output_dir
-        )
+        ret = choose_folder(title="Select output directory", default_dir=output_dir)
         if ret:
             output_dir = Path(ret)
             dpg.set_value(f"{tag}_output_dir", str(output_dir))
 
-    def show_message(
-        msg: str, color: tuple[int, int, int, int] = style.red
-    ) -> None:
+    def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
@@ -67,42 +62,56 @@ def convert_wav_dialog(
             show_message("Invalid output directory")
             return
 
-        out_files = list(wav_paths)
-
-        if dpg.get_value(f"{tag}_trim_silence"):
-            logger.info("Trimming silence...")
-            silence_threshold = dpg.get_value(f"{tag}_silence_threshold")
-            for i, wav in enumerate(out_files):
-                trim_silence(wav, silence_threshold, out_file=output_dir / wav.name)
-                out_files[i] = output_dir / wav.name
-
-        if dpg.get_value(f"{tag}_create_prefetch_snippet"):
-            logger.info("Creating prefetch snippets...")
-            snippet_length = dpg.get_value(f"{tag}_snippet_legnth")
-            for i, wav in enumerate(out_files):
-                create_prefetch_snippet(wav, snippet_length, out_file=output_dir / wav.name)
-                out_files[i] = output_dir / wav.name
-        
-        if dpg.get_value(f"{tag}_adjust_volume"):
-            logger.info("Adjusting volume...")
-            target_volume = dpg.get_value(f"{tag}_target_volume")
-            for i, wav in enumerate(out_files):
-                set_volume(wav, target_volume, out_file = output_dir / wav.name)
-                out_files[i] = output_dir / wav.name
-
         if dpg.get_value(f"{tag}_convert_to_wem"):
             try:
                 wwise_exe = config.locate_wwise()
             except Exception:
                 show_message("Wwise exe not found")
                 return
-                
-            logger.info("Converting wave files...")
-            out_files = wav2wem(wwise_exe, out_files, out_dir=output_dir)
+
+        loading = common_loading_indicator("Converting...")
+        try:
+            out_files = list(wav_paths)
+
+            if dpg.get_value(f"{tag}_trim_silence"):
+                logger.info("Trimming silence...")
+                dpg.set_value(f"{loading}_label", "Trimming silence...")
+                silence_threshold = dpg.get_value(f"{tag}_silence_threshold")
+
+                for i, wav in enumerate(out_files):
+                    trim_silence(wav, silence_threshold, out_file=output_dir / wav.name)
+                    out_files[i] = output_dir / wav.name
+
+            if dpg.get_value(f"{tag}_create_prefetch_snippet"):
+                logger.info("Creating prefetch snippets...")
+                dpg.set_value(f"{loading}_label", "Creating prefetch snippets...")
+                snippet_length = dpg.get_value(f"{tag}_snippet_legnth")
+
+                for i, wav in enumerate(out_files):
+                    create_prefetch_snippet(
+                        wav, snippet_length, out_file=output_dir / wav.name
+                    )
+                    out_files[i] = output_dir / wav.name
+
+            if dpg.get_value(f"{tag}_adjust_volume"):
+                logger.info("Adjusting volume...")
+                dpg.set_value(f"{loading}_label", "Adjusting volume...")
+                target_volume = dpg.get_value(f"{tag}_target_volume")
+
+                for i, wav in enumerate(out_files):
+                    set_volume(wav, target_volume, out_file=output_dir / wav.name)
+                    out_files[i] = output_dir / wav.name
+
+            if dpg.get_value(f"{tag}_convert_to_wem"):
+                logger.info("Converting wave files...")
+                dpg.set_value(f"{loading}_label", "Converting waves...")
+                out_files = wav2wem(wwise_exe, out_files, out_dir=output_dir)
+        finally:
+            dpg.delete_item(loading)
 
         if callback:
             callback(out_files)
-        
+
         dpg.delete_item(window)
 
     with dpg.window(
@@ -125,11 +134,7 @@ def convert_wav_dialog(
         dpg.add_spacer(height=5)
 
         with dpg.group(horizontal=True):
-            dpg.add_input_text(
-                readonly=True,
-                enabled=False,
-                tag=f"{tag}_output_dir"
-            )
+            dpg.add_input_text(readonly=True, enabled=False, tag=f"{tag}_output_dir")
             dpg.add_button(
                 arrow=True,
                 direction=dpg.mvDir_Right,
