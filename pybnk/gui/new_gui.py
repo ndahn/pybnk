@@ -64,10 +64,11 @@ class PyBnkGui:
             tag = dpg.generate_uuid()
 
         self.tag = tag
-        self.max_events = 500
+        self.max_list_nodes = 500
         self.language: Localization = English()
         self.bnk: Soundbank = None
-        self.events: dict[int, Event] = {}
+        self.event_map: dict[int, Event] = {}
+        self.globals_map: dict[int, Event] = {}
         self._selected_root: str = None
         self._selected_node: Node = None
         self._selected_node_backup: str = None
@@ -346,7 +347,7 @@ class PyBnkGui:
                 )
 
             dpg.add_separator()
-            
+
             dpg.add_menu_item(
                 label="Cut",
                 callback=self.node_cut,
@@ -366,7 +367,7 @@ class PyBnkGui:
             )
 
             dpg.add_separator()
-            
+
             dpg.add_menu_item(
                 label="Delete",
                 callback=self.node_delete,
@@ -410,7 +411,8 @@ class PyBnkGui:
     def locate_wwise(self) -> str:
         if not self.config.wwise_exe or not Path(self.config.wwise_exe).is_file():
             wwise_exe = open_file_dialog(
-                title="Locate WwiseConsole.exe", filetypes={"WwiseConsole": "WwiseConsole.exe"}
+                title="Locate WwiseConsole.exe",
+                filetypes={"WwiseConsole": "WwiseConsole.exe"},
             )
             if not wwise_exe:
                 raise ValueError("WwiseConsole is required for converting to WEM")
@@ -421,9 +423,13 @@ class PyBnkGui:
         return self.config.wwise_exe
 
     def locate_vgmstream(self) -> str:
-        if not self.config.vgmstream_exe or not Path(self.config.vgmstream_exe).is_file():
+        if (
+            not self.config.vgmstream_exe
+            or not Path(self.config.vgmstream_exe).is_file()
+        ):
             vgmstream_exe = open_file_dialog(
-                title="Locate vgmstream-cli.exe", filetypes={"vgmstream-cli": "vgmstream-cli.exe"}
+                title="Locate vgmstream-cli.exe",
+                filetypes={"vgmstream-cli": "vgmstream-cli.exe"},
             )
             if not vgmstream_exe:
                 raise ValueError("vgmstream-cli is required for converting WEMs")
@@ -472,7 +478,7 @@ class PyBnkGui:
             if path.endswith(".bnk"):
                 bnk2json = self.locate_bnk2json()
                 unpack_soundbank(bnk2json, path)
-            
+
             self._load_soundbank(path)
             self._activate_bnk_menus(True)
             self.config.add_recent_file(path)
@@ -482,11 +488,10 @@ class PyBnkGui:
         logger.info(f"Loading soundbank {path}")
         self.bnk = Soundbank.load(path)
         self.regenerate()
-        logger.info(f"Loaded {len(self.events)} events")
+        logger.info(f"Loaded {len(self.event_map)} events")
 
-    def _create_root_entry(self, event: Event) -> None:
+    def _create_root_entry(self, node: Event, table: str) -> None:
         bnk = self.bnk
-        tag = self.tag
 
         def register_context_menu(tag: str, node: Node) -> None:
             registry = f"{tag}_handlers"
@@ -511,12 +516,12 @@ class PyBnkGui:
             def delve(nid: int) -> None:
                 node: Node = bnk[nid]
 
-                sub_tag = f"{tag}_node_{nid}"
+                sub_tag = f"{table}_node_{nid}"
                 if dpg.does_item_exist(sub_tag):
                     # Item already open somewhere else
                     label = f"*{node.type} ({node.id})"
                     with table_tree_leaf(
-                        table=f"{tag}_events_table",
+                        table=table,
                         before=anchor,
                     ) as row:
                         register_context_menu(row.selectable, node)
@@ -535,7 +540,7 @@ class PyBnkGui:
                     with table_tree_node(
                         label,
                         on_click_callback=self._on_node_selected,
-                        table=f"{tag}_events_table",
+                        table=table,
                         tag=sub_tag,
                         before=anchor,
                         user_data=nid,
@@ -545,7 +550,7 @@ class PyBnkGui:
                             delve(child_id)
                 else:
                     with table_tree_leaf(
-                        table=f"{tag}_events_table",
+                        table=table,
                         tag=sub_tag,
                         before=anchor,
                     ) as row:
@@ -553,51 +558,50 @@ class PyBnkGui:
                         dpg.add_selectable(
                             label=label,
                             callback=self._on_node_selected,
-                            tag=f"{tag}_node_{node.id}",
+                            tag=f"{table}_node_{node.id}",
                             user_data=nid,
                         )
 
             delve(entrypoint.id)
 
-        self.events[event.id] = event
-        name = event.lookup_name("<?>")
-
         with table_tree_node(
-            f"{name} ({event.id})",
+            str(node),
             on_click_callback=self._on_node_selected,
-            table=f"{tag}_events_table",
-            tag=f"{tag}_event_{event.id}",
-            user_data=event,
+            table=table,
+            tag=f"{table}_node_{node.id}",
+            user_data=node,
         ) as root_row:
-            register_context_menu(root_row.selectable, event)
-            for aid in event.actions:
-                # TODO Make actions the top level items and add a list of events associated with them?
-                action = Action(bnk[aid].dict)
-                action_row = add_lazy_table_tree_node(
-                    f"{action.action_type.name} ({aid})",
+            register_context_menu(root_row.selectable, node)
+            for _, ref_id in node.get_references():
+                child = bnk[ref_id]
+                child_row = add_lazy_table_tree_node(
+                    str(child),
                     lazy_load_action_structure,
                     on_click_callback=self._on_node_selected,
-                    table=f"{tag}_events_table",
-                    tag=f"{tag}_action_{aid}",
-                    user_data=action,
+                    table=table,
+                    tag=f"{table}_node_{node.id}_{ref_id}",
+                    user_data=child,
                 )
-                register_context_menu(action_row.selectable, action)
+                register_context_menu(child_row.selectable, child)
 
     def regenerate(self) -> None:
         self.clear()
-        self.events.clear()
+        self._regenerate_events_list()
+        self._regenerate_globals_list()
 
+    def _regenerate_events_list(self) -> None:
+        self.event_map.clear()
         events = list(self.bnk.query({"type": "Event"}))
         dpg.set_value(
             f"{self.tag}_events_count",
-            f"Showing {min(self.max_events, len(events))}/{len(events)} events",
+            f"Showing {min(self.max_list_nodes, len(events))}/{len(events)} events",
         )
 
         for node in events:
-            event = Event(node.dict)
+            node: Event = node.cast()
 
             # TODO make this filter configurable
-            for aid in event.actions:
+            for aid in node.actions:
                 action = Action(self.bnk[aid].dict)
                 if action.action_type == ActionType.PLAY:
                     break
@@ -605,9 +609,41 @@ class PyBnkGui:
                 # Not a play action
                 continue
 
-            self._create_root_entry(event)
-            if len(self.events) >= self.max_events:
+            node_tag = self._create_root_entry(node, f"{self.tag}_events_table")
+            self.event_map[node.id] = node_tag
+            if len(self.event_map) >= self.max_list_nodes:
                 break
+
+    def _regenerate_globals_list(self) -> None:
+        self.globals_map.clear()
+        global_nodes = [
+            n
+            for n in self.bnk.hirc
+            if n.parent is None and n.type not in ("Event", "Action")
+        ]
+        dpg.set_value(
+            f"{self.tag}_globals_count",
+            f"Showing {min(self.max_list_nodes, len(global_nodes))}/{len(global_nodes)} globals",
+        )
+
+        type_map: dict[str, list[Node]] = {}
+        for node in global_nodes:
+            type_map.setdefault(node.type, []).append(node)
+
+        for node_type, nodes in type_map.items():
+            with table_tree_node(
+                node_type,
+                table=f"{self.tag}_globals_table",
+                on_click_callback=self._on_node_selected,
+            ):
+                for node in nodes:
+                    node = node.cast()
+                    node_tag = self._create_root_entry(
+                        node, f"{self.tag}_globals_table"
+                    )
+                    self.globals_map[node.id] = node_tag
+                    if len(self.globals_map) >= self.max_list_nodes:
+                        break
 
     def _open_context_menu(
         self, sender: str, app_data: Any, user_data: tuple[str, Node]
@@ -652,6 +688,7 @@ class PyBnkGui:
             dpg.set_value(f"{self.tag}_json", data)
         else:
             self._selected_node_backup = None
+            dpg.set_value(f"{self.tag}_json", "")
 
         self._selected_node = node
         self._set_component_highlight(f"{self.tag}_json", False)
@@ -750,11 +787,12 @@ class PyBnkGui:
 
     def clear(self) -> None:
         tag = self.tag
+        dpg.set_value(f"{tag}_events_filter", "")
         dpg.delete_item(f"{tag}_events_table", children_only=True, slot=1)
+        dpg.set_value(f"{tag}_globals_filter", "")
+        dpg.delete_item(f"{tag}_globals_table", children_only=True, slot=1)
         dpg.delete_item(f"{tag}_attributes", children_only=True, slot=1)
         dpg.set_value(f"{tag}_json", "")
-        dpg.set_value(f"{tag}_events_filter", "")
-        dpg.set_value(f"{tag}_globals_filter", "")
 
     def _bank_delete_orphans(self) -> None:
         self.bnk.delete_orphans()

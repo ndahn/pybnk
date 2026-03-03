@@ -94,3 +94,6 @@ class Event(Node):
         """Disassociates all actions from this event."""
         self["actions"] = []
         self["action_count"] = 0
+
+    def __str__(self):
+        return f"{self.lookup_name('<?>')} ({self.id})"

@@ -123,9 +123,12 @@ class Node:
     @property
     def parent(self) -> int:
         """ID of a node's parent node."""
-        # TODO: some nodes like buses don't have a direct_parent_id
-        # TODO some nodes like MusicRandomSequenceContainer have their base params at a deeper level
-        return self.get("node_base_params/direct_parent_id", None)
+        try:
+            # Some nodes like MusicRandomSequenceContainer have their base params at a deeper level
+            return self.resolve_path("**/node_base_params/direct_parent_id")[1]
+        except Exception:
+            # Some nodes like buses don't have a direct_parent_id at all
+            return None
 
     @parent.setter
     def parent(self, parent: "Node | int") -> None:
@@ -135,10 +138,14 @@ class Node:
         if not isinstance(parent, int):
             raise ValueError(f"Invalid parent {parent}")
 
-        if self.parent > 0 and parent > 0 and parent != self.parent:
-            logger.warning(f"Node {self} is being assigned new parent {parent}")
-
-        self["node_base_params/direct_parent_id"] = parent
+        try:
+            path, old_parent = self.resolve_path("node_base_params/direct_parent_id")
+            if old_parent > 0 and parent > 0 and parent != old_parent:
+                logger.warning(f"Node {self} is being assigned new parent {parent}")
+            
+            self[path] = parent
+        except Exception:
+            raise ValueError(f"{self} is not a parentable node")
 
     @property
     def body(self) -> dict:
