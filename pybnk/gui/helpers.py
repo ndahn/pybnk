@@ -10,6 +10,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
+from pybnk.gui import style
 from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
 from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
 
@@ -520,3 +521,27 @@ def center_window(window: str, parent: str = None) -> None:
             dpos[1] + (dsize[1] - psize[1]) / 2,
         ),
     )
+
+
+def common_loading_indicator(
+    label: str, color: tuple[int, int, int, int] = style.purple
+) -> str:
+    with dpg.window(
+        modal=True,
+        min_size=(50, 20),
+        no_close=True,
+        no_move=True,
+        no_collapse=True,
+        no_title_bar=True,
+        no_resize=True,
+        no_scroll_with_mouse=True,
+        no_scrollbar=True,
+        no_saved_settings=True,
+    ) as dialog:
+        with dpg.group(horizontal=True):
+            dpg.add_loading_indicator(color=color)
+            with dpg.group():
+                dpg.add_spacer(height=5)
+                dpg.add_text(label)
+
+    return dialog

@@ -19,6 +19,9 @@ def calc_hash_dialog(
         dpg.set_value(f"{tag}_hash", h)
 
     def on_hash_changed(sender: str, hash: str, user_data: Any) -> None:
+        if not hash:
+            return
+        
         label = lookup_table.get(int(hash), "<?>")
         dpg.set_value(f"{tag}_label", label)
 

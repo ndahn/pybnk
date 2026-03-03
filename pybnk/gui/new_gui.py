@@ -13,7 +13,7 @@ from pybnk.node_types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.config import Config, load_config
-from pybnk.gui.helpers import create_widget, center_window, create_properties_table
+from pybnk.gui.helpers import create_widget, center_window, create_properties_table, common_loading_indicator
 from pybnk.gui import style
 from pybnk.gui.style import init_themes, themes
 from pybnk.gui.localization import Localization, English
@@ -35,8 +35,6 @@ from pybnk.gui.dialogs.convert_wav_dialog import convert_wav_dialog
 # TODO boss music
 # TODO ambience
 # TODO mass transfer
-# TODO convert audio files
-# TODO edit globals (buses, actor mixers, attenuations)
 # TODO setup RTCPs
 # TODO streaming audio
 # TODO action graph visualization
@@ -93,6 +91,7 @@ class PyBnkGui:
 
         sys.excepthook = self._handle_exception
         logger.addHandler(LogHandler())
+        logger.info("Hello :3")
 
     def _handle_exception(
         self, exc_type: Type[Exception], exc_value: Exception, exc_traceback
@@ -303,6 +302,7 @@ class PyBnkGui:
             no_title_bar=True,
             no_move=True,
             no_close=True,
+            no_resize=True,
             no_saved_settings=True,
             show=False,
             min_size=(10, 10),
@@ -385,13 +385,13 @@ class PyBnkGui:
     def show_notification(
         self, msg: str, color: tuple[int, int, int, int] = style.red
     ) -> None:
-        w = dpg.get_viewport_width() - 6
+        w = dpg.get_viewport_width() - 8
         h = dpg.get_viewport_height() - dpg.get_item_height(
             f"{self.tag}_notification_window"
-        )
+        ) - 35
         # Note: since this is a popup there's no need for a timer to hide it
         dpg.configure_item(
-            f"{self.tag}_notification_window", show=True, pos=(-5, h), min_size=(w, 10)
+            f"{self.tag}_notification_window", show=True, pos=(4, h), min_size=(w, 10)
         )
         dpg.configure_item(
             f"{self.tag}_notification_text", default_value=msg, color=color
@@ -420,14 +420,24 @@ class PyBnkGui:
             filetypes={lang.json_files: "*.json"},
         )
         if path:
-            self.bnk.save(path)
+            loading = common_loading_indicator("Saving soundbank...")
+            try:
+                logger.info(f"Saving soundbank to {path}")
+                self.bnk.save(path)
+                logger.info("Don't forget to repack!")
+            finally:
+                dpg.delete_item(loading)
 
     def _repack_soundbank(self) -> None:
         if not self.bnk:
             return
 
-        bnk2json = self.config.locate_bnk2json()
-        repack_soundbank(bnk2json, self.bnk.bnk_dir)
+        loading = common_loading_indicator("Repacking...")
+        try:
+            bnk2json = self.config.locate_bnk2json()
+            repack_soundbank(bnk2json, self.bnk.bnk_dir)
+        finally:
+            dpg.delete_item(loading)
 
     def _open_soundbank(self) -> None:
         lang = self.language
@@ -440,19 +450,26 @@ class PyBnkGui:
         )
         if path:
             if path.endswith(".bnk"):
-                bnk2json = self.config.locate_bnk2json()
-                unpack_soundbank(bnk2json, path)
+                logger.info(f"Unpacking soundbank {path}")
+                loading = common_loading_indicator("Unpacking...")
+                try:
+                    bnk2json = self.config.locate_bnk2json()
+                    unpack_soundbank(bnk2json, path)
+                finally:
+                    dpg.delete_item(loading)
 
-            self._load_soundbank(path)
-            self._set_bnk_menus_enabled(True)
-            self.config.add_recent_file(path)
-            self.config.save()
-
-    def _load_soundbank(self, path: str) -> None:
-        logger.info(f"Loading soundbank {path}")
-        self.bnk = Soundbank.load(path)
-        self.regenerate()
-        logger.info(f"Loaded {len(self.event_map)} events")
+            logger.info(f"Loading soundbank {path}")
+            loading = common_loading_indicator("Loading soundbank...")
+            try:
+                self.bnk = Soundbank.load(path)
+                self.config.add_recent_file(path)
+                self.config.save()
+                
+                self.regenerate()
+                self._set_bnk_menus_enabled(True)
+                logger.info(f"Loaded soundbank {self.bnk.name} with {len(self.event_map)} events")
+            finally:
+                dpg.delete_item(loading)
 
     def _create_root_entry(self, node: Event, table: str) -> None:
         bnk = self.bnk
