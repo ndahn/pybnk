@@ -249,7 +249,6 @@ def table_tree_node(
                 tag=selectable,
                 user_data=user_data,
             )
-
     try:
         dpg.set_item_user_data(table, cur_level + 1)
         yield descriptor
@@ -282,7 +281,7 @@ def table_tree_leaf(
             before=before,
             user_data=descriptor,
             show=show,
-        ) as row:
+        ):
             yield descriptor
     finally:
         children = dpg.get_item_children(row, slot=1)

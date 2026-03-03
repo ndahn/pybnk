@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from pybnk import Soundbank, Node
-from pybnk.types import Event, Action, RandomSequenceContainer, Sound
+from pybnk.node_types import Event, Action, RandomSequenceContainer, Sound
 from pybnk.util import logger
 
 

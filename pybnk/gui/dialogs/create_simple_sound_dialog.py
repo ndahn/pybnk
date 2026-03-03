@@ -4,7 +4,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
-from pybnk.types import Event, ActorMixer
+from pybnk.node_types import Event, ActorMixer
 from pybnk.gui import style
 from pybnk.gui.helpers import create_properties_table, create_filepaths_table
 from pybnk.enums import property_defaults

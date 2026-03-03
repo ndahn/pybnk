@@ -1,5 +1,5 @@
 from pybnk import Soundbank, Node, calc_hash
-from pybnk.types import Event, Action
+from pybnk.node_types import Event, Action
 from pybnk.wem import import_wems
 from pybnk.util import format_hierarchy, logger
 

@@ -2,7 +2,7 @@ from typing import Any, Callable
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank
-from pybnk.types import WwiseNode
+from pybnk.node_types import WwiseNode
 from pybnk.gui import style
 from pybnk.gui.helpers import create_widget, get_function_spec
 

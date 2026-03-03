@@ -3,7 +3,7 @@ import re
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.types import Event, Action
+from pybnk.node_types import Event, Action
 from pybnk.enums import SoundType
 from pybnk.gui import style
 from pybnk.gui.helpers import create_widget

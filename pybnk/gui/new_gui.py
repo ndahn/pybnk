@@ -10,7 +10,7 @@ from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.types import WwiseNode, Action, Event
+from pybnk.node_types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.gui.config import Config, load_config
@@ -536,7 +536,7 @@ class PyBnkGui:
                         table=table,
                         before=anchor,
                     ) as row:
-                        register_context_menu(row.selectable, node)
+                        #register_context_menu(row.selectable, node)
                         dpg.add_selectable(
                             label=label,
                             callback=self._on_node_selected,  # TODO navigate to other instance?
@@ -585,16 +585,23 @@ class PyBnkGui:
         ) as root_row:
             register_context_menu(root_row.selectable, node)
             for _, ref_id in node.get_references():
-                child = bnk[ref_id]
-                child_row = add_lazy_table_tree_node(
-                    str(child),
-                    lazy_load_action_structure,
-                    on_click_callback=self._on_node_selected,
-                    table=table,
-                    tag=f"{table}_node_{node.id}_{ref_id}",
-                    user_data=child,
-                )
-                register_context_menu(child_row.selectable, child)
+                child = bnk.get(ref_id)
+                if child:
+                    child_row = add_lazy_table_tree_node(
+                        str(child),
+                        lazy_load_action_structure,
+                        on_click_callback=self._on_node_selected,
+                        table=table,
+                        tag=f"{table}_node_{node.id}_{ref_id}",
+                        user_data=child,
+                    )
+                    register_context_menu(child_row.selectable, child)
+                else:
+                    with table_tree_leaf(table, tag=f"{table}_node_{ref_id}"):
+                        dpg.add_selectable(
+                            label=f"[External] ({ref_id})",
+                            callback=None,
+                        )
 
     def regenerate(self) -> None:
         self.clear()
@@ -612,7 +619,6 @@ class PyBnkGui:
         for node in events:
             node: Event = node.cast()
 
-            # TODO make this filter configurable
             for aid in node.actions:
                 action = Action(self.bnk[aid].dict)
                 if action.action_type == ActionType.PLAY:

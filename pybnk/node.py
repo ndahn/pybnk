@@ -28,7 +28,7 @@ class Node:
     @classmethod
     def wrap(cls, node_dict: dict, *args, **kwargs):
         # Make sure the subclasses have been loaded
-        import pybnk.types
+        import pybnk.node_types
 
         def all_subclasses(c: type) -> list[type[Node]]:
             return set(c.__subclasses__()).union(
@@ -250,6 +250,15 @@ class Node:
                     for i, item in enumerate(current):
                         queue.append((item, current_path + [str(i)]))
 
+        def flatten(results: list) -> list[tuple[str, Any]]:
+            flat = []
+            for r in results:
+                if isinstance(r, list):
+                    flat.extend(r)
+                elif r:
+                    flat.append(r)
+            return flat
+
         def delve(
             obj: Any, key_index: int, resolved: list[str]
         ) -> tuple[str, Any] | list[tuple[str, Any]]:
@@ -270,7 +279,8 @@ class Node:
                     if sub
                 ]
 
-                return results
+                # Combine lists from different branches and filter out empty ones
+                return flatten(results)
 
             elif key == "**":
                 if key_index >= len(parts):
@@ -288,7 +298,8 @@ class Node:
                     if sub
                 ]
 
-                return results
+                # Combine lists from different branches and filter out empty ones
+                return flatten(results)
 
             elif ":" in key:
                 key, idx = key.split(":")
