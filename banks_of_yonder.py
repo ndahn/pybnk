@@ -2,7 +2,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk.util import resource_path
 from pybnk.gui.style import init_themes
-from pybnk.gui.new_gui import BanksOfYonder
+from pybnk.gui.yonder import BanksOfYonder
 
 
 def dpg_init():
