@@ -126,7 +126,7 @@ def get_next_foldable_row_sibling(table: str, row: str) -> int:
     rows = dpg.get_item_children(table, slot=1)
     row_idx = rows.index(row)
 
-    if row_idx > 0:
+    if row_idx >= 0:
         rows = rows[row_idx + 1 :]
 
     for child_row in rows:
@@ -254,7 +254,7 @@ def table_tree_node(
         yield descriptor
     finally:
         dpg.set_item_user_data(table, cur_level)
-
+        set_foldable_row_status(tag, not folded)
 
 @contextmanager
 def table_tree_leaf(

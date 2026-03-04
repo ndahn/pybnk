@@ -46,12 +46,45 @@ class Action(Node):
 
         action.id = nid
         action.action_type = 1027  # Play action type
-        action.set("params/Play", {}) # TODO
+        action.set("params/Play", {})  # TODO
 
         action.target_id = target_id
         action.is_bus = False
         action.fade_curve = fade_curve
         action.bank_id = bank_id
+
+        return action
+
+    @classmethod
+    def new_event_action(
+        cls, nid: int, target_event_id: int, delay: int = 0
+    ) -> "Action":
+        """Creates an action that triggers another event.
+
+        Parameters
+        ----------
+        nid : int
+            Action ID (hash).
+        target_event_id : int
+            ID of the event to trigger.
+        delay : int, default=0
+            Delay after which to trigger the event
+
+        Returns
+        -------
+        Action
+            New PlayEvent action instance.
+        """
+        temp = cls.load_template(cls.__name__)
+        action = cls(temp)
+
+        action.id = nid
+        action.action_type = 8451
+        action.target_id = target_event_id
+        action.set("params", "PlayEvent")
+
+        if delay > 0:
+            action.delay = delay
 
         return action
 
@@ -140,7 +173,7 @@ class Action(Node):
 
         action.id = nid
         action.action_type = 1538  # Mute bus action type
-        action.set("params/XXX", {}) # TODO
+        action.set("params/XXX", {})  # TODO
 
         action.target_id = target_bus_id
         action.is_bus = True
@@ -183,7 +216,7 @@ class Action(Node):
 
         action.id = nid
         action.action_type = 2818  # Reset bus volume action type
-        action.set("params/XXX", {}) # TODO
+        action.set("params/XXX", {})  # TODO
 
         action.target_id = target_bus_id
         action.is_bus = True
@@ -306,8 +339,35 @@ class Action(Node):
             prop_bundle.append({"TransitionTime": value})
 
     @property
+    def delay(self) -> int:
+        """Delay before this action activates.
+
+        Returns
+        -------
+        int
+            Delay in milliseconds (0 if not set).
+        """
+        for prop in self["prop_bundle"]:
+            if "Delay" in prop:
+                return prop["Delay"]
+        return 0
+
+    @delay.setter
+    def delay(self, value: int) -> None:
+        # Remove existing delay if present
+        prop_bundle = self["prop_bundle"]
+        prop_bundle[:] = [p for p in prop_bundle if "Delay" not in p]
+        # Add new value if non-zero
+        if value != 0:
+            prop_bundle.append({"Delay": value})
+
+    @property
     def params(self) -> dict[str, Any]:
         params = self["params"]
+        if isinstance(params, str):
+            # For reference actions like "PlayEvent"
+            return {params: {}}
+
         param_key = next(iter(params.keys()))
         return params[param_key]
 

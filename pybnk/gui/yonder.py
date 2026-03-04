@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from collections import deque
 import pyperclip
+import networkx as nx
 from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
@@ -12,6 +13,7 @@ from pybnk import Soundbank, Node
 from pybnk.node_types import WwiseNode, Action, Event
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
+from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
 from pybnk.gui.helpers import (
     create_widget,
@@ -24,7 +26,6 @@ from pybnk.gui.style import themes
 from pybnk.gui.localization import Localization, English
 from pybnk.gui.table_tree_nodes import (
     table_tree_node,
-    table_tree_leaf,
     add_lazy_table_tree_node,
     set_foldable_row_status,
 )
@@ -49,6 +50,7 @@ from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 # TODO streaming audio
 # TODO action graph visualization
 # TODO localizations
+# TODO attenuation curve editor
 
 
 class BanksOfYonder:
@@ -343,6 +345,11 @@ class BanksOfYonder:
                     tag=f"{tag}_context_add_action_play",
                 )
                 dpg.add_menu_item(
+                    label="Event",
+                    callback=self.node_add_action_event,
+                    tag=f"{tag}_context_add_action_event",
+                )
+                dpg.add_menu_item(
                     label="Stop",
                     callback=self.node_add_action_stop,
                     tag=f"{tag}_context_add_action_stop",
@@ -511,91 +518,46 @@ class BanksOfYonder:
             )
             dpg.bind_item_handler_registry(tag, registry)
 
-        def lazy_load_action_structure(
-            sender: str, anchor: str, action: Action
+        def lazy_load_event_structure(
+            sender: str, anchor: str, entrypoint: Node
         ) -> None:
-            entrypoint = bnk[action.target_id]
-            g = bnk.get_subtree(entrypoint)
+            def delve(node: Node) -> None:
+                sub_tag = f"{table}_node_{node.id}"
+                while dpg.does_alias_exist(sub_tag):
+                    sub_tag += "_1"
 
-            def delve(nid: int) -> None:
-                node: Node = bnk[nid]
+                references = node.get_references()
 
-                sub_tag = f"{table}_node_{nid}"
-                if dpg.does_item_exist(sub_tag):
-                    # Item already open somewhere else
-                    label = f"*{node.type} ({node.id})"
-                    with table_tree_leaf(
-                        table=table,
-                        before=anchor,
-                    ) as row:
-                        # register_context_menu(row.selectable, node)
-                        dpg.add_selectable(
-                            label=label,
-                            callback=self._on_node_selected,  # TODO navigate to other instance?
-                            user_data=nid,
-                        )
+                # TODO children of first lazy node are expanded if last lazy node is expanded
+                # Test withcs_c3671
+                for _, ref_id in references:
+                    child = bnk.get(ref_id)
+                    if child:
+                        with table_tree_node(
+                            str(child),
+                            on_click_callback=self._on_node_selected,
+                            table=table,
+                            # tag=sub_tag,
+                            before=anchor,
+                            user_data=child,
+                        ) as row:
+                            register_context_menu(row.selectable, child)
+                            delve(child)
+                    else:
+                        # TODO reference placeholder?
+                        pass
 
-                    return
+            delve(entrypoint)
 
-                label = f"{node.type} ({node.id})"
-                children = g.successors(nid)
-
-                if children:
-                    with table_tree_node(
-                        label,
-                        on_click_callback=self._on_node_selected,
-                        table=table,
-                        tag=sub_tag,
-                        before=anchor,
-                        user_data=nid,
-                    ) as row:
-                        register_context_menu(row.selectable, node)
-                        for child_id in children:
-                            delve(child_id)
-                else:
-                    with table_tree_leaf(
-                        table=table,
-                        tag=sub_tag,
-                        before=anchor,
-                    ) as row:
-                        register_context_menu(row.selectable, node)
-                        dpg.add_selectable(
-                            label=label,
-                            callback=self._on_node_selected,
-                            tag=f"{table}_node_{node.id}",
-                            user_data=nid,
-                        )
-
-            delve(entrypoint.id)
-
-        with table_tree_node(
+        root_row = add_lazy_table_tree_node(
             str(node),
+            lazy_load_event_structure,
             on_click_callback=self._on_node_selected,
             table=table,
             tag=f"{table}_node_{node.id}",
             user_data=node,
-        ) as root_row:
-            register_context_menu(root_row.selectable, node)
-            for _, ref_id in node.get_references():
-                child = bnk.get(ref_id)
-                if child:
-                    child_row = add_lazy_table_tree_node(
-                        str(child),
-                        lazy_load_action_structure,
-                        on_click_callback=self._on_node_selected,
-                        table=table,
-                        tag=f"{table}_node_{node.id}_{ref_id}",
-                        user_data=child,
-                    )
-                    register_context_menu(child_row.selectable, child)
-                else:
-                    pass
-                    # TODO throws an exception for some reason?
-                    # with table_tree_leaf(table, tag=f"{table}_node_{ref_id}"):
-                    #     dpg.add_selectable(
-                    #         label=f"[External] ({ref_id})",
-                    #         callback=None,
-                    #     )
+        )
+        register_context_menu(root_row.selectable, node)
 
     def regenerate(self) -> None:
         dpg.delete_item(f"{self.tag}_attributes", children_only=True, slot=1)
@@ -605,16 +567,31 @@ class BanksOfYonder:
         self._regenerate_globals_list()
 
     def _regenerate_events_list(self) -> None:
-        filt: str = dpg.get_value(f"{self.tag}_events_filter")
         dpg.delete_item(f"{self.tag}_events_table", children_only=True, slot=1)
         self.event_map.clear()
 
-        # TODO this is wrong
-        # For every event traverse its graph and check if any of its children should be shown
-        events = list(self.bnk.query(f"type=Event {filt or ''}"))
+        all_events = list(self.bnk.query("type=Event"))
+
+        filt: str = dpg.get_value(f"{self.tag}_events_filter").strip()
+        if filt:
+            # For every filtered
+            g = self.bnk.get_full_tree()
+            selected = self.bnk.query(filt)
+            events = set()
+
+            for node in selected:
+                for pid in nx.ancestors(g, node.id):
+                    parent = self.bnk[pid]
+                    if parent.type == "Event":
+                        events.add(parent)
+
+            events = sorted(events)
+        else:
+            events = all_events
+
         dpg.set_value(
             f"{self.tag}_events_count",
-            f"Showing {min(self.max_list_nodes, len(events))}/{len(events)} events",
+            f"Showing {min(self.max_list_nodes, len(events))}/{len(all_events)} events",
         )
 
         for node in events:
@@ -634,11 +611,9 @@ class BanksOfYonder:
                 break
 
     def _regenerate_globals_list(self) -> None:
-        filt: str = dpg.get_value(f"{self.tag}_globals_filter")
         dpg.delete_item(f"{self.tag}_globals_table", children_only=True, slot=1)
         self.globals_map.clear()
 
-        # TODO filter
         global_nodes = [
             n
             for n in self.bnk.hirc
@@ -653,12 +628,21 @@ class BanksOfYonder:
         for node in global_nodes:
             type_map.setdefault(node.type, []).append(node)
 
+        filt: str = dpg.get_value(f"{self.tag}_globals_filter")
+        if filt:
+            for node_type, nodes in type_map.items():
+                type_map[node_type] = list(query_nodes(nodes, filt))
+
         for node_type, nodes in type_map.items():
+            if not nodes:
+                continue
+
             with table_tree_node(
                 node_type,
                 table=f"{self.tag}_globals_table",
                 on_click_callback=self._on_node_selected,
             ):
+                nodes.sort()
                 for node in nodes:
                     node = node.cast()
                     node_tag = self._create_root_entry(
@@ -834,6 +818,14 @@ class BanksOfYonder:
 
     def node_add_action_play(self) -> None:
         act = Action.new_play_action(self.bnk.new_id(), 0)
+        self._selected_node.add_action(act)
+        self.bnk.add_nodes(act)
+        self.regenerate()
+        set_foldable_row_status(f"{self.tag}_event_{self._selected_node.id}", True)
+        self.select_node(act)
+
+    def node_add_action_event(self) -> None:
+        act = Action.new_event_action(self.bnk.new_id(), 0)
         self._selected_node.add_action(act)
         self.bnk.add_nodes(act)
         self.regenerate()

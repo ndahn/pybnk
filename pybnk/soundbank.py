@@ -353,11 +353,15 @@ class Soundbank:
                 wems = [src["source_id"] for src in node["sources"]]
                 g.nodes[node_id]["wems"] = wems
 
-            if "children" in node_params:
-                children = node_params["children"].get("items", [])
+            for _, cid in node.resolve_path("**/children/items:*", []):
+                todo.append((cid, node_id))
+            
+            ext_id = node.get("external_id", None)
+            if ext_id:
+                todo.append((ext_id, node_id))
 
-                for cid in children:
-                    todo.append((cid, node_id))
+            for _, act_id in node.resolve_path("actions:*", []):
+                todo.append((act_id, node_id))
 
         return g
 

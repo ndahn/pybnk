@@ -124,7 +124,7 @@ class Node:
         """ID of a node's parent node."""
         try:
             # Some nodes like MusicRandomSequenceContainer have their base params at a deeper level
-            return self.resolve_path("**/node_base_params/direct_parent_id")[1]
+            return self.resolve_path("**/node_base_params/direct_parent_id")[0][1]
         except Exception:
             # Some nodes like buses don't have a direct_parent_id at all
             return None
@@ -138,7 +138,7 @@ class Node:
             raise ValueError(f"Invalid parent {parent}")
 
         try:
-            path, old_parent = self.resolve_path("node_base_params/direct_parent_id")
+            path, old_parent = self.resolve_path("**/node_base_params/direct_parent_id")[0]
             if old_parent > 0 and parent > 0 and parent != old_parent:
                 logger.warning(f"Node {self} is being assigned new parent {parent}")
 
@@ -319,7 +319,10 @@ class Node:
                 return delve(obj[key], key_index + 1, resolved + [key])
 
         try:
-            return delve(self.body, 0, [])
+            res = delve(self.body, 0, [])
+            if isinstance(res, tuple):
+                res = [res]
+            return res
         except KeyError as e:
             if default != _undefined:
                 return default
@@ -337,6 +340,12 @@ class Node:
                             refs.append((p, ref))
 
         return refs
+
+    def __eq__(self, value: "Node") -> bool:
+        return self.id == value.id
+
+    def __lt__(self, other: "Node") -> bool:
+        return self.id < other.id
 
     def __contains__(self, item: Any) -> bool:
         if not isinstance(item, str):
