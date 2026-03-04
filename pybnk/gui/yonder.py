@@ -4,6 +4,7 @@ import logging
 import json
 from pathlib import Path
 from collections import deque
+import subprocess
 import pyperclip
 import networkx as nx
 from docstring_parser import parse as doc_parse
@@ -465,6 +466,8 @@ class BanksOfYonder:
         try:
             bnk2json = self.config.locate_bnk2json()
             repack_soundbank(bnk2json, self.bnk.bnk_dir)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Repack failed ({e.returncode}):\n{e.output}")
         finally:
             dpg.delete_item(loading)
 
@@ -485,6 +488,7 @@ class BanksOfYonder:
         path = open_file_dialog(
             title=lang.open,
             filetypes={
+                "Soundbank files (.bnk, .json)": ["*.bnk", "*.json"],
                 lang.json_files: "*.json",
                 lang.soundbank_files: "*.bnk",
             },
@@ -594,7 +598,7 @@ class BanksOfYonder:
 
         filt: str = dpg.get_value(f"{self.tag}_events_filter").strip()
         if filt:
-            # For every filtered
+            # Find the events associated with visible nodes
             g = self.bnk.get_full_tree()
             selected = self.bnk.query(filt)
             events = set()
@@ -651,29 +655,24 @@ class BanksOfYonder:
 
         # Sort the keys
         type_map = {k: sorted(type_map[k]) for k in sorted(type_map.keys())}
-        offset = 0
 
-        while True:
-            done = True
-            for node_type, nodes in type_map.items():
-                if not nodes or len(nodes) <= offset:
-                    continue
+        for node_type, nodes in type_map.items():
+            if not nodes:
+                continue
 
-                done = False
-                with table_tree_node(
-                    node_type,
-                    table=f"{self.tag}_globals_table",
-                    on_click_callback=self._on_node_selected,
-                ):
-                    node = nodes[offset].cast()
+            with table_tree_node(
+                node_type,
+                table=f"{self.tag}_globals_table",
+                on_click_callback=self._on_node_selected,
+            ):
+                for node in nodes:
                     node_tag = self._create_root_entry(
                         node, f"{self.tag}_globals_table"
                     )
                     self.globals_map[node.id] = node_tag
 
-            offset += 1
-            if done or len(self.globals_map) >= self.max_list_nodes:
-                break
+                    if len(self.globals_map) >= self.max_list_nodes:
+                        break
 
         dpg.set_value(
             f"{self.tag}_globals_count",

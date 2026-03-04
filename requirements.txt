@@ -6,3 +6,5 @@ crossfiledialog
 pywin32; sys_platform == "windows"
 docstring_parser
 pyperclip
+lark
+rapidfuzz

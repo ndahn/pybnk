@@ -111,6 +111,7 @@ class Node:
             idsec["Hash"] = id
             idsec.pop("String", None)
         elif isinstance(id, str):
+            # BUG onlyone or the other must be set!
             idsec["Hash"] = calc_hash(id)
             idsec["String"] = id
         else:

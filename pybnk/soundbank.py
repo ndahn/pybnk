@@ -23,8 +23,9 @@ class Soundbank:
             json_path = bnk_path
             bnk_path = bnk_path.parent
         else:
+            if bnk_path.name.endswith(".bnk"):
+                bnk_path = bnk_path.parent / bnk_path.stem
             json_path = bnk_path / "soundbank.json"
-            bnk_path = bnk_path
 
         with json_path.open() as f:
             bnk_json: dict = json.load(f)
@@ -42,6 +43,12 @@ class Soundbank:
                 bnk_id = body["BKHD"]["bank_id"]
             elif "HIRC" in body:
                 hirc: list[Node] = [Node(obj) for obj in body["HIRC"]["objects"]]
+                cleaned = {n.id: n for n in hirc}
+                if len(cleaned) < len(hirc):
+                    logger.warning(
+                        f"Removed {len(hirc) - len(cleaned)} duplicate nodes from soundbank"
+                    )
+                    hirc = list(cleaned.values())
             else:
                 pass
 
@@ -135,6 +142,8 @@ class Soundbank:
         return bnk
 
     def save(self, path: Path = None, backup: bool = True) -> None:
+        logger.info(f"Saving {self}")
+
         # Solve the dependency graph
         self.solve()
         self._apply_hirc_to_json()
@@ -152,6 +161,8 @@ class Soundbank:
 
         with path.open("w") as f:
             json.dump(self._json, f, indent=2)
+
+        logger.info(f"Saved {self} to {path}, a backup was created")
 
     def new_id(self) -> int:
         while True:
@@ -272,7 +283,7 @@ class Soundbank:
         g = self.get_full_tree()
         new_hirc = []
 
-        if not nx.is_directed_acyclic_graph():
+        if not nx.is_directed_acyclic_graph(g):
             logger.warning("HIRC is not acyclic")
 
         # These will be appended at the very end
@@ -306,17 +317,19 @@ class Soundbank:
         actions.sort(key=lambda n: n.id)
         new_hirc.extend(n.dict for n in actions)
 
+        logger.info(f"Solved structure for {len(g)} nodes ({len(events)} events)")
         self._regenerate_index_table()
 
-    def get_full_tree(self) -> nx.DiGraph:
+    def get_full_tree(self, valid_only: bool = True) -> nx.DiGraph:
         g = nx.DiGraph()
 
         for node in self.hirc:
             g.add_node(node.id, type=node.type)
-            references = node.get_references(node)
+            references = node.get_references()
             if references:
                 for _, ref in references:
-                    g.add_edge(node.id, ref)
+                    if not valid_only or ref in self:
+                        g.add_edge(node.id, ref)
 
         return g
 
@@ -355,7 +368,7 @@ class Soundbank:
 
             for _, cid in node.resolve_path("**/children/items:*", []):
                 todo.append((cid, node_id))
-            
+
             ext_id = node.get("external_id", None)
             if ext_id:
                 todo.append((ext_id, node_id))
@@ -398,7 +411,7 @@ class Soundbank:
 
     def query(self, query: str) -> Generator[Node, None, None]:
         yield from query_nodes(self.hirc, query)
-        
+
     def query_one(self, query: str, default: Any = None) -> Node:
         return next(self.query(query), default)
 
