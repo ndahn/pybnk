@@ -1,5 +1,6 @@
 from typing import Any, Type
 import sys
+import os
 import logging
 import json
 from pathlib import Path
@@ -10,7 +11,20 @@ from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.node_types import WwiseNode, Action, Event
+from pybnk.node_types import (
+    Action,
+    ActorMixer,
+    Attenuation,
+    Bus,
+    Event,
+    LayerContainer,
+    MusicRandomSequenceContainer,
+    MusicSegment,
+    MusicTrack,
+    RandomSequenceContainer,
+    Sound,
+    WwiseNode,
+)
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.query import query_nodes
@@ -104,12 +118,6 @@ class BanksOfYonder:
         with dpg.menu_bar():
             with dpg.menu(label="File"):
                 dpg.add_menu_item(
-                    label="New Soundbank...",
-                    shortcut="ctrl-n",
-                    callback=self._create_empty_soundbank,
-                )
-                dpg.add_separator()
-                dpg.add_menu_item(
                     label="Open...",
                     shortcut="ctrl-o",
                     callback=self._open_soundbank,
@@ -133,6 +141,12 @@ class BanksOfYonder:
                     shortcut="f4",
                     callback=self._repack_soundbank,
                     tag=f"{self.tag}_menu_file_repack",
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
+                    label="New Soundbank...",
+                    shortcut="ctrl-n",
+                    callback=self._create_empty_soundbank,
                 )
 
             with dpg.menu(label="Soundbank", tag=f"{self.tag}_menu_edit"):
@@ -305,6 +319,7 @@ class BanksOfYonder:
                         callback=self.node_reset_json,
                     )
 
+        # Shown now, but will be positioned properly by the welcome message
         with dpg.window(
             no_title_bar=True,
             no_move=True,
@@ -315,7 +330,9 @@ class BanksOfYonder:
             tag=f"{tag}_notification_window",
         ):
             with dpg.group(width=-1):
-                dpg.add_text("Hello :3", color=style.red, tag=f"{tag}_notification_text")
+                dpg.add_text(
+                    "Hello :3", color=style.red, tag=f"{tag}_notification_text"
+                )
 
         dpg.bind_item_theme(f"{tag}_notification_window", themes.notification_frame)
 
@@ -568,7 +585,7 @@ class BanksOfYonder:
         self._regenerate_globals_list()
 
         # TODO reveal node in item list
-        #self.select_node(self._selected_node)
+        # self.select_node(self._selected_node)
 
     def _regenerate_events_list(self) -> None:
         dpg.delete_item(f"{self.tag}_events_table", children_only=True, slot=1)
@@ -614,7 +631,6 @@ class BanksOfYonder:
             f"Showing {len(self.event_map)}/{len(all_events)} events",
         )
 
-
     def _regenerate_globals_list(self) -> None:
         dpg.delete_item(f"{self.tag}_globals_table", children_only=True, slot=1)
         self.globals_map.clear()
@@ -635,7 +651,7 @@ class BanksOfYonder:
                 type_map[node_type] = list(query_nodes(nodes, filt))
 
         # Sort the keys
-        type_map = {k:sorted(type_map[k]) for k in sorted(type_map.keys())}
+        type_map = {k: sorted(type_map[k]) for k in sorted(type_map.keys())}
         offset = 0
 
         while True:
@@ -753,6 +769,10 @@ class BanksOfYonder:
                 tag=f"{self.tag}_attr_hash",
             )
 
+            dpg.add_spacer(height=3)
+            dpg.add_separator()
+            dpg.add_spacer(height=3)
+
             # Find all exposed python properties, including those from base classes
             properties: dict[str, property] = {}
             todo = deque([node.__class__])
@@ -765,6 +785,9 @@ class BanksOfYonder:
                         properties.setdefault(name, prop)
 
                 todo.extend(c.__bases__)
+
+            # This may remove or add properties that are handled differently
+            self._create_type_specific_attributes(node, properties)
 
             for name, prop in properties.items():
                 value_type = prop.fget.__annotations__["return"]
@@ -802,6 +825,49 @@ class BanksOfYonder:
 
             dpg.add_child_window(height=-30, border=False)
             dpg.add_button(label="Reset")
+
+    def _create_type_specific_attributes(
+        self, node: Node, properties: dict[str, property]
+    ) -> None:
+        # TODO
+        if isinstance(node, Action):
+            pass
+        elif isinstance(node, ActorMixer):
+            pass
+        elif isinstance(node, Attenuation):
+            pass
+        elif isinstance(node, Bus):
+            pass
+        elif isinstance(node, Event):
+            pass
+        elif isinstance(node, LayerContainer):
+            pass
+        elif isinstance(node, MusicRandomSequenceContainer):
+            pass
+        elif isinstance(node, MusicSegment):
+            pass
+        elif isinstance(node, MusicTrack):
+            pass
+        elif isinstance(node, RandomSequenceContainer):
+            pass
+        elif isinstance(node, Sound):
+            def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
+                sound.source_id = int(wem_path.stem)
+                sound.media_size = wem_path.stat().st_size
+                dpg.set_value(sender, wem_path.stem)
+                self.update_json_panel()
+
+            create_widget(
+                Path,
+                "source_id",
+                on_wem_selected,
+                default=str(node.source_id),
+                filetypes={"WEMs (.wem)": "*.wem"},
+                readonly=True,
+                user_data=node,
+            )
+            properties.pop("media_size")
+            properties.pop("source_id")
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)

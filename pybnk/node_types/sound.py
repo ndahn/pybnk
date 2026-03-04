@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from pybnk.node import Node
-from pybnk.enums import SourceType
+from pybnk.enums import SourceType, PluginType
 from .wwise_node import WwiseNode
 
 
@@ -101,18 +101,18 @@ class Sound(WwiseNode):
         self["bank_source_data/media_information/source_id"] = value
 
     @property
-    def plugin(self) -> str:
+    def plugin(self) -> PluginType:
         """Codec plugin type.
 
         Returns
         -------
-        str
+        PluginType
             Plugin name (e.g., 'VORBIS', 'PCM').
         """
         return self["bank_source_data/plugin"]
 
     @plugin.setter
-    def plugin(self, value: str) -> None:
+    def plugin(self, value: PluginType) -> None:
         self["bank_source_data/plugin"] = value
 
     @property
@@ -121,7 +121,7 @@ class Sound(WwiseNode):
 
         Returns
         -------
- SourceTyper
+        SourceType
             Source type (e.g., 'Embedded', 'Streamed').
         """
         return self["bank_source_data/source_type"]

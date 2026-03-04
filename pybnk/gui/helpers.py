@@ -11,7 +11,7 @@ from pybnk.node import Node, NodeLike
 from pybnk.util import logger
 from pybnk.enums import property_defaults
 from pybnk.gui import style
-from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
+from pybnk.gui.dialogs.file_dialog import open_multiple_dialog, open_file_dialog, save_file_dialog
 from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
 
 
@@ -25,6 +25,8 @@ def create_widget(
     readonly: bool = False,
     flags_as_int: bool = False,
     accept_on_enter: bool = False,
+    file_save: bool = False,
+    filetypes: dict[str, str] = None,
     parent: str = 0,
     tag: str = 0,
     user_data: Any = None,
@@ -144,6 +146,43 @@ def create_widget(
             user_data=user_data,
             **kwargs,
         )
+    elif value_type is Path:
+        if default:
+            default = str(default)
+
+        def select_file() -> None:
+            if file_save:
+                ret = save_file_dialog(
+                    title=label,
+                    default_file=default,
+                    filetypes=filetypes,
+                )
+            else:
+                ret = open_file_dialog(
+                    title=label,
+                    default_file=default,
+                    filetypes=filetypes,
+                )
+
+            if ret:
+                dpg.set_value(tag, ret)
+                callback(tag, Path(ret), user_data)
+
+        with dpg.group(horizontal=True, parent=parent):
+            dpg.add_input_text(
+                default_value=default,
+                decimal=True,
+                readonly=readonly,
+                enabled=not readonly,
+                user_data=user_data,
+                tag=tag,
+            )
+            dpg.add_button(
+                arrow=True,
+                direction=dpg.mvDir_Right,
+                callback=select_file,
+            )
+            dpg.add_text(label)
     elif value_type is NodeLike or issubclass(value_type, Node):
         if isinstance(default, Node):
             default = default.id
