@@ -42,15 +42,15 @@ from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
-# TODO filters
 # TODO boss music
 # TODO ambience
+# TODO specialized attribute handling (e.g. replacing wems)
 # TODO mass transfer
 # TODO setup RTCPs
 # TODO streaming audio
+# TODO attenuation curve editor
 # TODO action graph visualization
 # TODO localizations
-# TODO attenuation curve editor
 
 
 class BanksOfYonder:
@@ -544,7 +544,7 @@ class BanksOfYonder:
                             register_context_menu(row.selectable, child)
                             delve(child)
                     else:
-                        # TODO reference placeholder?
+                        # reference placeholder?
                         pass
 
             delve(entrypoint)
@@ -565,6 +565,9 @@ class BanksOfYonder:
 
         self._regenerate_events_list()
         self._regenerate_globals_list()
+
+        # TODO reveal node in item list
+        #self.select_node(self._selected_node)
 
     def _regenerate_events_list(self) -> None:
         dpg.delete_item(f"{self.tag}_events_table", children_only=True, slot=1)
