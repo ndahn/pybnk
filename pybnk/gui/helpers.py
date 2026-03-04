@@ -419,7 +419,7 @@ def create_filepaths_table(
         if not result:
             return
 
-        current_paths.extend(Path(p) for p in result)
+        current_paths.extend(Path(p) for p in result if p)
         refresh_table()
         on_value_changed(tag, list(current_paths), user_data)
 

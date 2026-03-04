@@ -88,7 +88,7 @@ class BanksOfYonder:
 
         sys.excepthook = self._handle_exception
         logger.addHandler(LogHandler())
-        logger.info("Hello :3")
+        dpg.set_frame_callback(5, lambda: logger.info("Hello :3"))
 
     def _handle_exception(
         self, exc_type: Type[Exception], exc_value: Exception, exc_traceback
@@ -310,12 +310,11 @@ class BanksOfYonder:
             no_close=True,
             no_resize=True,
             no_saved_settings=True,
-            show=False,
             min_size=(10, 10),
             tag=f"{tag}_notification_window",
         ):
             with dpg.group(width=-1):
-                dpg.add_text("TEST", color=style.red, tag=f"{tag}_notification_text")
+                dpg.add_text("Hello :3", color=style.red, tag=f"{tag}_notification_text")
 
         dpg.bind_item_theme(f"{tag}_notification_window", themes.notification_frame)
 
@@ -400,7 +399,7 @@ class BanksOfYonder:
         h = (
             dpg.get_viewport_height()
             - dpg.get_item_height(f"{self.tag}_notification_window")
-            - 35
+            - 4
         )
         # Note: since this is a popup there's no need for a timer to hide it
         dpg.configure_item(
@@ -592,11 +591,6 @@ class BanksOfYonder:
         else:
             events = all_events
 
-        dpg.set_value(
-            f"{self.tag}_events_count",
-            f"Showing {min(self.max_list_nodes, len(events))}/{len(all_events)} events",
-        )
-
         for node in events:
             node: Event = node.cast()
 
@@ -613,6 +607,12 @@ class BanksOfYonder:
             if len(self.event_map) >= self.max_list_nodes:
                 break
 
+        dpg.set_value(
+            f"{self.tag}_events_count",
+            f"Showing {len(self.event_map)}/{len(all_events)} events",
+        )
+
+
     def _regenerate_globals_list(self) -> None:
         dpg.delete_item(f"{self.tag}_globals_table", children_only=True, slot=1)
         self.globals_map.clear()
@@ -622,10 +622,6 @@ class BanksOfYonder:
             for n in self.bnk.hirc
             if n.parent is None and n.type not in ("Event", "Action")
         ]
-        dpg.set_value(
-            f"{self.tag}_globals_count",
-            f"Showing {min(self.max_list_nodes, len(global_nodes))}/{len(global_nodes)} globals",
-        )
 
         type_map: dict[str, list[Node]] = {}
         for node in global_nodes:
@@ -636,24 +632,36 @@ class BanksOfYonder:
             for node_type, nodes in type_map.items():
                 type_map[node_type] = list(query_nodes(nodes, filt))
 
-        for node_type, nodes in type_map.items():
-            if not nodes:
-                continue
+        # Sort the keys
+        type_map = {k:sorted(type_map[k]) for k in sorted(type_map.keys())}
+        offset = 0
 
-            with table_tree_node(
-                node_type,
-                table=f"{self.tag}_globals_table",
-                on_click_callback=self._on_node_selected,
-            ):
-                nodes.sort()
-                for node in nodes:
-                    node = node.cast()
+        while True:
+            done = True
+            for node_type, nodes in type_map.items():
+                if not nodes or len(nodes) <= offset:
+                    continue
+
+                done = False
+                with table_tree_node(
+                    node_type,
+                    table=f"{self.tag}_globals_table",
+                    on_click_callback=self._on_node_selected,
+                ):
+                    node = nodes[offset].cast()
                     node_tag = self._create_root_entry(
                         node, f"{self.tag}_globals_table"
                     )
                     self.globals_map[node.id] = node_tag
-                    if len(self.globals_map) >= self.max_list_nodes:
-                        break
+
+            offset += 1
+            if done or len(self.globals_map) >= self.max_list_nodes:
+                break
+
+        dpg.set_value(
+            f"{self.tag}_globals_count",
+            f"Showing {len(self.globals_map)}/{len(global_nodes)} globals",
+        )
 
     def _open_context_menu(
         self, sender: str, app_data: Any, user_data: tuple[str, Node]
