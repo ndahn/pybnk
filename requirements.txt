@@ -5,3 +5,4 @@ audioop-lts >= 0.2.2
 crossfiledialog
 pywin32; sys_platform == "windows"
 docstring_parser
+pyperclip

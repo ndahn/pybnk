@@ -1,5 +1,4 @@
 from typing import Literal
-import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -32,7 +31,7 @@ def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
             )
         )
 
-        wem_size = os.path.getsize(str(target_path))
+        wem_size = target_path.stat().st_size
         for node in sound_nodes:
             node["bank_source_data/media_information/in_memory_media_size"] = wem_size
 
