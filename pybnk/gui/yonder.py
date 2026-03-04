@@ -104,6 +104,12 @@ class BanksOfYonder:
         with dpg.menu_bar():
             with dpg.menu(label="File"):
                 dpg.add_menu_item(
+                    label="New Soundbank...",
+                    shortcut="ctrl-n",
+                    callback=self._create_empty_soundbank,
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
                     label="Open...",
                     shortcut="ctrl-o",
                     callback=self._open_soundbank,
@@ -127,11 +133,6 @@ class BanksOfYonder:
                     shortcut="f4",
                     callback=self._repack_soundbank,
                     tag=f"{self.tag}_menu_file_repack",
-                )
-                dpg.add_separator()
-                dpg.add_menu_item(
-                    label="Create Empty Soundbank",
-                    callback=self._create_empty_soundbank,
                 )
 
             with dpg.menu(label="Soundbank", tag=f"{self.tag}_menu_edit"):
@@ -489,6 +490,7 @@ class BanksOfYonder:
         loading = common_loading_indicator("Loading soundbank...")
         try:
             self.bnk = Soundbank.load(path)
+            dpg.set_viewport_title(f"Banks of Yonder - {self.bnk.name}")
             self.config.add_recent_file(path)
             self.config.save()
 
