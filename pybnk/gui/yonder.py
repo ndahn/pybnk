@@ -122,6 +122,10 @@ class BanksOfYonder:
                     shortcut="ctrl-o",
                     callback=self._open_soundbank,
                 )
+                dpg.add_menu(
+                    label="Recent files",
+                    tag=f"{self.tag}_menu_recent_files",
+                )
                 dpg.add_separator()
                 dpg.add_menu_item(
                     label="Save",
@@ -227,6 +231,8 @@ class BanksOfYonder:
                     label="About",
                     callback=self._open_about_dialog,
                 )
+
+        self._regenerate_recent_files_menu()
 
     def _set_bnk_menus_enabled(self, enabled: bool) -> None:
         for subtag in [
@@ -410,6 +416,77 @@ class BanksOfYonder:
                 tag=f"{tag}_context_delete",
             )
 
+    def _regenerate_recent_files_menu(self) -> None:
+        dpg.delete_item(f"{self.tag}_menu_recent_files", slot=1, children_only=True)
+        # dpg.split_frame()
+
+        def load_file(sender: str, app_data: Any, path: Path) -> None:
+            if self.bnk:
+                # A soundbank is loaded, save before exiting?
+
+                def save_and_load():
+                    dpg.delete_item(dialog)
+                    self._save_soundbank()
+                    self._load_soundbank(path)
+
+                def save_as_and_load():
+                    dpg.delete_item(dialog)
+                    if self._save_soundbank_as():
+                        self._load_soundbank(path)
+
+                def just_load():
+                    dpg.delete_item(dialog)
+                    self._load_soundbank(path)
+
+                with dpg.window(
+                    label="Continue?",
+                    modal=True,
+                    no_saved_settings=True,
+                    on_close=lambda: dpg.delete_item(dialog),
+                ) as dialog:
+                    dpg.add_text("Save current soundbank first?")
+
+                    dpg.add_separator()
+                    dpg.add_spacer(height=5)
+
+                    with dpg.group(horizontal=True):
+                        dpg.add_button(label="Save", callback=save_and_load)
+                        dpg.add_button(label="Save as", callback=save_as_and_load)
+                        dpg.add_text("|")
+                        dpg.add_button(label="Just do it", callback=just_load)
+
+                dpg.split_frame()
+                center_window(dialog)
+            else:
+                self._load_soundbank(path)
+
+        for i in range(10):
+            if i < len(self.config.recent_files):
+                path = Path(self.config.recent_files[i])
+
+                parts = path.parts
+                short = parts[-1]
+
+                for p in reversed(parts[:-1]):
+                    short = Path(p, short)
+                    if len(str(short)) > 70:
+                        short = Path("...", short)
+                        break
+
+                dpg.add_menu_item(
+                    label=str(short),
+                    parent=f"{self.tag}_menu_recent_files",
+                    callback=load_file,
+                    user_data=path,
+                )
+            else:
+                # We need to add menu item stubs, otherwise the additional items will mess up
+                # the dearpygui layout
+                dpg.add_menu_item(
+                    parent=f"{self.tag}_menu_recent_files",
+                    show=False,
+                )
+
     def show_notification(
         self, msg: str, color: tuple[int, int, int, int] = style.red
     ) -> None:
@@ -439,9 +516,9 @@ class BanksOfYonder:
 
         self.bnk.save()
 
-    def _save_soundbank_as(self) -> None:
+    def _save_soundbank_as(self) -> bool:
         if not self.bnk:
-            return
+            return False
 
         lang = self.language
         path = save_file_dialog(
@@ -455,8 +532,11 @@ class BanksOfYonder:
                 logger.info(f"Saving soundbank to {path}")
                 self.bnk.save(path)
                 logger.info("Don't forget to repack!")
+                return True
             finally:
                 dpg.delete_item(loading)
+
+        return False
 
     def _repack_soundbank(self) -> None:
         if not self.bnk:
@@ -497,6 +577,14 @@ class BanksOfYonder:
             self._load_soundbank(Path(path))
 
     def _load_soundbank(self, path: Path) -> None:
+        if not path.is_file():
+            logger.error(f"File not found: {path}")
+            self.config.remove_recent_file(path)
+            self.config.save()
+
+            self._regenerate_recent_files_menu()
+            return
+
         if path.name.endswith(".bnk"):
             logger.info(f"Unpacking soundbank {path}")
             loading = common_loading_indicator("Unpacking...")
@@ -513,6 +601,7 @@ class BanksOfYonder:
             dpg.set_viewport_title(f"Banks of Yonder - {self.bnk.name}")
             self.config.add_recent_file(path)
             self.config.save()
+            self._regenerate_recent_files_menu()
 
             self.regenerate()
             self._set_bnk_menus_enabled(True)
