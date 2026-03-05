@@ -1,7 +1,11 @@
-from typing import Any, IO, Literal, TYPE_CHECKING
+from typing import Any, Callable, IO, Literal, TYPE_CHECKING
 from contextlib import AbstractContextManager
 from importlib import resources
 from pathlib import Path
+from dataclasses import dataclass
+from docstring_parser import parse as doc_parse
+import inspect
+import builtins
 import logging
 import subprocess
 import shutil
@@ -95,3 +99,49 @@ def format_hierarchy(bnk: "Soundbank", graph: nx.DiGraph) -> str:
 
     delve(root, "")
     return ret.rstrip("\n")
+
+
+@dataclass
+class FuncArg:
+    undefined = object()
+
+    name: str
+    type: type
+    default: Any = None
+    doc: str = None
+
+
+def get_function_spec(
+    func: Callable, undefined: Any = FuncArg.undefined
+) -> dict[str, FuncArg]:
+    func_args = {}
+    sig = inspect.signature(func)
+
+    param_doc = {}
+    if func.__doc__:
+        parsed_doc = doc_parse(func.__doc__)
+        param_doc = {p.arg_name: p.description for p in parsed_doc.params}
+
+    # Create CLI options for click
+    for param in sig.parameters.values():
+        ptype = None
+        default = undefined
+
+        if param.annotation is not param.empty:
+            ptype = param.annotation
+            if ptype and isinstance(ptype, str):
+                # If it's a primitive type we can parse it, otherwise ignore it
+                # NOTE use the proper builtins module here, __builtins__ is unreliable
+                ptype = getattr(builtins, ptype, None)
+
+        if param.default is not inspect.Parameter.empty:
+            default = param.default
+
+            if ptype is None and default is not None:
+                ptype = type(default)
+
+        func_args[param.name] = FuncArg(
+            param.name, ptype, default, param_doc.get(param.name)
+        )
+
+    return func_args
