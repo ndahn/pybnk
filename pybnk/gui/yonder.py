@@ -34,6 +34,7 @@ from pybnk.gui.helpers import (
     center_window,
     create_properties_table,
     common_loading_indicator,
+    add_paragraphs,
 )
 from pybnk.gui import style
 from pybnk.gui.style import themes
@@ -840,8 +841,11 @@ class BanksOfYonder:
         with dpg.group(parent=f"{self.tag}_attributes"):
             # Heading
             dpg.add_text(node.type)
+            if node.__class__.__doc__:
+                with dpg.tooltip(dpg.last_item()):
+                    add_paragraphs(node.__class__.__doc__)
 
-            if node.type == "Event":
+            if not isinstance(node, WwiseNode):
                 dpg.add_input_text(
                     label="Name",
                     default_value=node.lookup_name("<?>"),
@@ -866,7 +870,7 @@ class BanksOfYonder:
             while todo:
                 c = todo.popleft()
                 for name, prop in c.__dict__.items():
-                    if name in ("id", "type", "parent"):
+                    if name in ("id", "name", "type", "parent"):
                         continue
                     if isinstance(prop, property):
                         properties.setdefault(name, prop)

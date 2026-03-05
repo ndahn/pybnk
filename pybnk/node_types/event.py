@@ -5,8 +5,7 @@ from pybnk.enums import SoundType
 class Event(Node):
     """Event that triggers actions in response to game calls.
     
-    Events are the interface between game code and Wwise audio. When the
-    game posts an event, it executes the associated actions (play, stop, etc.).
+    Events are the interface between game code and Wwise audio. When the game posts an event, it executes the associated actions (play, stop, etc.).
     """
 
     @classmethod

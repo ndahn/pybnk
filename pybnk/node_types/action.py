@@ -6,15 +6,7 @@ from pybnk.enums import ActionType
 class Action(Node):
     """Unified Action node for all action types.
 
-    Actions are triggered by Events and perform operations like playing,
-    stopping, pausing sounds, muting buses, or modifying properties.
-
-    Use the appropriate factory method for each action type:
-    - Action.new_play() - Start playback
-    - Action.new_stop() - Stop playback
-    - Action.new_mute_bus() - Mute a bus
-    - Action.new_reset_bus_volume() - Reset bus volume
-    - Action.new_reset_bus_lpfm() - Reset bus low-pass filter
+    Actions are triggered by Events and perform operations like playing, stopping, pausing sounds, muting buses, or modifying properties.
     """
 
     # Factory methods for different action types
