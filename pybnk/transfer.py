@@ -143,13 +143,13 @@ def copy_wwise_events(
         # Play event
         play_evt_name = f"Play_{wwise_src}"
         play_evt = src_bnk[play_evt_name].copy()
-        play_evt.id = calc_hash(f"Play_{wwise_dst}")
+        play_evt.name = f"Play_{wwise_dst}"
         play_evt = copy_event(src_bnk, dst_bnk, play_evt)
 
         # Stop event
         stop_evt_name = f"Stop_{wwise_src}"
         stop_evt = src_bnk[stop_evt_name].copy()
-        stop_evt.id = calc_hash(f"Stop_{wwise_dst}")
+        stop_evt.name = f"Stop_{wwise_dst}"
         stop_evt = copy_event(src_bnk, dst_bnk, stop_evt)
 
         # Collect the structures attached to each action

@@ -54,12 +54,12 @@ def repack_soundbank(bnk2json_exe: Path, bnk_dir: Path) -> Path:
     subprocess.check_output([str(bnk2json_exe), str(bnk_dir)])
 
     # Rename the backup and new soundbank to make things a little easier for the user
-    old_file = bnk_dir.parent / bnk_dir.stem + ".bnk"
-    new_file = bnk_dir.parent / bnk_dir.stem + ".created.bnk"
+    old_file = bnk_dir.parent / (bnk_dir.stem + ".bnk")
+    new_file = bnk_dir.parent / (bnk_dir.stem + ".created.bnk")
     shutil.move(old_file, str(old_file) + ".bak")
     shutil.move(new_file, old_file)
 
-    return bnk_dir.parent / bnk_dir.stem + ".bnk"
+    return bnk_dir.parent / (bnk_dir.stem + ".bnk")
 
 
 def format_hierarchy(bnk: "Soundbank", graph: nx.DiGraph) -> str:

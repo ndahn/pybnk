@@ -26,7 +26,7 @@ class Event(Node):
         temp = cls.load_template(cls.__name__)
 
         event = cls(temp)
-        event.id = name
+        event.name = name
 
         return event
 

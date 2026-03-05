@@ -100,22 +100,34 @@ class Node:
         h = idsec.get("Hash")
         if not h:
             h = calc_hash(idsec["String"])
-            idsec["Hash"] = h
 
         return h
 
     @id.setter
-    def id(self, id: int | str) -> None:
+    def id(self, id: int) -> None:
         idsec = self._attr["id"]
-        if isinstance(id, int):
-            idsec["Hash"] = id
-            idsec.pop("String", None)
-        elif isinstance(id, str):
-            # BUG onlyone or the other must be set!
-            idsec["Hash"] = calc_hash(id)
-            idsec["String"] = id
-        else:
-            raise ValueError(f"Invalid node ID {id}")
+        # Only one or the other can be set, not both!
+        idsec["Hash"] = int(id)
+        idsec.pop("String", None)
+
+    @property
+    def name(self) -> str:
+        idsec = self._attr["id"]
+        n = idsec.get("String")
+        if not n:
+            n = self.lookup_name()
+            if n:
+                # If the name lookup succeeded use 
+                self.name = n
+
+        return n
+
+    @name.setter
+    def name(self, name: str) -> None:
+        idsec: dict = self._attr["id"]
+        # Only one or the other can be set, not both!
+        idsec.pop("Hash", None)
+        idsec["String"] = name
 
     def get_name(self) -> str:
         return self._attr["id"].get("String")

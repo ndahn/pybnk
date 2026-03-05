@@ -735,11 +735,11 @@ class BanksOfYonder:
         if not node:
             return
 
-        def update_name_and_id(sender: str, new_name: str, user_data: Any) -> None:
+        def update_node_name(sender: str, new_name: str, user_data: Any) -> None:
             if not new_name:
                 return
 
-            node.id = new_name
+            node.name = new_name
             dpg.set_value(f"{self.tag}_attr_hash", str(node.id))
 
         def on_properties_changed(
@@ -756,7 +756,7 @@ class BanksOfYonder:
                 dpg.add_input_text(
                     label="Name",
                     default_value=node.lookup_name("<?>"),
-                    callback=update_name_and_id,
+                    callback=update_node_name,
                 )
 
             dpg.add_input_text(
