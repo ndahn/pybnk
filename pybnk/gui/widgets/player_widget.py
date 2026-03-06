@@ -23,6 +23,7 @@ def add_wav_player(
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
 
+    last_path: Path = None
     player: WavPlayer = None
 
     def create_player(audio: Path) -> WavPlayer:
@@ -41,20 +42,27 @@ def add_wav_player(
         return player
 
     def on_play_pause() -> None:
-        nonlocal player
+        nonlocal player, last_path
         audio = get_sound()
 
-        if player and player._path != str(audio):
+        if player and last_path != audio:
             # Audio changed
             player.stop()
             player = None
 
         if not player:
+            print("### new")
             player = create_player(audio)
+            last_path = audio
 
+        print("### .")
         if player.playing:
+            print("### pause")
             player.pause()
         else:
+            if player.position >= player.duration:
+                player.seek(0.0)
+            print("### play")
             player.play()
             progress_update()
 
