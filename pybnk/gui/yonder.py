@@ -598,6 +598,9 @@ class BanksOfYonder:
         logger.info(f"Loading soundbank {path}")
         loading = loading_indicator("Loading soundbank...")
         try:
+            dpg.set_value(f"{self.tag}_events_filter", "")
+            dpg.set_value(f"{self.tag}_globals_filter", "")
+
             self.bnk = Soundbank.load(path)
             dpg.set_viewport_title(f"Banks of Yonder - {self.bnk.name}")
             self.config.add_recent_file(path)

@@ -336,7 +336,7 @@ class Node:
             if isinstance(res, tuple):
                 res = [res]
             return res
-        except KeyError as e:
+        except (KeyError, TypeError) as e:
             if default != _undefined:
                 return default
 
@@ -347,7 +347,7 @@ class Node:
         for node_type, paths in reference_fields.items():
             if node_type in ("*", self.type):
                 for path in paths:
-                    result = self.resolve_path(path)
+                    result = self.resolve_path(path, [])
                     for p, ref in result:
                         if include_unset or (isinstance(ref, int) and ref > 0):
                             refs.append((p, ref))

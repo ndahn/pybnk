@@ -27,6 +27,10 @@ def add_wav_player(
     player: WavPlayer = None
 
     def create_player(audio: Path) -> WavPlayer:
+        if not audio.is_file():
+            logger.error(f"Audio {audio} does not exist")
+            return None
+
         if audio.name.endswith(".wem"):
             wav = Path(_wav_tmp_dir.name) / (audio.stem + ".wav")
             if not wav.is_file():
@@ -36,7 +40,8 @@ def add_wav_player(
         elif audio.name.endswith(".wav"):
             wav = audio
         else:
-            raise ValueError(f"Audio must be a wav or wem file ({audio})")
+            logger.error(f"Audio must be a wav or wem file ({audio})")
+            return None
 
         player = WavPlayer(str(wav))
         return player
@@ -52,6 +57,9 @@ def add_wav_player(
 
         if not player:
             player = create_player(audio)
+            if not player:
+                return
+
             dpg.set_value(f"{tag}_total", f"{player.duration:.2f}")
             last_path = audio
 

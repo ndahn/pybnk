@@ -44,7 +44,6 @@ def resource_path(resource_path: str) -> AbstractContextManager[Path, Literal[Fa
 
 
 def unpack_soundbank(bnk2json_exe: Path, bnk_path: Path) -> Path:
-    logger.info(f"Unpacking soundbank {bnk_path.name}")
     subprocess.check_output([str(bnk2json_exe), str(bnk_path)])
 
     return bnk_path.parent / bnk_path.stem / "soundbank.json"
@@ -54,7 +53,6 @@ def repack_soundbank(bnk2json_exe: Path, bnk_dir: Path) -> Path:
     if bnk_dir.name == "sounbank.json":
         bnk_dir = bnk_dir.parent
 
-    logger.info(f"Repacking soundbank {bnk_dir.stem}")
     subprocess.check_output([str(bnk2json_exe), str(bnk_dir)])
 
     # Rename the backup and new soundbank to make things a little easier for the user
