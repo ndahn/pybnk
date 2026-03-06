@@ -1,6 +1,5 @@
-from typing import Any, Callable, IO, Literal, TYPE_CHECKING
-from contextlib import AbstractContextManager
-from importlib import resources
+from typing import Any, Callable, TYPE_CHECKING
+import sys
 from pathlib import Path
 from dataclasses import dataclass
 from docstring_parser import parse as doc_parse
@@ -20,27 +19,15 @@ logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler())
 
 
-def resource_data(resource_path: str, binary: bool = False) -> str | bytes:
-    import pybnk
+def resource_dir() -> Path:
+    return Path(sys.argv[0]).parent / "resources"
 
-    res = resources.files(pybnk).joinpath("resources/" + resource_path)
+
+def resource_data(res_path: str, binary: bool = False) -> str | bytes:
+    res = resource_dir() / res_path
     if binary:
         return res.read_bytes()
     return res.read_text()
-
-
-def resource_file(resource_path: str, binary: bool = False) -> IO[str]:
-    import pybnk
-
-    res = resources.files(pybnk).joinpath("resources/" + resource_path)
-    return res.open(mode="rb" if binary else "r")
-
-
-def resource_path(resource_path: str) -> AbstractContextManager[Path, Literal[False]]:
-    import pybnk
-
-    res = resources.files(pybnk).joinpath("resources/" + resource_path)
-    return resources.path(pybnk, res)
 
 
 def unpack_soundbank(bnk2json_exe: Path, bnk_path: Path) -> Path:

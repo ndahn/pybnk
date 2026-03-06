@@ -1,16 +1,16 @@
 from dearpygui import dearpygui as dpg
 
-from pybnk.util import resource_path
+from pybnk.util import resource_dir
 from pybnk.gui.style import init_themes
 from pybnk.gui.yonder import BanksOfYonder
 
 
 def dpg_init():
     with dpg.font_registry():
-        with resource_path("NotoSansMonoCJKsc-Regular.otf") as path:
-            with dpg.font(str(path), 18) as default_font:
-                dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
-                dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Simplified_Common)
+        font_path = resource_dir() / "NotoSansMonoCJKsc-Regular.otf"
+        with dpg.font(str(font_path), 18) as default_font:
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Default)
+            dpg.add_font_range_hint(dpg.mvFontRangeHint_Chinese_Simplified_Common)
 
         dpg.bind_font(default_font)
 
