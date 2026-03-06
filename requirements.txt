@@ -8,3 +8,5 @@ docstring_parser
 pyperclip
 lark
 rapidfuzz
+numpy
+sounddevice

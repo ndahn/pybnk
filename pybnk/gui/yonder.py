@@ -29,21 +29,19 @@ from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
-from pybnk.gui.helpers import (
+from pybnk.gui.helpers import center_window
+from pybnk.gui.widgets import (
     create_widget,
-    center_window,
     create_properties_table,
     common_loading_indicator,
     add_paragraphs,
-)
-from pybnk.gui import style
-from pybnk.gui.style import themes
-from pybnk.gui.localization import Localization, English
-from pybnk.gui.table_tree_nodes import (
     table_tree_node,
     add_lazy_table_tree_node,
     set_foldable_row_status,
 )
+from pybnk.gui import style
+from pybnk.gui.style import themes
+from pybnk.gui.localization import Localization, English
 from pybnk.gui.dialogs.about_dialog import about_dialog
 from pybnk.gui.dialogs.create_node_dialog import create_node_dialog
 from pybnk.gui.dialogs.new_wwise_event_dialog import new_wwise_event_dialog
@@ -57,6 +55,7 @@ from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
+# TODO player
 # TODO boss music
 # TODO ambience
 # TODO specialized attribute handling (e.g. replacing wems)
@@ -959,6 +958,7 @@ class BanksOfYonder:
             )
             properties.pop("media_size")
             properties.pop("source_id")
+
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)

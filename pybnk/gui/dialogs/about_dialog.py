@@ -1,5 +1,3 @@
-import os
-import sys
 from dearpygui import dearpygui as dpg
 import webbrowser
 

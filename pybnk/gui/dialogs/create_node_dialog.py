@@ -5,7 +5,7 @@ from pybnk import Soundbank
 from pybnk.node_types import WwiseNode
 from pybnk.util import get_function_spec
 from pybnk.gui import style
-from pybnk.gui.helpers import create_widget
+from pybnk.gui.widgets import create_widget
 
 
 def create_node_dialog(

@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Callable
 import re
 from dearpygui import dearpygui as dpg
 
@@ -6,7 +6,7 @@ from pybnk import Soundbank, Node
 from pybnk.node_types import Event, Action
 from pybnk.enums import SoundType
 from pybnk.gui import style
-from pybnk.gui.helpers import create_widget
+from pybnk.gui.widgets import create_widget
 
 
 def new_wwise_event_dialog(

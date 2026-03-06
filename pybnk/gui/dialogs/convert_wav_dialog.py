@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.gui import style
 from pybnk.gui.config import Config
 from pybnk.gui.dialogs.file_dialog import choose_folder
-from pybnk.gui.helpers import create_filepaths_table, common_loading_indicator
+from pybnk.gui.widgets import create_filepaths_table, common_loading_indicator
 from pybnk.util import logger
 from pybnk.wem import wav2wem, trim_silence, set_volume, create_prefetch_snippet
 

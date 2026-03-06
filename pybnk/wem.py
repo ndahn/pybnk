@@ -159,31 +159,35 @@ def wem2wav(
     vgmstream_exe: Path,
     wems: list[Path] | Path,
     out_dir: Path = None,
-) -> None:
+) -> list[Path]:
     if isinstance(wems, Path):
         wems = [wems]
 
-    wav_dir = wems[0].parent
     if not out_dir:
-        out_dir = wav_dir
+        out_dir = wems[0].parent
 
-    try:
-        for wem in wems:
+    out_files = []
+
+    for wem in wems:
+        try:
             if not wem.is_file():
                 logger.error(f"FileNotFound: {wem}")
+                out_files.append(None)
                 continue
 
+            out_file = str(out_dir / (wem.stem + ".wav"))
             subprocess.check_call(
                 [
                     str(vgmstream_exe),
+                    "-i",  # ignore looping
                     "-o",
-                    wem.parent / wem.stem + ".wav",
+                    out_file,
                     str(wem),
                 ]
             )
-    except subprocess.CalledProcessError as e:
-        logger.error(
-            "Conversion failed! Make sure you have the required libraries installed!\n"
-            " -> https://github.com/vgmstream/vgmstream/blob/master/doc/USAGE.md"
-        )
-        raise e
+            out_files.append(out_file)
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Conversion failed ({e.returncode}):\n{e.output}")
+            out_files.append(None)
+
+    return out_files
