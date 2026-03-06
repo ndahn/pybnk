@@ -51,24 +51,18 @@ def add_wav_player(
             player = None
 
         if not player:
-            print("### new")
             player = create_player(audio)
+            dpg.set_value(f"{tag}_total", f"{player.duration:.2f}")
             last_path = audio
 
-        print("### .")
         if player.playing:
-            print("### pause")
             player.pause()
         else:
             if player.position >= player.duration:
                 player.seek(0.0)
-            print("### play")
+            
             player.play()
             progress_update()
-
-    def on_stop() -> None:
-        if player:
-            player.stop()
 
     def on_progress_changed(sender: str, progress: float, user_data: Any) -> None:
         if player:
@@ -81,10 +75,6 @@ def add_wav_player(
         dpg.configure_item(
             f"{tag}_progress", default_value=player.position, max_value=player.duration
         )
-        dpg.set_value(
-            f"{tag}_progress_text", f"{player.position:.2f} / {player.duration:.2f}"
-        )
-
         dpg.set_frame_callback(dpg.get_frame_count() + 2, progress_update)
 
     with dpg.group(horizontal=True, tag=tag):
@@ -94,22 +84,16 @@ def add_wav_player(
             callback=on_play_pause,
             tag=f"{tag}_play_pause",
         )
-        dpg.add_button(
-            label="x",
-            callback=on_stop,
-            tag=f"{tag}_stop",
-        )
 
-        with dpg.group():
-            dpg.add_slider_float(
-                min_value=0.0,
-                max_value=1.0,
-                clamped=True,
-                no_input=True,
-                callback=on_progress_changed,
-                tag=f"{tag}_progress",
-            )
-            dpg.add_text(
-                "0.00 / 0.00",
-                tag=f"{tag}_progress_text",
-            )
+        dpg.add_slider_float(
+            min_value=0.0,
+            max_value=1.0,
+            clamped=True,
+            no_input=True,
+            callback=on_progress_changed,
+            tag=f"{tag}_progress",
+        )
+        dpg.add_text(
+            "0.00",
+            tag=f"{tag}_total",
+        )

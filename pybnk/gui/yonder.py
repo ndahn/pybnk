@@ -966,6 +966,8 @@ class BanksOfYonder:
                 lambda: node.get_source_path(self.bnk),
             )
 
+            dpg.add_spacer(height=5)
+
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
 
