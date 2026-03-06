@@ -4,7 +4,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.enums import property_defaults
 
 
-def create_properties_table(
+def add_properties_table(
     initial_properties: dict[str, Any],
     on_value_changed: Callable[[str, dict[str, Any], Any], None],
     *,
@@ -116,4 +116,3 @@ def create_properties_table(
         for prop, val in current_properties.items():
             add_row(prop, val)
         add_footer()
-

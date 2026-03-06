@@ -6,10 +6,10 @@ from dearpygui import dearpygui as dpg
 from pybnk.node import Node, NodeLike
 from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
 from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
-from .flags_widget import create_flag_checkboxes
+from .flags_widget import add_flag_checkboxes
 
 
-def create_widget(
+def add_generic_widget(
     value_type: type,
     label: str,
     callback: Callable[[str, Any, Any], None],
@@ -34,7 +34,7 @@ def create_widget(
             value_type = int
         else:
             # We have specific support for flags already
-            return create_flag_checkboxes(
+            return add_flag_checkboxes(
                 value_type,
                 callback,
                 readonly=readonly,

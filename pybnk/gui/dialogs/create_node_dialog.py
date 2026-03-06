@@ -5,7 +5,7 @@ from pybnk import Soundbank
 from pybnk.node_types import WwiseNode
 from pybnk.util import get_function_spec
 from pybnk.gui import style
-from pybnk.gui.widgets import create_widget
+from pybnk.gui.widgets import add_generic_widget
 
 
 def create_node_dialog(
@@ -43,7 +43,7 @@ def create_node_dialog(
                 continue
 
             node_args[name] = arg.default
-            create_widget(
+            add_generic_widget(
                 arg.type,
                 name,
                 set_arg,

@@ -3,7 +3,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.gui import style
 
 
-def common_loading_indicator(
+def loading_indicator(
     label: str, color: tuple[int, int, int, int] = style.purple
 ) -> str:
     with dpg.window(

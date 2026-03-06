@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.util import logger
 
 
-def create_flag_checkboxes(
+def add_flag_checkboxes(
     flag_type: Type[IntFlag],
     callback: Callable[[str, int, Any], None],
     *,

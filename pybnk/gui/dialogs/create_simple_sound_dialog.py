@@ -6,7 +6,7 @@ from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
 from pybnk.node_types import Event, ActorMixer
 from pybnk.gui import style
-from pybnk.gui.widgets import create_properties_table, create_filepaths_table
+from pybnk.gui.widgets import add_properties_table, add_filepaths_table
 from pybnk.enums import property_defaults
 from .select_node_dialog import select_node_of_type
 
@@ -48,9 +48,7 @@ def create_simple_sound_dialog(
         wem_paths.clear()
         wem_paths.extend(paths)
 
-    def show_message(
-        msg: str, color: tuple[int, int, int, int] = style.red
-    ) -> None:
+    def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
@@ -138,11 +136,11 @@ def create_simple_sound_dialog(
 
         # Properties
         dpg.add_spacer(height=5)
-        create_properties_table(properties, on_properties_changed)
+        add_properties_table(properties, on_properties_changed)
 
         # WEMs
         dpg.add_spacer(height=5)
-        create_filepaths_table(
+        add_filepaths_table(
             wem_paths,
             on_wems_changed,
             title="WEMs",

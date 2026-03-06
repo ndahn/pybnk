@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
 
 
-def create_filepaths_table(
+def add_filepaths_table(
     initial_paths: list[Path],
     on_value_changed: Callable[[str, list[Path], Any], None],
     *,

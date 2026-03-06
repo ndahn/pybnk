@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 from pybnk.gui import style
 from pybnk.gui.config import Config
 from pybnk.gui.dialogs.file_dialog import choose_folder
-from pybnk.gui.widgets import create_filepaths_table, common_loading_indicator
+from pybnk.gui.widgets import add_filepaths_table, loading_indicator
 from pybnk.util import logger
 from pybnk.wem import wav2wem, trim_silence, set_volume, create_prefetch_snippet
 
@@ -69,7 +69,7 @@ def convert_wavs_dialog(
                 show_message("Wwise exe not found")
                 return
 
-        loading = common_loading_indicator("Converting...")
+        loading = loading_indicator("Converting...")
         try:
             out_files = list(wav_paths)
 
@@ -123,7 +123,7 @@ def convert_wavs_dialog(
         tag=tag,
         on_close=lambda: dpg.delete_item(window),
     ) as window:
-        create_filepaths_table(
+        add_filepaths_table(
             [],
             on_wavs_changed,
             title="Wave files",

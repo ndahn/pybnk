@@ -31,9 +31,9 @@ from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
 from pybnk.gui.helpers import center_window
 from pybnk.gui.widgets import (
-    create_widget,
-    create_properties_table,
-    common_loading_indicator,
+    add_generic_widget,
+    add_properties_table,
+    loading_indicator,
     add_paragraphs,
     table_tree_node,
     add_lazy_table_tree_node,
@@ -527,7 +527,7 @@ class BanksOfYonder:
             filetypes={lang.json_files: "*.json"},
         )
         if path:
-            loading = common_loading_indicator("Saving soundbank...")
+            loading = loading_indicator("Saving soundbank...")
             try:
                 logger.info(f"Saving soundbank to {path}")
                 self.bnk.save(path)
@@ -542,7 +542,7 @@ class BanksOfYonder:
         if not self.bnk:
             return
 
-        loading = common_loading_indicator("Repacking...")
+        loading = loading_indicator("Repacking...")
         try:
             bnk2json = self.config.locate_bnk2json()
             repack_soundbank(bnk2json, self.bnk.bnk_dir)
@@ -587,7 +587,7 @@ class BanksOfYonder:
 
         if path.name.endswith(".bnk"):
             logger.info(f"Unpacking soundbank {path}")
-            loading = common_loading_indicator("Unpacking...")
+            loading = loading_indicator("Unpacking...")
             try:
                 bnk2json = self.config.locate_bnk2json()
                 unpack_soundbank(bnk2json, path)
@@ -595,7 +595,7 @@ class BanksOfYonder:
                 dpg.delete_item(loading)
 
         logger.info(f"Loading soundbank {path}")
-        loading = common_loading_indicator("Loading soundbank...")
+        loading = loading_indicator("Loading soundbank...")
         try:
             self.bnk = Soundbank.load(path)
             dpg.set_viewport_title(f"Banks of Yonder - {self.bnk.name}")
@@ -890,7 +890,7 @@ class BanksOfYonder:
                     self.update_json_panel()
 
                 try:
-                    widget = create_widget(
+                    widget = add_generic_widget(
                         value_type,
                         name,
                         set_property,
@@ -907,7 +907,7 @@ class BanksOfYonder:
 
             if isinstance(node, WwiseNode):
                 dpg.add_spacer(height=5)
-                create_properties_table(
+                add_properties_table(
                     node.properties,
                     on_properties_changed,
                     user_data=node,
@@ -941,13 +941,14 @@ class BanksOfYonder:
         elif isinstance(node, RandomSequenceContainer):
             pass
         elif isinstance(node, Sound):
+
             def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
                 sound.source_id = int(wem_path.stem)
                 sound.media_size = wem_path.stat().st_size
                 dpg.set_value(sender, wem_path.stem)
                 self.update_json_panel()
 
-            create_widget(
+            add_generic_widget(
                 Path,
                 "source_id",
                 on_wem_selected,
@@ -958,7 +959,6 @@ class BanksOfYonder:
             )
             properties.pop("media_size")
             properties.pop("source_id")
-
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)

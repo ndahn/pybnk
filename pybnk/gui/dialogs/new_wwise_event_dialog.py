@@ -6,7 +6,7 @@ from pybnk import Soundbank, Node
 from pybnk.node_types import Event, Action
 from pybnk.enums import SoundType
 from pybnk.gui import style
-from pybnk.gui.widgets import create_widget
+from pybnk.gui.widgets import add_generic_widget
 
 
 def new_wwise_event_dialog(
@@ -19,9 +19,7 @@ def new_wwise_event_dialog(
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
 
-    def show_message(
-        msg: str, color: tuple[int, int, int, int] = style.red
-    ) -> None:
+    def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
@@ -42,7 +40,7 @@ def new_wwise_event_dialog(
         allow_arbitrary_name = dpg.get_value(f"{tag}_allow_arbitrary_name")
         if not allow_arbitrary_name:
             valid_chars = "".join(str(s) for s in SoundType)
-            if not re.match(rf"[{valid_chars}]\d{4,10}"):
+            if not re.match(rf"[{valid_chars}]\d{4, 10}"):
                 show_message("Name not matching pattern (x123456789)")
                 return
 
@@ -52,7 +50,9 @@ def new_wwise_event_dialog(
         create_play_event = dpg.get_value(f"{tag}_create_play_event")
         if create_play_event:
             play_evt = Event.new(f"Play_{name}")
-            play_action = Action.new_play_action(bnk.new_id(), target_id, bank_id=bnk.id)
+            play_action = Action.new_play_action(
+                bnk.new_id(), target_id, bank_id=bnk.id
+            )
             play_evt.add_action(play_action)
             new_nodes.extend([play_evt, play_action])
 
@@ -90,7 +90,7 @@ def new_wwise_event_dialog(
             tag=f"{tag}_allow_arbitrary_names",
         )
 
-        create_widget(
+        add_generic_widget(
             Node,
             "Target node",
             None,
