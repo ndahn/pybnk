@@ -79,7 +79,7 @@ class Config:
             self.vgmstream_exe = vgmstream_exe
             self.save()
 
-        return self.wwise_exe
+        return self.vgmstream_exe
 
 
 _config: Config = None

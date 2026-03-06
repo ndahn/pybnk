@@ -14,7 +14,7 @@ _wav_tmp_dir = tempfile.TemporaryDirectory("_player", "pybnk_")
 atexit.register(_wav_tmp_dir.cleanup)
 
 
-def add_player_widget(
+def add_wav_player(
     config: Config,
     get_sound: Callable[[], Path],
     *,
@@ -27,9 +27,11 @@ def add_player_widget(
 
     def create_player(audio: Path) -> WavPlayer:
         if audio.name.endswith(".wem"):
-            vgmstream = config.locate_vgmstream()
-            logger.info(f"Converting {audio} to wav for playback")
-            wav = wem2wav(Path(vgmstream), [audio], Path(_wav_tmp_dir))[0]
+            wav = Path(_wav_tmp_dir.name) / (audio.stem + ".wav")
+            if not wav.is_file():
+                vgmstream = config.locate_vgmstream()
+                logger.info(f"Converting {audio} to wav for playback")
+                wav = wem2wav(Path(vgmstream), [audio], Path(_wav_tmp_dir.name))[0]
         elif audio.name.endswith(".wav"):
             wav = audio
         else:
@@ -45,6 +47,9 @@ def add_player_widget(
         if player and player._path != str(audio):
             # Audio changed
             player.stop()
+            player = None
+
+        if not player:
             player = create_player(audio)
 
         if player.playing:
@@ -69,10 +74,10 @@ def add_player_widget(
             f"{tag}_progress", default_value=player.position, max_value=player.duration
         )
         dpg.set_value(
-            f"{tag}_progress_text", f"{player.position:.1f} / {player.duration:.1f}"
+            f"{tag}_progress_text", f"{player.position:.2f} / {player.duration:.2f}"
         )
 
-        dpg.set_frame_callback(dpg.get_frame_count(), progress_update)
+        dpg.set_frame_callback(dpg.get_frame_count() + 2, progress_update)
 
     with dpg.group(horizontal=True, tag=tag):
         dpg.add_button(
@@ -97,6 +102,6 @@ def add_player_widget(
                 tag=f"{tag}_progress",
             )
             dpg.add_text(
-                "0.0 / 0.0",
+                "0.00 / 0.00",
                 tag=f"{tag}_progress_text",
             )

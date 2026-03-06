@@ -38,6 +38,7 @@ from pybnk.gui.widgets import (
     table_tree_node,
     add_lazy_table_tree_node,
     set_foldable_row_status,
+    add_wav_player,
 )
 from pybnk.gui import style
 from pybnk.gui.style import themes
@@ -959,6 +960,11 @@ class BanksOfYonder:
             )
             properties.pop("media_size")
             properties.pop("source_id")
+
+            add_wav_player(
+                self.config,
+                lambda: node.get_source_path(self.bnk),
+            )
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)

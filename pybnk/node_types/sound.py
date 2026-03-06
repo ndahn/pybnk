@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 import os
 from pathlib import Path
 
@@ -5,6 +6,8 @@ from pybnk.node import Node
 from pybnk.enums import SourceType, PluginType
 from .wwise_node import WwiseNode
 
+if TYPE_CHECKING:
+    from pybnk.soundbank import Soundbank
 
 
 class Sound(WwiseNode):
@@ -99,6 +102,13 @@ class Sound(WwiseNode):
     @source_id.setter
     def source_id(self, value: int) -> None:
         self["bank_source_data/media_information/source_id"] = value
+
+    def get_source_path(self, bnk: "Soundbank") -> Path:
+        src = self.source_id
+        if src <= 0:
+            return None
+
+        return bnk.bnk_dir / f"{src}.wem"
 
     @property
     def plugin(self) -> PluginType:
