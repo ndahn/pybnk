@@ -1,6 +1,10 @@
+from typing import Any
 from pathlib import Path
 
 from pybnk.util import resource_data
+
+
+_lookup_table: dict[int, str] = {}
 
 
 def calc_hash(input: str) -> int:
@@ -23,11 +27,25 @@ def calc_hash(input: str) -> int:
 
 def load_lookup_table(path: Path = None) -> dict[int, str]:
     if not path:
-        keys = resource_data("wwise_ids.txt")
+        pairs = resource_data("wwise_ids.txt").splitlines()
     else:
-        keys = [x.strip() for x in path.read_text().splitlines()]
+        pairs = [x.strip() for x in path.read_text().splitlines()]
 
-    return {calc_hash(k): k for k in keys if not k.startswith("#")}
+    table = {}
+    for x in pairs:
+        if x.startswith("#"):
+            continue
+
+        h = calc_hash(x)
+        table[h] = x.strip(" \n")
+
+    return table
 
 
-lookup_table = load_lookup_table()
+def get_name_for_hash(h: int, default: Any = None) -> str:
+    global _lookup_table
+
+    if not _lookup_table:
+        _lookup_table = load_lookup_table()
+    
+    return _lookup_table.get(h, default)

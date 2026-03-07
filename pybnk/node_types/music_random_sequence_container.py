@@ -1,5 +1,5 @@
 from pybnk.node import Node
-from pybnk.util import logger
+from pybnk.util import logger, PathDict
 from .wwise_node import WwiseNode
 
 
@@ -47,8 +47,12 @@ class MusicRandomSequenceContainer(WwiseNode):
         return container
 
     @property
-    def base_params(self) -> dict:
-        return self["music_trans_node_params/music_node_params/node_base_params"]
+    def base_params(self) -> PathDict:
+        return PathDict(self["music_trans_node_params/music_node_params/node_base_params"])
+
+    @property
+    def music_params(self) -> PathDict:
+        return PathDict(self["music_trans_node_params/music_node_params"])
 
     @property
     def tempo(self) -> float:
@@ -59,11 +63,11 @@ class MusicRandomSequenceContainer(WwiseNode):
         float
             Tempo in beats per minute.
         """
-        return self["music_trans_node_params/music_node_params/meter_info/tempo"]
+        return self.music_params["meter_info/tempo"]
 
     @tempo.setter
     def tempo(self, value: float) -> None:
-        self["music_trans_node_params/music_node_params/meter_info/tempo"] = value
+        self.music_params["meter_info/tempo"] = value
 
     @property
     def time_signature(self) -> tuple[int, int]:
@@ -74,22 +78,18 @@ class MusicRandomSequenceContainer(WwiseNode):
         tuple[int, int]
             (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
         """
-        beat_count = self[
-            "music_trans_node_params/music_node_params/meter_info/time_signature_beat_count"
+        beat_count = self.music_params["meter_info/time_signature_beat_count"
         ]
-        beat_value = self[
-            "music_trans_node_params/music_node_params/meter_info/time_signature_beat_value"
+        beat_value = self.music_params["meter_info/time_signature_beat_value"
         ]
         return (beat_count, beat_value)
 
     @time_signature.setter
     def time_signature(self, value: tuple[int, int]) -> None:
         beat_count, beat_value = value
-        self[
-            "music_trans_node_params/music_node_params/meter_info/time_signature_beat_count"
+        self.music_params["meter_info/time_signature_beat_count"
         ] = beat_count
-        self[
-            "music_trans_node_params/music_node_params/meter_info/time_signature_beat_value"
+        self.music_params["meter_info/time_signature_beat_value"
         ] = beat_value
 
     @property
@@ -101,11 +101,11 @@ class MusicRandomSequenceContainer(WwiseNode):
         float
             Grid period in ms.
         """
-        return self["music_trans_node_params/music_node_params/meter_info/grid_period"]
+        return self.music_params["meter_info/grid_period"]
 
     @grid_period.setter
     def grid_period(self, value: float) -> None:
-        self["music_trans_node_params/music_node_params/meter_info/grid_period"] = value
+        self.music_params["meter_info/grid_period"] = value
 
     @property
     def playlist_items(self) -> list[dict]:
@@ -237,11 +237,11 @@ class MusicRandomSequenceContainer(WwiseNode):
 
     def get_references(self) -> list[tuple[str, int]]:
         paths = (
-            "music_trans_node_params/music_node_params/override_bus_id",
-            "music_trans_node_params/music_node_params/aux_params/aux1",
-            "music_trans_node_params/music_node_params/aux_params/aux2",
-            "music_trans_node_params/music_node_params/aux_params/aux3",
-            "music_trans_node_params/music_node_params/aux_params/aux4",
+            "music_trans_node_params/music_node_params/node_base_params/override_bus_id",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux1",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux2",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux3",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux4",
         )
         refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
 

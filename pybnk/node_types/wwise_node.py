@@ -1,6 +1,6 @@
 from pybnk.node import Node, NodeLike
 from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType, VirtualQueueBehavior
-from pybnk.util import logger
+from pybnk.util import logger, PathDict
 
 
 class WwiseNode(Node):
@@ -10,8 +10,8 @@ class WwiseNode(Node):
     """
 
     @property
-    def base_params(self) -> dict:
-        return self["node_base_params"]
+    def base_params(self) -> PathDict:
+        return PathDict(self["node_base_params"])
 
     @property
     def parent(self) -> int:

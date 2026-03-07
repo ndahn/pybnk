@@ -26,7 +26,8 @@ from pybnk.node_types import (
     Sound,
     WwiseNode,
 )
-from pybnk.util import logger, unpack_soundbank, repack_soundbank, PathDict
+from pybnk.hash import get_name_for_hash
+from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.enums import ActionType
 from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
@@ -942,7 +943,10 @@ class BanksOfYonder:
         elif isinstance(node, MusicSegment):
             pass
         elif isinstance(node, MusicSwitchContainer):
-            pass
+            properties.pop("arguments", None)
+            args = [f"{get_name_for_hash(a, '?')} ({a})" for a in node.arguments]
+            dpg.add_listbox(args, label="arguments")  # TODO
+
         elif isinstance(node, MusicTrack):
             pass
         elif isinstance(node, RandomSequenceContainer):
@@ -1053,7 +1057,7 @@ class BanksOfYonder:
         logger.info(f"Copied node {self._selected_node} to clipboard")
 
     def node_paste_child(self) -> None:
-        data = json.loads(pyperclip.paste(), object_hook=lambda d: PathDict.convert(d))
+        data = json.loads(pyperclip.paste())
         node = Node.wrap(data)
         if not isinstance(node, WwiseNode):
             raise ValueError(f"Node {node} cannot be parented")

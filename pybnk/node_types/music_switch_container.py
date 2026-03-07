@@ -1,4 +1,4 @@
-from typing import Any
+from pybnk.util import logger, PathDict
 from .wwise_node import WwiseNode
 
 
@@ -45,8 +45,14 @@ class MusicSwitchContainer(WwiseNode):
         return container
 
     @property
-    def base_params(self) -> dict:
-        return self["music_trans_node_params/music_node_params/node_base_params"]
+    def base_params(self) -> PathDict:
+        return PathDict(
+            self["music_trans_node_params/music_node_params/node_base_params"]
+        )
+
+    @property
+    def music_params(self) -> PathDict:
+        return PathDict(self["music_trans_node_params/music_node_params"])
 
     @property
     def tempo(self) -> float:
@@ -57,11 +63,11 @@ class MusicSwitchContainer(WwiseNode):
         float
             Tempo in beats per minute.
         """
-        self.base_params["meter_info/tempo"]
+        self.music_params["meter_info/tempo"]
 
     @tempo.setter
     def tempo(self, value: float) -> None:
-        self.base_params["meter_info/tempo"] = value
+        self.music_params["meter_info/tempo"] = value
 
     @property
     def time_signature(self) -> tuple[int, int]:
@@ -72,15 +78,15 @@ class MusicSwitchContainer(WwiseNode):
         tuple[int, int]
             (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
         """
-        beat_count = self.base_params["meter_info/time_signature_beat_count"]
-        beat_value = self.base_params["meter_info/time_signature_beat_value"]
+        beat_count = self.music_params["meter_info/time_signature_beat_count"]
+        beat_value = self.music_params["meter_info/time_signature_beat_value"]
         return (beat_count, beat_value)
 
     @time_signature.setter
     def time_signature(self, value: tuple[int, int]) -> None:
         beat_count, beat_value = value
-        self.base_params["meter_info/time_signature_beat_count"] = beat_count
-        self.base_params["meter_info/time_signature_beat_value"] = beat_value
+        self.music_params["meter_info/time_signature_beat_count"] = beat_count
+        self.music_params["meter_info/time_signature_beat_value"] = beat_value
 
     @property
     def grid_period(self) -> float:
@@ -91,11 +97,11 @@ class MusicSwitchContainer(WwiseNode):
         float
             Grid period in ms.
         """
-        self.base_params["meter_info/grid_period"]
+        self.music_params["meter_info/grid_period"]
 
     @grid_period.setter
     def grid_period(self, value: float) -> None:
-        self.base_params["meter_info/grid_period"] = value
+        self.music_params["meter_info/grid_period"] = value
 
     @property
     def continue_playback(self) -> bool:
@@ -139,15 +145,22 @@ class MusicSwitchContainer(WwiseNode):
         self["tree_mode"] = value
 
     @property
-    def arguments(self) -> list[dict]:
+    def arguments(self) -> list[int]:
         """Get the list of state group arguments.
 
         Returns
         -------
-        list[dict]
-            List of argument dicts with group_id.
+        list[int]
+            List of group_id arguments.
         """
-        return self["arguments"]
+        args = []
+        for a in self["arguments"]:
+            gid = a.get("group_id")
+            if gid is None:
+                logger.warning(f"Found unknown argument {a} in {self}")
+            else:
+                args.append(gid)
+        return args
 
     @property
     def group_types(self) -> list[str]:
@@ -630,11 +643,11 @@ class MusicSwitchContainer(WwiseNode):
 
     def get_references(self) -> list[tuple[str, int]]:
         paths = (
-            "music_trans_node_params/music_node_params/override_bus_id",
-            "music_trans_node_params/music_node_params/aux_params/aux1",
-            "music_trans_node_params/music_node_params/aux_params/aux2",
-            "music_trans_node_params/music_node_params/aux_params/aux3",
-            "music_trans_node_params/music_node_params/aux_params/aux4",
+            "music_trans_node_params/music_node_params/node_base_params/override_bus_id",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux1",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux2",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux3",
+            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux4",
         )
         refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
 

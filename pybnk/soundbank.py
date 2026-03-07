@@ -8,7 +8,7 @@ import shutil
 import networkx as nx
 
 from pybnk.hash import calc_hash
-from pybnk.util import logger, resource_data, PathDict
+from pybnk.util import logger, resource_data
 from pybnk.node import Node
 from pybnk.query import query_nodes
 
@@ -28,7 +28,7 @@ class Soundbank:
             json_path = bnk_path / "soundbank.json"
 
         with json_path.open() as f:
-            bnk_json: dict = json.load(f, object_hook=lambda d: PathDict.convert(d))
+            bnk_json: dict = json.load(f)
 
         # Read the sections
         sections = bnk_json.get("sections", None)
@@ -59,10 +59,7 @@ class Soundbank:
         if not path.is_dir():
             raise ValueError(f"{path} is not a directory")
 
-        bnk = json.loads(
-            resource_data("empty_soundbank.json"),
-            object_hook=lambda d: PathDict.convert(d),
-        )
+        bnk = json.loads(resource_data("empty_soundbank.json"))
         name_hash = calc_hash(name)
         bnk["sections"][0]["body"]["BKHD"]["bank_id"] = name_hash
 

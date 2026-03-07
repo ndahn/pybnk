@@ -3,8 +3,8 @@ import json
 import copy
 from collections import deque
 
-from pybnk.hash import calc_hash, lookup_table
-from pybnk.util import logger, resource_data, PathDict
+from pybnk.hash import calc_hash, get_name_for_hash
+from pybnk.util import resource_data
 
 
 _undefined = object()
@@ -21,9 +21,7 @@ class Node:
 
         if name not in cls._templates:
             template_txt = resource_data("templates/" + name)
-            cls._templates[name] = json.loads(
-                template_txt, object_hook=lambda d: PathDict.convert(d)
-            )
+            cls._templates[name] = json.loads(template_txt)
 
         return cls._templates[name]
 
@@ -162,17 +160,14 @@ class Node:
         return n
 
     def lookup_name(self, default: str = None) -> str:
-        idsec = self._attr["id"]
-        s = idsec.get("String")
-        if not s:
-            s = lookup_table.get(self.id)
-            if s:
-                idsec["String"] = s
+        name = self._attr["id"].get("String")
+        if not name:
+            name = get_name_for_hash(self.id)
 
-        if s is None:
+        if name is None:
             return default
 
-        return s
+        return name
 
     def paths(self) -> Iterator[str]:
         def delve(item: dict, path: str):

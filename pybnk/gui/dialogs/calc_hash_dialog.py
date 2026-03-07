@@ -2,7 +2,7 @@ from typing import Any
 from dearpygui import dearpygui as dpg
 
 from pybnk.gui import style
-from pybnk.hash import calc_hash, lookup_table
+from pybnk.hash import calc_hash, get_name_for_hash
 
 
 def calc_hash_dialog(
@@ -22,7 +22,7 @@ def calc_hash_dialog(
         if not hash:
             return
         
-        label = lookup_table.get(int(hash), "<?>")
+        label = get_name_for_hash(int(hash), "<?>")
         dpg.set_value(f"{tag}_label", label)
 
     with dpg.window(
