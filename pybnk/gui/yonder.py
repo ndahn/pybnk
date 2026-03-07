@@ -24,6 +24,7 @@ from pybnk.node_types import (
     MusicTrack,
     RandomSequenceContainer,
     Sound,
+    SwitchContainer,
     WwiseNode,
 )
 from pybnk.hash import get_name_for_hash
@@ -710,15 +711,6 @@ class BanksOfYonder:
 
         for node in events:
             node: Event = node.cast()
-
-            for aid in node.actions:
-                action = Action(self.bnk[aid].dict)
-                if action.action_type == ActionType.PLAY:
-                    break
-            else:
-                # Not a play action
-                continue
-
             node_tag = self._create_root_entry(node, f"{self.tag}_events_table")
             self.event_map[node.id] = node_tag
             if len(self.event_map) >= self.max_list_nodes:
@@ -976,6 +968,11 @@ class BanksOfYonder:
                 lambda: node.get_source_path(self.bnk),
             )
 
+            dpg.add_spacer(height=5)
+        elif isinstance(node, SwitchContainer):
+            switch_ids = node.switch_mappings.keys()
+            items = [f"{get_name_for_hash(s, '?')} ({s})" for s in switch_ids]
+            dpg.add_listbox(items, label="Switches")  # TODO
             dpg.add_spacer(height=5)
 
     def regenerate_attributes(self) -> None:

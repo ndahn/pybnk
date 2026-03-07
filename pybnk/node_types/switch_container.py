@@ -113,6 +113,13 @@ class SwitchContainer(WwiseNode):
         return self["children/items"]
 
     @property
+    def switch_mappings(self) -> dict[int, list[int]]:
+        res = {}
+        for g in self.switch_groups:
+            res.setdefault(g["switch_id"], []).extend(g["nodes"])
+        return res
+
+    @property
     def switch_groups(self) -> list[dict]:
         """Get the list of switch group mappings.
 
