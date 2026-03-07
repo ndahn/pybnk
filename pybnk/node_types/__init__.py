@@ -6,6 +6,7 @@ from .event import Event
 from .layer_container import LayerContainer
 from .music_random_sequence_container import MusicRandomSequenceContainer
 from .music_segment import MusicSegment
+from .music_switch_container import MusicSwitchContainer
 from .music_track import MusicTrack
 from .random_sequence_container import RandomSequenceContainer
 from .sound import Sound

@@ -85,7 +85,7 @@ class Sound(WwiseNode):
         sound.media_size = size
         if parent is not None:
             sound.parent = parent
-        
+
         return sound
 
     @property
@@ -164,11 +164,11 @@ class Sound(WwiseNode):
         bool
             True if attenuation is enabled.
         """
-        return self["node_base_params/positioning_params/enable_attenuation"]
+        return self.base_params["positioning_params/enable_attenuation"]
 
     @enable_attenuation.setter
     def enable_attenuation(self, value: bool) -> None:
-        self["node_base_params/positioning_params/enable_attenuation"] = value
+        self.base_params["positioning_params/enable_attenuation"] = value
 
     @property
     def three_dimensional_spatialization(self) -> str:
@@ -179,15 +179,15 @@ class Sound(WwiseNode):
         str
             Spatialization mode (e.g., 'None', 'Position', 'PositionAndOrientation').
         """
-        return self[
-            "node_base_params/positioning_params/three_dimensional_spatialization_mode"
+        return self.base_params[
+            "positioning_params/three_dimensional_spatialization_mode"
         ]
 
     @three_dimensional_spatialization.setter
     def three_dimensional_spatialization(self, value: str) -> None:
-        self[
-            "node_base_params/positioning_params/three_dimensional_spatialization_mode"
-        ] = value
+        self.base_params["positioning_params/three_dimensional_spatialization_mode"] = (
+            value
+        )
 
     def set_streaming(self, streamed: bool = True) -> None:
         """Configures whether audio loads into memory or streams from disk.

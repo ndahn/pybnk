@@ -134,50 +134,7 @@ class SwitchContainer(WwiseNode):
         """
         return self["switch_params"]
 
-    def add_child(self, child_id: int | WwiseNode) -> None:
-        """Add a child node to the container.
-
-        Parameters
-        ----------
-        child_id : int | WwiseNode
-            Child node ID or Node instance.
-        """
-        if isinstance(child_id, WwiseNode):
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id not in children:
-            children.append(child_id)
-            self["children/count"] = len(children)
-
-    def remove_child(self, child_id: int | WwiseNode) -> bool:
-        """Remove a child node from the container.
-
-        Parameters
-        ----------
-        child_id : int | WwiseNode
-            Child node ID or Node instance to remove.
-
-        Returns
-        -------
-        bool
-            True if child was removed, False if not found.
-        """
-        if isinstance(child_id, WwiseNode):
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id in children:
-            children.remove(child_id)
-            self["children/count"] = len(children)
-            # Also remove from switch groups and params
-            self._remove_from_switch_groups(child_id)
-            self._remove_from_switch_params(child_id)
-            return True
-        
-        return False
-
-    def clear_children(self) -> None:
+    def clear(self) -> None:
         """Remove all children from the container."""
         self["children/items"] = []
         self["children/count"] = 0
@@ -185,6 +142,20 @@ class SwitchContainer(WwiseNode):
         self["switch_group_count"] = 0
         self["switch_params"] = []
         self["switch_param_count"] = 0
+
+    def _update_children_list(self) -> None:
+        children_set = set()
+        for param in self.switch_params:
+            children_set.add(param.get("node_id", 0))
+
+        for group in self.switch_groups:
+            children_set.update(group.get("nodes", []))
+
+        # Update the children list
+        children = self.base_params["children/items"]
+        children.clear()
+        children.extend(sorted(c for c in children_set if c > 0))
+        self.base_params["children/count"] = len(children)
 
     def add_switch_mapping(self, switch_id: int, node_ids: list[int]) -> None:
         """Map a switch value to one or more child nodes.
@@ -203,6 +174,7 @@ class SwitchContainer(WwiseNode):
         }
         self["switch_groups"].append(switch_group)
         self["switch_group_count"] = len(self["switch_groups"])
+        self._update_children_list()
 
     def remove_switch_mapping(self, switch_id: int) -> bool:
         """Remove a switch mapping.
@@ -222,6 +194,7 @@ class SwitchContainer(WwiseNode):
             if group["switch_id"] == switch_id:
                 switch_groups.pop(i)
                 self["switch_group_count"] = len(switch_groups)
+                self._update_children_list()
                 return True
 
         return False
@@ -291,6 +264,7 @@ class SwitchContainer(WwiseNode):
         }
         self["switch_params"].append(param)
         self["switch_param_count"] = len(self["switch_params"])
+        self._update_children_list()
 
     def _remove_from_switch_groups(self, node_id: int) -> None:
         """Remove node from all switch group mappings."""
@@ -299,8 +273,11 @@ class SwitchContainer(WwiseNode):
                 group["nodes"].remove(node_id)
                 group["node_count"] = len(group["nodes"])
 
+        self._update_children_list()
+
     def _remove_from_switch_params(self, node_id: int) -> None:
         """Remove node from switch params."""
         params = self["switch_params"]
         self["switch_params"] = [p for p in params if p["node_id"] != node_id]
         self["switch_param_count"] = len(self["switch_params"])
+        self._update_children_list()

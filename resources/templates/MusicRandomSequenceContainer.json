@@ -93,35 +93,8 @@
               "state_group_chunks": []
             },
             "initial_rtpc": {
-              "count": 1,
-              "rtpcs": [
-                {
-                  "id": 2814051022,
-                  "rtpc_type": "GameParameter",
-                  "rtpc_accum": "Additive",
-                  "param_id": 3,
-                  "curve_id": 820277889,
-                  "curve_scaling": "None",
-                  "graph_point_count": 3,
-                  "graph_points": [
-                    {
-                      "from": 0.0,
-                      "to": 0.0,
-                      "interpolation": "Linear"
-                    },
-                    {
-                      "from": 0.75,
-                      "to": 30.0,
-                      "interpolation": "Constant"
-                    },
-                    {
-                      "from": 2.0,
-                      "to": 30.0,
-                      "interpolation": "Linear"
-                    }
-                  ]
-                }
-              ]
+              "count": 0,
+              "rtpcs": []
             }
           },
           "children": {
@@ -139,67 +112,11 @@
           "stinger_count": 0,
           "stingers": []
         },
-        "transition_rule_count": 1,
-        "transition_rules": [
-          {
-            "source_transition_rule_count": 1,
-            "source_ids": [-1],
-            "destination_transition_rule_count": 1,
-            "destination_ids": [-1],
-            "source_transition_rule": {
-              "transition_time": 0,
-              "fade_curve": "Linear",
-              "fade_offet": 0,
-              "sync_type": "ExitMarker",
-              "clue_filter_hash": 0,
-              "play_post_exit": 0
-            },
-            "destination_transition_rule": {
-              "transition_time": 0,
-              "fade_curve": "Linear",
-              "fade_offet": 0,
-              "clue_filter_hash": 0,
-              "jump_to_id": 0,
-              "jump_to_type": 0,
-              "entry_type": 0,
-              "play_pre_entry": 0,
-              "destination_match_source_cue_name": 0
-            },
-            "alloc_trans_object_flag": 0,
-            "transition_object": {
-              "segment_id": 0,
-              "fade_out": {
-                "transition_time": 0,
-                "curve": "Log3",
-                "offset": 0
-              },
-              "fade_in": {
-                "transition_time": 0,
-                "curve": "Log3",
-                "offset": 0
-              },
-              "play_pre_entry": 0,
-              "play_post_exit": 0
-            }
-          }
-        ]
+        "transition_rule_count": 0,
+        "transition_rules": []
       },
-      "playlist_item_count": 2,
-      "playlist_items": [
-        {
-          "segment_id": 943663366,
-          "playlist_item_id": 669209285,
-          "child_count": 0,
-          "ers_type": 0,
-          "loop_base": 0,
-          "loop_min": 0,
-          "loop_max": 0,
-          "weight": 50000,
-          "avoid_repeat_count": 0,
-          "use_weight": 0,
-          "shuffle": 0
-        }
-      ]
+      "playlist_item_count": 0,
+      "playlist_items": []
     }
   }
 }

@@ -47,6 +47,10 @@ class MusicRandomSequenceContainer(WwiseNode):
         return container
 
     @property
+    def base_params(self) -> dict:
+        return self["music_trans_node_params/music_node_params/node_base_params"]
+
+    @property
     def tempo(self) -> float:
         """Tempo in BPM.
 
@@ -136,6 +140,28 @@ class MusicRandomSequenceContainer(WwiseNode):
         """
         return self["music_trans_node_params/music_node_params/children/items"]
 
+    def _update_children_list(self) -> None:
+        children_set = set()
+
+        for playlist_item in self.playlist_items:
+            children_set.add(playlist_item.get("segment_id", 0))
+
+        # Collect from transition rules
+        for rule in self["music_trans_node_params/transition_rules"]:
+            children_set.update(rule.get("source_ids", []))
+            children_set.update(rule.get("destination_ids", []))
+
+            # Transition object segment_id
+            segment_id = rule.get("transition_object", {}).get("segment_id", 0)
+            if segment_id > 0:
+                children_set.add(segment_id)
+
+        # Update the children list
+        children = self.base_params["children/items"]
+        children.clear()
+        children.extend(sorted(c for c in children_set if c > 0))
+        self.base_params["children/count"] = len(children)
+
     def add_playlist_item(
         self,
         segment_id: int | Node,
@@ -208,3 +234,24 @@ class MusicRandomSequenceContainer(WwiseNode):
         """Disassociates all playlist items from this container."""
         self["playlist_items"] = []
         self["playlist_item_count"] = 0
+
+    def get_references(self) -> list[tuple[str, int]]:
+        paths = (
+            "music_trans_node_params/music_node_params/override_bus_id",
+            "music_trans_node_params/music_node_params/aux_params/aux1",
+            "music_trans_node_params/music_node_params/aux_params/aux2",
+            "music_trans_node_params/music_node_params/aux_params/aux3",
+            "music_trans_node_params/music_node_params/aux_params/aux4",
+        )
+        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+
+        children = self["music_trans_node_params/music_node_params/children/items"]
+        for i, child_id in enumerate(children):
+            refs.append(
+                (
+                    f"music_trans_node_params/music_node_params/children/items:{i}",
+                    child_id,
+                )
+            )
+
+        return refs

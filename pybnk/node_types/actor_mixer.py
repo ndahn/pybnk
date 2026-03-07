@@ -51,13 +51,14 @@ class ActorMixer(WwiseNode):
         int
             Bus ID (0 = use parent bus).
         """
-        return self["node_base_params/override_bus_id"]
+        return self.base_params["override_bus_id"]
 
     @override_bus_id.setter
     def override_bus_id(self, value: int | Node) -> None:
         if isinstance(value, Node):
             value = value.id
-        self["node_base_params/override_bus_id"] = value
+        
+        self.base_params["override_bus_id"] = value
 
     @property
     def children_ids(self) -> list[int]:

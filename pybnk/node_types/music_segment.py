@@ -50,6 +50,10 @@ class MusicSegment(WwiseNode):
         return segment
 
     @property
+    def base_params(self) -> dict:
+        return self["music_node_params/node_base_params"]
+
+    @property
     def duration(self) -> float:
         """Segment duration in milliseconds.
 
@@ -181,3 +185,24 @@ class MusicSegment(WwiseNode):
             List of child track hash IDs.
         """
         return self["music_node_params/children/items"]
+
+    def get_references(self) -> list[tuple[str, int]]:
+        paths = (
+            "music_node_params/override_bus_id",
+            "music_node_params/aux_params/aux1",
+            "music_node_params/aux_params/aux2",
+            "music_node_params/aux_params/aux3",
+            "music_node_params/aux_params/aux4",
+        )
+        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+
+        children = self["music_node_params/children/items"]
+        for i, child_id in enumerate(children):
+            refs.append(
+                (
+                    f"music_node_params/children/items:{i}",
+                    child_id,
+                )
+            )
+
+        return refs

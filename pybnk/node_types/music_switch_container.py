@@ -1,21 +1,25 @@
 from typing import Any
-from wwise_node import WwiseNode
+from .wwise_node import WwiseNode
 
 
 class MusicSwitchContainer(WwiseNode):
     """Specialized node for MusicSwitchContainer type.
-    
+
     Music switch containers select which music segment to play based on game
     state using a decision tree. Supports complex transition rules between
     segments and multi-dimensional state-based selection.
     """
 
     @classmethod
-    def new(cls, nid: int, tempo: float = 120.0,
-            time_signature: tuple[int, int] = (4, 4),
-            parent_id: int = 0) -> "MusicSwitchContainer":
+    def new(
+        cls,
+        nid: int,
+        tempo: float = 120.0,
+        time_signature: tuple[int, int] = (4, 4),
+        parent_id: int = 0,
+    ) -> "MusicSwitchContainer":
         """Create a new MusicSwitchContainer node.
-        
+
         Parameters
         ----------
         nid : int
@@ -26,7 +30,7 @@ class MusicSwitchContainer(WwiseNode):
             Time signature (beat_count, beat_value).
         parent_id : int, default=0
             Parent node ID.
-            
+
         Returns
         -------
         MusicSwitchContainer
@@ -41,65 +45,69 @@ class MusicSwitchContainer(WwiseNode):
         return container
 
     @property
+    def base_params(self) -> dict:
+        return self["music_trans_node_params/music_node_params/node_base_params"]
+
+    @property
     def tempo(self) -> float:
         """Get or set the tempo in BPM.
-        
+
         Returns
         -------
         float
             Tempo in beats per minute.
         """
-        return self["music_trans_node_params/music_node_params/meter_info/tempo"]
-    
+        self.base_params["meter_info/tempo"]
+
     @tempo.setter
     def tempo(self, value: float) -> None:
-        self["music_trans_node_params/music_node_params/meter_info/tempo"] = value
+        self.base_params["meter_info/tempo"] = value
 
     @property
     def time_signature(self) -> tuple[int, int]:
         """Get or set the time signature.
-        
+
         Returns
         -------
         tuple[int, int]
             (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
         """
-        beat_count = self["music_trans_node_params/music_node_params/meter_info/time_signature_beat_count"]
-        beat_value = self["music_trans_node_params/music_node_params/meter_info/time_signature_beat_value"]
+        beat_count = self.base_params["meter_info/time_signature_beat_count"]
+        beat_value = self.base_params["meter_info/time_signature_beat_value"]
         return (beat_count, beat_value)
-    
+
     @time_signature.setter
     def time_signature(self, value: tuple[int, int]) -> None:
         beat_count, beat_value = value
-        self["music_trans_node_params/music_node_params/meter_info/time_signature_beat_count"] = beat_count
-        self["music_trans_node_params/music_node_params/meter_info/time_signature_beat_value"] = beat_value
+        self.base_params["meter_info/time_signature_beat_count"] = beat_count
+        self.base_params["meter_info/time_signature_beat_value"] = beat_value
 
     @property
     def grid_period(self) -> float:
         """Get or set the grid period in milliseconds.
-        
+
         Returns
         -------
         float
             Grid period in ms.
         """
-        return self["music_trans_node_params/music_node_params/meter_info/grid_period"]
-    
+        self.base_params["meter_info/grid_period"]
+
     @grid_period.setter
     def grid_period(self, value: float) -> None:
-        self["music_trans_node_params/music_node_params/meter_info/grid_period"] = value
+        self.base_params["meter_info/grid_period"] = value
 
     @property
     def continue_playback(self) -> bool:
         """Get or set whether to continue playback across switches.
-        
+
         Returns
         -------
         bool
             True if playback continues across switches.
         """
         return bool(self["continue_playback"])
-    
+
     @continue_playback.setter
     def continue_playback(self, value: bool) -> None:
         self["continue_playback"] = int(value)
@@ -107,29 +115,25 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def tree_depth(self) -> int:
         """Get or set the decision tree depth.
-        
+
         Returns
         -------
         int
             Tree depth (number of state dimensions).
         """
         return self["tree_depth"]
-    
-    @tree_depth.setter
-    def tree_depth(self, value: int) -> None:
-        self["tree_depth"] = value
 
     @property
     def tree_mode(self) -> str:
         """Get or set the tree mode.
-        
+
         Returns
         -------
         str
             Tree mode (e.g., 'BestMatch', 'Sequential').
         """
         return self["tree_mode"]
-    
+
     @tree_mode.setter
     def tree_mode(self, value: str) -> None:
         self["tree_mode"] = value
@@ -137,7 +141,7 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def arguments(self) -> list[dict]:
         """Get the list of state group arguments.
-        
+
         Returns
         -------
         list[dict]
@@ -148,7 +152,7 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def group_types(self) -> list[str]:
         """Get the list of group types.
-        
+
         Returns
         -------
         list[str]
@@ -159,7 +163,7 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def decision_tree(self) -> dict:
         """Get the decision tree root.
-        
+
         Returns
         -------
         dict
@@ -170,39 +174,28 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def transition_rules(self) -> list[dict]:
         """Get the transition rules.
-        
+
         Returns
         -------
         list[dict]
             List of transition rule dictionaries.
         """
         return self["music_trans_node_params/transition_rules"]
-    
-    @property
-    def transition_rule_count(self) -> int:
-        """Get the number of transition rules.
-        
-        Returns
-        -------
-        int
-            Number of transition rules.
-        """
-        return self["music_trans_node_params/transition_rule_count"]
 
     @property
     def children_ids(self) -> list[int]:
         """Get list of child segment IDs.
-        
+
         Returns
         -------
         list[int]
             List of child segment hash IDs.
         """
-        return self["music_trans_node_params/music_node_params/children/items"]
+        self.base_params["children/items"]
 
     def add_argument(self, group_id: int, group_type: str = "State") -> None:
         """Add a state group argument dimension.
-        
+
         Parameters
         ----------
         group_id : int
@@ -216,21 +209,22 @@ class MusicSwitchContainer(WwiseNode):
 
     def set_decision_tree(self, tree_dict: dict) -> None:
         """Set the decision tree structure.
-        
+
         This will flatten the tree and calculate correct first_child_index values
         for serialization to Wwise soundbanks.
-        
+
         Parameters
         ----------
         tree_dict : dict
             Complete tree structure with keys, node_ids, and children.
         """
+
         # Flatten the tree and calculate indices
         def _flatten_tree_preorder(node: dict, flattened: list) -> None:
             # Record this node's index and info
             current_index = len(flattened)
             children = node.get("children", [])
-            
+
             node_info = {
                 "index": current_index,
                 "key": node.get("key", 0),
@@ -239,11 +233,11 @@ class MusicSwitchContainer(WwiseNode):
                 "child_count": len(children),
                 "weight": node.get("weight", 50),
                 "probability": node.get("probability", 100),
-                "children_indices": []
+                "children_indices": [],
             }
-            
+
             flattened.append(node_info)
-            
+
             # Process children in order
             for child in children:
                 child_index = len(flattened)
@@ -252,26 +246,26 @@ class MusicSwitchContainer(WwiseNode):
 
         flattened = []
         _flatten_tree_preorder(tree_dict, flattened)
-        
+
         # The root node needs the nested children for the JSON structure
         # but the flattened array has the correct indices
         root_with_children = self._rebuild_nested_structure(flattened)
-        
+
         self["tree"] = root_with_children
         self["tree_size"] = len(flattened)
-        
+
         # Update children list
         self._update_children_list()
 
     def _update_children_list(self) -> None:
         """Update children list from all sources.
-        
+
         Collects segment IDs from:
         1. Tree leaf nodes
         2. Transition rule source_ids
         3. Transition rule destination_ids
         4. Transition object segment_id
-        
+
         Ensures children are unique and sorted ascending.
         """
         children_set = set()
@@ -280,44 +274,44 @@ class MusicSwitchContainer(WwiseNode):
             node_id = node.get("node_id", 0)
             if node_id > 0:
                 children_set.add(node_id)
-            
+
             for child in node.get("children", []):
                 _collect_from_tree(child, children_set)
 
         _collect_from_tree(self["tree"], children_set)
-        
+
         # Collect from transition rules
         for rule in self["music_trans_node_params/transition_rules"]:
             # Source IDs
             for sid in rule.get("source_ids", []):
                 if sid > 0:
                     children_set.add(sid)
-            
+
             # Destination IDs
             for did in rule.get("destination_ids", []):
                 if did > 0:
                     children_set.add(did)
-            
+
             # Transition object segment_id
             trans_obj = rule.get("transition_object", {})
             segment_id = trans_obj.get("segment_id", 0)
             if segment_id > 0:
                 children_set.add(segment_id)
-        
+
         # Update the children list
-        children = self["music_trans_node_params/music_node_params/children/items"]
+        children = self.base_params["children/items"]
         children.clear()
-        children.extend(sorted(children_set))
-        self["music_trans_node_params/music_node_params/children/count"] = len(children)
-    
+        children.extend(sorted(c for c in children_set if c > 0))
+        self.base_params["children/count"] = len(children)
+
     def _rebuild_nested_structure(self, flattened: list) -> dict:
         """Rebuild nested structure from flattened array.
-        
+
         Parameters
         ----------
         flattened : list
             Flattened node info array.
-            
+
         Returns
         -------
         dict
@@ -325,12 +319,15 @@ class MusicSwitchContainer(WwiseNode):
         """
         if not flattened:
             return {
-                "key": 0, "node_id": 0,
-                "first_child_index": 0, "child_count": 0,
-                "weight": 50, "probability": 100,
-                "children": []
+                "key": 0,
+                "node_id": 0,
+                "first_child_index": 0,
+                "child_count": 0,
+                "weight": 50,
+                "probability": 100,
+                "children": [],
             }
-        
+
         # Build nodes with correct indices
         nodes = []
         for info in flattened:
@@ -341,15 +338,15 @@ class MusicSwitchContainer(WwiseNode):
                 "child_count": info["child_count"],
                 "weight": info["weight"],
                 "probability": info["probability"],
-                "children": []
+                "children": [],
             }
             nodes.append(node)
-        
+
         # Build nested structure
         for i, info in enumerate(flattened):
             for child_idx in info["children_indices"]:
                 nodes[i]["children"].append(nodes[child_idx])
-        
+
         return nodes[0]
 
     def _count_tree_nodes(self, node: dict) -> int:
@@ -359,10 +356,11 @@ class MusicSwitchContainer(WwiseNode):
             count += self._count_tree_nodes(child)
         return count
 
-    def add_tree_leaf(self, node_id: int, key: int = 0, weight: int = 50,
-                     probability: int = 100) -> dict:
+    def add_tree_leaf(
+        self, node_id: int, key: int = 0, weight: int = 50, probability: int = 100
+    ) -> dict:
         """Create a tree leaf node (terminal node with segment).
-        
+
         Parameters
         ----------
         node_id : int
@@ -373,7 +371,7 @@ class MusicSwitchContainer(WwiseNode):
             Selection weight.
         probability : int, default=100
             Selection probability percentage.
-            
+
         Returns
         -------
         dict
@@ -386,13 +384,18 @@ class MusicSwitchContainer(WwiseNode):
             "child_count": 0,
             "weight": weight,
             "probability": probability,
-            "children": []
+            "children": [],
         }
 
-    def add_tree_branch(self, key: int = 0, children: list[dict] = None,
-                       weight: int = 50, probability: int = 100) -> dict:
+    def add_tree_branch(
+        self,
+        key: int = 0,
+        children: list[dict] = None,
+        weight: int = 50,
+        probability: int = 100,
+    ) -> dict:
         """Create a tree branch node (intermediate node with children).
-        
+
         Parameters
         ----------
         key : int, default=0
@@ -403,7 +406,7 @@ class MusicSwitchContainer(WwiseNode):
             Selection weight.
         probability : int, default=100
             Selection probability percentage.
-            
+
         Returns
         -------
         dict
@@ -411,7 +414,7 @@ class MusicSwitchContainer(WwiseNode):
         """
         if children is None:
             children = []
-        
+
         return {
             "key": key,
             "node_id": 0,
@@ -419,13 +422,14 @@ class MusicSwitchContainer(WwiseNode):
             "child_count": len(children),
             "weight": weight,
             "probability": probability,
-            "children": children
+            "children": children,
         }
 
-    def _build_tree_recursive(self, mappings: dict[int, tuple | list],
-                              depth: int, max_depth: int) -> dict:
+    def _build_tree_recursive(
+        self, mappings: dict[int, tuple | list], depth: int, max_depth: int
+    ) -> dict:
         """Recursively build tree structure from mappings.
-        
+
         Parameters
         ----------
         mappings : dict[int, tuple | list]
@@ -434,7 +438,7 @@ class MusicSwitchContainer(WwiseNode):
             Current depth in tree.
         max_depth : int
             Maximum tree depth.
-            
+
         Returns
         -------
         dict
@@ -444,10 +448,12 @@ class MusicSwitchContainer(WwiseNode):
         if depth == max_depth:
             # Should only have one mapping here
             if len(mappings) != 1:
-                raise ValueError(f"Expected exactly 1 mapping at leaf, got {len(mappings)}")
+                raise ValueError(
+                    f"Expected exactly 1 mapping at leaf, got {len(mappings)}"
+                )
             segment_id = next(iter(mappings.keys()))
             return self.add_tree_leaf(segment_id)
-        
+
         # Group mappings by the key at this depth
         groups = {}
         for segment_id, keys in mappings.items():
@@ -455,25 +461,28 @@ class MusicSwitchContainer(WwiseNode):
             if key not in groups:
                 groups[key] = {}
             groups[key][segment_id] = keys
-        
+
         # Build children for each unique key at this depth
         children = []
         for key in sorted(groups.keys()):
             child_node = self._build_tree_recursive(groups[key], depth + 1, max_depth)
             child_node["key"] = key
             children.append(child_node)
-        
+
         # Create branch node
         return self.add_tree_branch(key=0, children=children)
 
-    def build_tree_from_mappings(self, mappings: dict[int, tuple | list],
-                                  state_group_ids: list[int],
-                                  group_type: str = "State") -> None:
+    def build_tree_from_mappings(
+        self,
+        mappings: dict[int, tuple | list],
+        state_group_ids: list[int],
+        group_type: str = "State",
+    ) -> None:
         """Build complete decision tree from segment->state mappings.
-        
+
         This helper automatically sets up arguments, group types, and builds
         the decision tree structure from a simple mapping.
-        
+
         Parameters
         ----------
         mappings : dict[int, tuple | list]
@@ -489,12 +498,12 @@ class MusicSwitchContainer(WwiseNode):
             List of state group IDs, one per dimension.
         group_type : str, default="State"
             Group type for all dimensions.
-            
+
         Examples
         --------
-        Build a 2D tree for Combat (peaceful=0, fighting=1) and 
+        Build a 2D tree for Combat (peaceful=0, fighting=1) and
         Location (indoor=0, outdoor=100):
-        
+
         >>> container.build_tree_from_mappings(
         ...     mappings={
         ...         300: (0, 0),    # Peaceful, Indoor
@@ -508,7 +517,7 @@ class MusicSwitchContainer(WwiseNode):
         # Validate inputs
         if not mappings:
             raise ValueError("mappings cannot be empty")
-        
+
         tree_depth = len(state_group_ids)
         for segment_id, keys in mappings.items():
             if len(keys) != tree_depth:
@@ -516,30 +525,30 @@ class MusicSwitchContainer(WwiseNode):
                     f"Segment {segment_id} has {len(keys)} keys, "
                     f"but tree_depth is {tree_depth}"
                 )
-        
+
         # Set up arguments and group types
         self["arguments"] = []
         self["group_types"] = []
         for group_id in state_group_ids:
             self.add_argument(group_id, group_type)
-        
+
         # Build tree structure
         tree_root = self._build_tree_recursive(mappings, 0, tree_depth)
-        
+
         # Set the tree (this will also update children list)
         self.set_decision_tree(tree_root)
 
     def build_tree_from_structure(self, structure: dict) -> None:
         """Build and set decision tree from a nested structure.
-        
+
         This is a convenience method that takes a nested tree structure and
         automatically flattens it with correct first_child_index values.
-        
+
         Parameters
         ----------
         structure : dict
             Nested tree structure with 'children' arrays.
-            
+
         Examples
         --------
         >>> container.build_tree_from_structure({
@@ -552,13 +561,17 @@ class MusicSwitchContainer(WwiseNode):
         """
         self.set_decision_tree(structure)
 
-    def add_transition_rule(self, source_ids: list[int], destination_ids: list[int],
-                           source_transition_time: int = 0, 
-                           destination_fade_offset: int = 0,
-                           source_fade_curve: str = "Linear",
-                           sync_type: str = "Immediate") -> None:
+    def add_transition_rule(
+        self,
+        source_ids: list[int],
+        destination_ids: list[int],
+        source_transition_time: int = 0,
+        destination_fade_offset: int = 0,
+        source_fade_curve: str = "Linear",
+        sync_type: str = "Immediate",
+    ) -> None:
         """Add a transition rule between segments.
-        
+
         Parameters
         ----------
         source_ids : list[int]
@@ -585,7 +598,7 @@ class MusicSwitchContainer(WwiseNode):
                 "fade_offet": 0,
                 "sync_type": sync_type,
                 "clue_filter_hash": 0,
-                "play_post_exit": 0
+                "play_post_exit": 0,
             },
             "destination_transition_rule": {
                 "transition_time": 0,
@@ -596,7 +609,7 @@ class MusicSwitchContainer(WwiseNode):
                 "jump_to_type": 0,
                 "entry_type": 0,
                 "play_pre_entry": 0,
-                "destination_match_source_cue_name": 0
+                "destination_match_source_cue_name": 0,
             },
             "alloc_trans_object_flag": 0,
             "transition_object": {
@@ -604,13 +617,34 @@ class MusicSwitchContainer(WwiseNode):
                 "fade_out": {"transition_time": 0, "curve": "Log3", "offset": 0},
                 "fade_in": {"transition_time": 0, "curve": "Log3", "offset": 0},
                 "play_pre_entry": 0,
-                "play_post_exit": 0
-            }
+                "play_post_exit": 0,
+            },
         }
         self["music_trans_node_params/transition_rules"].append(rule)
         self["music_trans_node_params/transition_rule_count"] = len(
             self["music_trans_node_params/transition_rules"]
         )
-        
+
         # Update children list
         self._update_children_list()
+
+    def get_references(self) -> list[tuple[str, int]]:
+        paths = (
+            "music_trans_node_params/music_node_params/override_bus_id",
+            "music_trans_node_params/music_node_params/aux_params/aux1",
+            "music_trans_node_params/music_node_params/aux_params/aux2",
+            "music_trans_node_params/music_node_params/aux_params/aux3",
+            "music_trans_node_params/music_node_params/aux_params/aux4",
+        )
+        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+
+        children = self["music_trans_node_params/music_node_params/children/items"]
+        for i, child_id in enumerate(children):
+            refs.append(
+                (
+                    f"music_trans_node_params/music_node_params/children/items:{i}",
+                    child_id,
+                )
+            )
+
+        return refs

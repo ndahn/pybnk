@@ -38,7 +38,7 @@ class Action(Node):
 
         action.id = nid
         action.action_type = 1027  # Play action type
-        action.set("params/Play", {})  # TODO
+        action.set("params/Play", {})
 
         action.target_id = target_id
         action.is_bus = False
@@ -135,6 +135,28 @@ class Action(Node):
         return action
 
     @classmethod
+    def new_set_state_action(
+        cls, 
+        nid: int,
+        switch_group_id: int,
+        switch_state_id: int,
+    ) -> "Action":
+        temp = cls.load_template(cls.__name__)
+        action = cls(temp)
+
+        action.id = nid
+        action.action_type = 4612  # Set state action type
+        action.set(
+            "params/SetState",
+            {
+                "params/SetState/switch_group_id", switch_group_id,
+                "params/SetState/switch_state_id", switch_state_id,
+            }
+        )
+
+        return action
+
+    @classmethod
     def new_mute_bus_action(
         cls,
         nid: int,
@@ -165,7 +187,7 @@ class Action(Node):
 
         action.id = nid
         action.action_type = 1538  # Mute bus action type
-        action.set("params/XXX", {})  # TODO
+        action.set("params/MuteM", {})
 
         action.target_id = target_bus_id
         action.is_bus = True
@@ -173,6 +195,12 @@ class Action(Node):
         action.bank_id = bank_id
 
         return action
+
+    # TODO SetVolumeM action 2562
+    # TODO ResetVolumeM action 2818
+    # TODO UnmuteM (bus) action 1794
+    # TODO UnmuteALL (bus) action 1796
+    # TODO ResetBusVolumeALL action 3332
 
     @classmethod
     def new_reset_bus_volume_action(
@@ -207,8 +235,8 @@ class Action(Node):
         action = cls(temp)
 
         action.id = nid
-        action.action_type = 2818  # Reset bus volume action type
-        action.set("params/XXX", {})  # TODO
+        action.action_type = 3330  # Reset bus volume action type
+        action.set("params/ResetBusVolumeM", {})
 
         action.target_id = target_bus_id
         action.is_bus = True
@@ -434,3 +462,6 @@ class Action(Node):
         if "except" in params:
             params["except"]["exceptions"] = []
             params["except"]["count"] = 0
+
+    def get_references(self) -> list[tuple[str, int]]:
+        return [("external_id", self.target_id)]

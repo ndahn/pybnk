@@ -4,19 +4,19 @@ from pybnk.enums import SoundType
 
 class Event(Node):
     """Event that triggers actions in response to game calls.
-    
+
     Events are the interface between game code and Wwise audio. When the game posts an event, it executes the associated actions (play, stop, etc.).
     """
 
     @classmethod
     def new(cls, name: str) -> "Event":
         """Create a new Event node.
-        
+
         Parameters
         ----------
         name : str
             The name by which this event will be triggered, e.g. "Play_c123456789".
-            
+
         Returns
         -------
         Event
@@ -30,7 +30,9 @@ class Event(Node):
         return event
 
     @classmethod
-    def make_event_name(sound_type: SoundType, event_id: int, event_type: str = None) -> str:
+    def make_event_name(
+        sound_type: SoundType, event_id: int, event_type: str = None
+    ) -> str:
         if not 0 < event_id < 1_000_000_000:
             raise ValueError(f"event ID {event_id} outside expected range")
 
@@ -42,17 +44,17 @@ class Event(Node):
     @property
     def actions(self) -> list[int]:
         """Actions executed when this event is triggered.
-        
+
         Returns
         -------
         list[int]
             List of action node IDs.
         """
         return self["actions"]
-    
+
     def add_action(self, action_id: int | Node) -> None:
         """Associates an action with this event for execution on trigger.
-        
+
         Parameters
         ----------
         action_id : int | Node
@@ -60,20 +62,20 @@ class Event(Node):
         """
         if isinstance(action_id, Node):
             action_id = action_id.id
-        
+
         actions = self["actions"]
         if action_id not in actions:
             actions.append(action_id)
             self["action_count"] = len(actions)
-    
+
     def remove_action(self, action_id: int | Node) -> bool:
         """Disassociates an action from this event.
-        
+
         Parameters
         ----------
         action_id : int | Node
             Action node ID or Action instance to remove.
-            
+
         Returns
         -------
         bool
@@ -81,18 +83,21 @@ class Event(Node):
         """
         if isinstance(action_id, Node):
             action_id = action_id.id
-        
+
         actions = self["actions"]
         if action_id in actions:
             actions.remove(action_id)
             self["action_count"] = len(actions)
             return True
         return False
-    
+
     def clear_actions(self) -> None:
         """Disassociates all actions from this event."""
         self["actions"] = []
         self["action_count"] = 0
+
+    def get_references(self) -> list[tuple[str, int]]:
+        return [(f"actions:{i}", act) for i, act in enumerate(self.actions) if act > 0]
 
     def __str__(self):
         return f"{self.lookup_name('<?>')} ({self.id})"

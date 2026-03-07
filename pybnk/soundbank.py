@@ -1,4 +1,4 @@
-from typing import Any, Generator
+from typing import Any, Generator, Iterator
 from pathlib import Path
 from random import randrange
 from collections import deque
@@ -8,7 +8,7 @@ import shutil
 import networkx as nx
 
 from pybnk.hash import calc_hash
-from pybnk.util import logger, resource_data
+from pybnk.util import logger, resource_data, PathDict
 from pybnk.node import Node
 from pybnk.query import query_nodes
 
@@ -28,7 +28,7 @@ class Soundbank:
             json_path = bnk_path / "soundbank.json"
 
         with json_path.open() as f:
-            bnk_json: dict = json.load(f)
+            bnk_json: dict = json.load(f, object_hook=lambda d: PathDict.convert(d))
 
         # Read the sections
         sections = bnk_json.get("sections", None)
@@ -42,7 +42,7 @@ class Soundbank:
             if "BKHD" in body:
                 bnk_id = body["BKHD"]["bank_id"]
             elif "HIRC" in body:
-                hirc: list[Node] = [Node(obj) for obj in body["HIRC"]["objects"]]
+                hirc: list[Node] = [Node.wrap(obj) for obj in body["HIRC"]["objects"]]
                 cleaned = {n.id: n for n in hirc}
                 if len(cleaned) < len(hirc):
                     logger.warning(
@@ -59,7 +59,10 @@ class Soundbank:
         if not path.is_dir():
             raise ValueError(f"{path} is not a directory")
 
-        bnk = json.loads(resource_data("empty_soundbank.json"))
+        bnk = json.loads(
+            resource_data("empty_soundbank.json"),
+            object_hook=lambda d: PathDict.convert(d),
+        )
         name_hash = calc_hash(name)
         bnk["sections"][0]["body"]["BKHD"]["bank_id"] = name_hash
 
@@ -76,9 +79,9 @@ class Soundbank:
         hirc: list[Node],
     ):
         self.bnk_dir = bnk_dir
-        self._json = json
         self.id = id
-        self.hirc = hirc
+        self._json = json
+        self._hirc = hirc
 
         # A helper dict for mapping object IDs to HIRC indices
         self._id2index: dict[int, int] = {}
@@ -87,7 +90,7 @@ class Soundbank:
     def _regenerate_index_table(self):
         self._id2index.clear()
 
-        for idx, node in enumerate(self.hirc):
+        for idx, node in enumerate(self._hirc):
             idsec = node.dict["id"]
             if "Hash" in idsec:
                 oid = idsec["Hash"]
@@ -119,7 +122,7 @@ class Soundbank:
         sections = self._json["sections"]
         for sec in sections:
             if "HIRC" in sec["body"]:
-                sec["body"]["HIRC"]["objects"] = [n.dict for n in self.hirc]
+                sec["body"]["HIRC"]["objects"] = [n.dict for n in self._hirc]
                 break
 
     def copy(self, name: str, new_bnk_id: int = None) -> "Soundbank":
@@ -129,7 +132,7 @@ class Soundbank:
             self.bnk_dir.parent / name,
             copy.deepcopy(self._json),
             self.id,
-            [n.copy() for n in self.hirc],
+            [n.copy() for n in self._hirc],
         )
 
         if new_bnk_id is not None:
@@ -172,7 +175,7 @@ class Soundbank:
 
     def get_insertion_index(self, nodes: list[Node]) -> tuple[int, int]:
         min_idx = 0
-        max_idx = len(self.hirc)
+        max_idx = len(self._hirc)
 
         for node in nodes:
             try:
@@ -205,7 +208,7 @@ class Soundbank:
             if n.id in self._id2index:
                 raise ValueError(f"Soundbank already contains a node with ID {n.id}")
 
-            self.hirc.append(n)
+            self._hirc.append(n)
 
         self._regenerate_index_table()
 
@@ -219,10 +222,10 @@ class Soundbank:
         for nid in abandoned:
             # Don't use `del self[nid]` as it will regenerate the index table on every delete
             idx = self._id2index[nid]
-            del self.hirc[idx]
+            del self._hirc[idx]
 
         # Search for any nodes referencing the deleted nodes and clear those references
-        for node in self.hirc:
+        for node in self._hirc:
             for path, ref in node.get_references(node):
                 if ref not in abandoned:
                     continue
@@ -270,11 +273,11 @@ class Soundbank:
                 break
 
         # Clear the hirc
-        orphan_nodes = [str(self.hirc[i]) for i in indices]
+        orphan_nodes = [str(self._hirc[i]) for i in indices]
         logger.info(
             f"The following {len(indices)} nodes have been orphaned (cascade={cascade}):\n{'  \n'.join(orphan_nodes)}"
         )
-        self.hirc = [x for i, x in enumerate(self.hirc) if i not in indices]
+        self._hirc = [x for i, x in enumerate(self._hirc) if i not in indices]
         self._regenerate_index_table()
 
         logger.info(f"Found and deleted {len(indices)} orphans")
@@ -323,7 +326,7 @@ class Soundbank:
     def get_full_tree(self, valid_only: bool = True) -> nx.DiGraph:
         g = nx.DiGraph()
 
-        for node in self.hirc:
+        for node in self._hirc:
             g.add_node(node.id, type=node.type)
             references = node.get_references()
             if references:
@@ -349,7 +352,7 @@ class Soundbank:
                 continue
 
             idx = self._id2index[node_id]
-            node = self.hirc[idx]
+            node = self._hirc[idx]
             node_type = node.type
             node_params = node.body
 
@@ -410,7 +413,7 @@ class Soundbank:
         return upchain
 
     def query(self, query: str) -> Generator[Node, None, None]:
-        yield from query_nodes(self.hirc, query)
+        yield from query_nodes(self._hirc, query)
 
     def query_one(self, query: str, default: Any = None) -> Node:
         return next(self.query(query), default)
@@ -451,7 +454,7 @@ class Soundbank:
 
             while todo:
                 node_id = todo.pop()
-                node = self.hirc[self._id2index[node_id]]
+                node = self._hirc[self._id2index[node_id]]
 
                 new_ids = set()
                 delve(node.body, "body", new_ids)
@@ -511,7 +514,7 @@ class Soundbank:
                         f"{node_id}: {path}: reference {item} does not exist (probably okay?)"
                     )
 
-        for node in self.hirc:
+        for node in self._hirc:
             node_id = node.id
 
             if node_id in discovered_ids:
@@ -536,6 +539,9 @@ class Soundbank:
 
         return issues
 
+    def __iter__(self) -> Iterator[Node]:
+        yield from self._hirc
+
     def __contains__(self, key: Any) -> Node:
         if isinstance(key, Node):
             key = key.id
@@ -552,7 +558,7 @@ class Soundbank:
                 key = calc_hash(key)
 
         idx = self._id2index[key]
-        return self.hirc[idx]
+        return self._hirc[idx]
 
     def __delitem__(self, key: int | str | Node) -> None:
         if isinstance(key, Node):
@@ -564,7 +570,7 @@ class Soundbank:
                 key = calc_hash(key)
 
         idx = self._id2index.pop(key)
-        del self.hirc[idx]
+        del self._hirc[idx]
 
         self._regenerate_index_table()
 

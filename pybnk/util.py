@@ -130,3 +130,31 @@ def get_function_spec(
         )
 
     return func_args
+
+
+class PathDict(dict):
+    @classmethod
+    def convert(cls, d: dict) -> "PathDict":
+        """Recursively converts a nested dict into a nested PathDict."""
+        pd = PathDict()
+        for key, value in d.items():
+            pd[key] = cls.convert(value) if isinstance(value, dict) else value
+        return pd
+
+    def __getitem__(self, key: Any) -> Any:
+        if isinstance(key, str) and "/" in key:
+            d = self
+            for k in key.split("/"):
+                d = d[k]
+            return d
+
+        return super().__getitem__(key)
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if isinstance(key, str) and "/" in key:
+            d = self
+            for k in key.split("/")[:-1]:
+                d = d[k]
+            d[key.rsplit("/", maxsplit=1)[-1]] = value
+        else:
+            super().__setitem__(key, value)

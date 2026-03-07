@@ -455,3 +455,13 @@ class Bus(Node):
             bus_id = bus_id.id
         
         self[f"initial_values/bus_initial_params/aux_params/aux{index}"] = bus_id
+
+    def get_references(self) -> list[tuple[str, int]]:
+        paths = (
+            "initial_values/override_bus_id",
+            "initial_values/bus_initial_params/aux_params/aux1",
+            "initial_values/bus_initial_params/aux_params/aux2",
+            "initial_values/bus_initial_params/aux_params/aux3",
+            "initial_values/bus_initial_params/aux_params/aux4",
+        )
+        return [(p, r) for p in paths if (r := self.get(p, 0)) > 0]

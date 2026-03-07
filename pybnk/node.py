@@ -4,8 +4,7 @@ import copy
 from collections import deque
 
 from pybnk.hash import calc_hash, lookup_table
-from pybnk.util import logger, resource_data
-from pybnk.enums import reference_fields
+from pybnk.util import logger, resource_data, PathDict
 
 
 _undefined = object()
@@ -13,30 +12,36 @@ NodeLike: TypeAlias = "Node | int | str"
 
 
 class Node:
+    _templates: dict[str, dict] = {}
+
     @classmethod
-    def load_template(cls, template: str) -> dict:
-        if not template.endswith(".json"):
-            template += ".json"
-        
-        template_txt = resource_data("templates/" + template)
-        return json.loads(template_txt)
+    def load_template(cls, name: str) -> dict:
+        if name.endswith(".json"):
+            name = name[:-5]
+
+        if name not in cls._templates:
+            template_txt = resource_data("templates/" + name)
+            cls._templates[name] = json.loads(
+                template_txt, object_hook=lambda d: PathDict.convert(d)
+            )
+
+        return cls._templates[name]
 
     @classmethod
     def wrap(cls, node_dict: dict, *args, **kwargs):
         # Make sure the subclasses have been loaded
         import pybnk.node_types
 
-        def all_subclasses(c: type) -> list[type[Node]]:
-            return set(c.__subclasses__()).union(
-                [s for c in c.__subclasses__() for s in all_subclasses(c)]
-            )
+        def all_subclasses(c: type) -> dict[str, type]:
+            result = {}
+            for subclass in c.__subclasses__():
+                result[subclass.__name__] = subclass
+                result.update(all_subclasses(subclass))
+            return result
 
-        tp = next(iter(node_dict["body"].keys()))
-        for sub in all_subclasses(cls):
-            if sub.__name__ == tp:
-                return sub(node_dict, *args, **kwargs)
-
-        return cls(node_dict, *args, **kwargs)
+        node_type = next(iter(node_dict["body"].keys()))
+        node_cls = all_subclasses(cls).get(node_type, cls)
+        return node_cls(node_dict, *args, **kwargs)
 
     def __init__(self, node_dict: dict):
         self._attr = node_dict
@@ -117,7 +122,7 @@ class Node:
         if not n:
             n = self.lookup_name()
             if n:
-                # If the name lookup succeeded use 
+                # If the name lookup succeeded use
                 self.name = n
 
         return n
@@ -134,30 +139,11 @@ class Node:
 
     @property
     def parent(self) -> int:
-        """ID of a node's parent node."""
-        try:
-            # Some nodes like MusicRandomSequenceContainer have their base params at a deeper level
-            return self.resolve_path("**/node_base_params/direct_parent_id")[0][1]
-        except Exception:
-            # Some nodes like buses don't have a direct_parent_id at all
-            return None
+        return None
 
     @parent.setter
     def parent(self, parent: "Node | int") -> None:
-        if isinstance(parent, Node):
-            parent = parent.id
-
-        if not isinstance(parent, int):
-            raise ValueError(f"Invalid parent {parent}")
-
-        try:
-            path, old_parent = self.resolve_path("**/node_base_params/direct_parent_id")[0]
-            if old_parent > 0 and parent > 0 and parent != old_parent:
-                logger.warning(f"Node {self} is being assigned new parent {parent}")
-
-            self[path] = parent
-        except Exception:
-            raise ValueError(f"{self} is not a parentable node")
+        raise ValueError(f"{self} is not a parentable node")
 
     @property
     def body(self) -> dict:
@@ -342,17 +328,8 @@ class Node:
 
             raise e
 
-    def get_references(self, include_unset: bool = False) -> list[tuple[str, int]]:
-        refs = []
-        for node_type, paths in reference_fields.items():
-            if node_type in ("*", self.type):
-                for path in paths:
-                    result = self.resolve_path(path, [])
-                    for p, ref in result:
-                        if include_unset or (isinstance(ref, int) and ref > 0):
-                            refs.append((p, ref))
-
-        return refs
+    def get_references(self) -> list[tuple[str, int]]:
+        return []
 
     def __eq__(self, value: "Node") -> bool:
         return self.id == value.id
@@ -370,6 +347,7 @@ class Node:
         if not path:
             raise ValueError("Empty path")
 
+        # TODO not required anymore when using PathDict
         parts = path.split("/")
         value = self.body
 
@@ -380,6 +358,7 @@ class Node:
 
     def __setitem__(self, path: str, val: Any) -> None:
         try:
+            # TODO not required anymore when using PathDict
             parts = path.split("/")
             attr = self.body
 

@@ -10,6 +10,29 @@ class WwiseNode(Node):
     """
 
     @property
+    def base_params(self) -> dict:
+        return self["node_base_params"]
+
+    @property
+    def parent(self) -> int:
+        """ID of a node's parent node."""
+        return self.base_params["direct_parent_id"]
+
+    @parent.setter
+    def parent(self, value: int | Node) -> None:
+        if isinstance(value, Node):
+            value = value.id
+
+        if not isinstance(value, int):
+            raise ValueError(f"Invalid parent {value}")
+
+        old_parent = self.parent
+        if old_parent > 0 and value > 0 and value != old_parent:
+            logger.warning(f"Node {self} is being assigned new parent {value}")
+        
+        self.base_params["direct_parent_id"] = value
+
+    @property
     def properties(self) -> dict[str, float]:
         """Initial property values.
 
@@ -18,7 +41,7 @@ class WwiseNode(Node):
         dict[str, float]
             Dict of property initial values.
         """
-        node_properties = self["node_base_params/node_initial_params/prop_initial_values"]
+        node_properties = self.base_params["node_initial_params/prop_initial_values"]
         # Much easier to manage
         properties = {}
 
@@ -62,7 +85,7 @@ class WwiseNode(Node):
             Property value to set.
         """
         # Try to find and update existing property
-        node_properties = self["node_base_params/node_initial_params/prop_initial_values"]
+        node_properties = self.base_params["node_initial_params/prop_initial_values"]
         for prop_dict in node_properties:
             if prop_name in prop_dict:
                 prop_dict[prop_name] = value
@@ -84,7 +107,7 @@ class WwiseNode(Node):
         bool
             True if property was removed, False if not found.
         """
-        prop_values = self["node_base_params/node_initial_params/prop_initial_values"]
+        prop_values = self.base_params["node_initial_params/prop_initial_values"]
         for i, prop_dict in enumerate(prop_values):
             if prop_name in prop_dict:
                 prop_values.pop(i)
@@ -93,7 +116,7 @@ class WwiseNode(Node):
 
     def clear_properties(self) -> None:
         """Remove all initial property values."""
-        self["node_base_params/node_initial_params/prop_initial_values"] = []
+        self.base_params["node_initial_params/prop_initial_values"] = []
 
     @property
     def max_instances(self) -> int:
@@ -104,11 +127,11 @@ class WwiseNode(Node):
         int
             Maximum instance count (0 = unlimited).
         """
-        return self["node_base_params/adv_settings_params/max_instance_count"]
+        return self.base_params["adv_settings_params/max_instance_count"]
 
     @max_instances.setter
     def max_instances(self, value: int) -> None:
-        self["node_base_params/adv_settings_params/max_instance_count"] = value
+        self.base_params["adv_settings_params/max_instance_count"] = value
 
     @property
     def use_virtual_behavior(self) -> bool:
@@ -119,11 +142,11 @@ class WwiseNode(Node):
         bool
             True if virtual voices are used.
         """
-        return self["node_base_params/adv_settings_params/use_virtual_behavior"]
+        return self.base_params["adv_settings_params/use_virtual_behavior"]
 
     @use_virtual_behavior.setter
     def use_virtual_behavior(self, value: bool) -> None:
-        self["node_base_params/adv_settings_params/use_virtual_behavior"] = value
+        self.base_params["adv_settings_params/use_virtual_behavior"] = value
 
     @property
     def virtual_queue_behavior(self) -> VirtualQueueBehavior:
@@ -134,11 +157,11 @@ class WwiseNode(Node):
         str
             Behavior mode (e.g., 'Resume', 'PlayFromElapsedTime', 'PlayFromBeginning').
         """
-        return self["node_base_params/adv_settings_params/virtual_queue_behavior"]
+        return self.base_params["adv_settings_params/virtual_queue_behavior"]
 
     @virtual_queue_behavior.setter
     def virtual_queue_behavior(self, value: VirtualQueueBehavior) -> None:
-        self["node_base_params/adv_settings_params/virtual_queue_behavior"] = value
+        self.base_params["adv_settings_params/virtual_queue_behavior"] = value
 
     @property
     def has_aux(self) -> bool:
@@ -149,19 +172,19 @@ class WwiseNode(Node):
         bool
             True if aux sends are active.
         """
-        return self["node_base_params/aux_params/has_aux"]
+        return self.base_params["aux_params/has_aux"]
 
     @has_aux.setter
     def has_aux(self, value: bool) -> None:
-        self["node_base_params/aux_params/has_aux"] = value
+        self.base_params["aux_params/has_aux"] = value
 
     @property
     def override_bus(self) -> NodeLike:
-        return self["node_base_params/override_bus_id"]
+        return self.base_params["override_bus_id"]
 
     @override_bus.setter
     def override_bus(self, bus_id: NodeLike) -> None:
-        self["node_base_params/override_bus_id"] = bus_id
+        self.base_params["override_bus_id"] = bus_id
 
     def get_aux_bus(self, index: int) -> int:
         """Get an auxiliary bus ID by index.
@@ -178,7 +201,7 @@ class WwiseNode(Node):
         """
         if index < 1 or index > 4:
             raise ValueError("Aux index must be between 1 and 4")
-        return self[f"node_base_params/aux_params/aux{index}"]
+        return self.base_params["aux_params/aux{index}"]
 
     def set_aux_bus(self, index: int, bus_id: int) -> None:
         """Set an auxiliary bus ID by index.
@@ -192,7 +215,7 @@ class WwiseNode(Node):
         """
         if index < 1 or index > 4:
             raise ValueError("Aux index must be between 1 and 4")
-        self[f"node_base_params/aux_params/aux{index}"] = bus_id
+        self.base_params["aux_params/aux{index}"] = bus_id
 
     def add_rtpc(
         self,
@@ -244,11 +267,27 @@ class WwiseNode(Node):
             ],
         }
 
-        rtpcs = self["node_base_params/initial_rtpc/rtpcs"]
+        rtpcs = self.base_params["initial_rtpc/rtpcs"]
         rtpcs.append(rtpc)
-        self["node_base_params/initial_rtpc/count"] = len(rtpcs)
+        self.base_params["initial_rtpc/count"] = len(rtpcs)
 
     def clear_rtpcs(self) -> None:
         """Remove all RTPC entries."""
-        self["node_base_params/initial_rtpc/rtpcs"] = []
-        self["node_base_params/initial_rtpc/count"] = 0
+        self.base_params["initial_rtpc/rtpcs"] = []
+        self.base_params["initial_rtpc/count"] = 0
+
+    def get_references(self) -> list[int]:
+        paths = (
+            "node_base_params/override_bus_id",
+            "node_base_params/aux_params/aux1",
+            "node_base_params/aux_params/aux2",
+            "node_base_params/aux_params/aux3",
+            "node_base_params/aux_params/aux4",
+        )
+        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+
+        children = self.get("children/items", [])
+        for i, child_id in enumerate(children):
+            refs.append((f"children/items:{i}", child_id))
+
+        return refs

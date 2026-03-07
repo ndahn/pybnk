@@ -20,12 +20,13 @@ from pybnk.node_types import (
     LayerContainer,
     MusicRandomSequenceContainer,
     MusicSegment,
+    MusicSwitchContainer,
     MusicTrack,
     RandomSequenceContainer,
     Sound,
     WwiseNode,
 )
-from pybnk.util import logger, unpack_soundbank, repack_soundbank
+from pybnk.util import logger, unpack_soundbank, repack_soundbank, PathDict
 from pybnk.enums import ActionType
 from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
@@ -733,7 +734,7 @@ class BanksOfYonder:
 
         global_nodes = [
             n
-            for n in self.bnk.hirc
+            for n in self.bnk
             if n.parent is None and n.type not in ("Event", "Action")
         ]
 
@@ -940,6 +941,8 @@ class BanksOfYonder:
             pass
         elif isinstance(node, MusicSegment):
             pass
+        elif isinstance(node, MusicSwitchContainer):
+            pass
         elif isinstance(node, MusicTrack):
             pass
         elif isinstance(node, RandomSequenceContainer):
@@ -1050,7 +1053,7 @@ class BanksOfYonder:
         logger.info(f"Copied node {self._selected_node} to clipboard")
 
     def node_paste_child(self) -> None:
-        data = json.loads(pyperclip.paste())
+        data = json.loads(pyperclip.paste(), object_hook=lambda d: PathDict.convert(d))
         node = Node.wrap(data)
         if not isinstance(node, WwiseNode):
             raise ValueError(f"Node {node} cannot be parented")
