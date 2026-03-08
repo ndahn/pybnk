@@ -1,6 +1,12 @@
+from typing import TYPE_CHECKING
+from pathlib import Path
+
 from pybnk.node import Node
 from pybnk.enums import SourceType
 from .wwise_node import WwiseNode
+
+if TYPE_CHECKING:
+    from pybnk.soundbank import Soundbank
 
 
 class MusicTrack(WwiseNode):
@@ -106,6 +112,13 @@ class MusicTrack(WwiseNode):
             List of source dictionaries with plugin, source_type, and media_information.
         """
         return self["sources"]
+
+    def get_source_path(self, bnk: "Soundbank", source_index: int) -> Path:
+        src = self.sources[source_index]["media_information"]["source_id"]
+        if src <= 0:
+            return None
+
+        return bnk.bnk_dir / f"{src}.wem"
 
     @property
     def playlist(self) -> list[dict]:

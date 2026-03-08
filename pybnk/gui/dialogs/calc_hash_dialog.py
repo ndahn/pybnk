@@ -23,7 +23,7 @@ def calc_hash_dialog(
             return
 
         label = lookup_name(int(hash), "<?>")
-        dpg.set_value(f"{tag}_label", label)
+        dpg.set_value(f"{tag}_string", label)
 
     with dpg.window(
         label=title,
@@ -35,9 +35,9 @@ def calc_hash_dialog(
         on_close=lambda: dpg.delete_item(window),
     ) as window:
         dpg.add_input_text(
-            label="Label",
+            label="String",
             callback=on_label_changed,
-            tag=f"{tag}_label",
+            tag=f"{tag}_string",
         )
         dpg.add_input_text(
             label="Hash",
@@ -49,5 +49,5 @@ def calc_hash_dialog(
         dpg.add_separator()
         dpg.add_text("Calculates an FNV-1a 32bit hash", color=style.blue)
 
-    on_label_changed(f"{tag}_label", default_value, None)
+    on_label_changed(f"{tag}_string", default_value, None)
     return tag

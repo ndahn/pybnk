@@ -206,7 +206,16 @@ def _create_type_specific_attributes(
             user_data=user_data,
         )
     elif isinstance(node, MusicTrack):
-        pass
+        _create_attributes_music_track(
+            bnk,
+            node,
+            properties,
+            on_node_changed,
+            on_node_selected,
+            tag=tag,
+            parent=parent,
+            user_data=user_data,
+        )
     elif isinstance(node, RandomSequenceContainer):
         pass
     elif isinstance(node, Sound):
@@ -301,6 +310,44 @@ def _create_attributes_music_switch_container(
     dpg.add_spacer(height=3)
 
 
+def _create_attributes_music_track(
+    bnk: Soundbank,
+    node: MusicTrack,
+    properties: dict[str, property],
+    on_node_changed: Callable[[str, Node, Any], None],
+    on_node_selected: Callable[[str, Node, Any], None],
+    *,
+    tag: str = 0,
+    parent: str = 0,
+    user_data: Any = None,
+) -> None:
+    def on_wem_selected(sender: str, wem_path: Path, info: tuple[int, MusicTrack]) -> None:
+        # TODO check if inside soundbank, offer to copy
+        index, track = info
+        source_details = track.sources[index]["media_information"]
+        source_details["source_id"] = int(wem_path.stem)
+        source_details["in_memory_media_size"] = wem_path.stat().st_size
+        dpg.set_value(sender, wem_path.stem)
+        on_node_changed(tag, track, user_data)
+    
+    for i, source in enumerate(node.sources):
+        add_generic_widget(
+            Path,
+            f"source_id #{i}",
+            on_wem_selected,
+            default=str(source["media_information"]["source_id"]),
+            filetypes={"WEMs (.wem)": "*.wem"},
+            readonly=True,
+            user_data=(i, node),
+        )
+
+        add_wav_player(lambda: node.get_source_path(bnk, i))
+
+    dpg.add_spacer(height=3)
+    dpg.add_separator()
+    dpg.add_spacer(height=3)
+
+
 def _create_attributes_sound(
     bnk: Soundbank,
     node: Sound,
@@ -313,12 +360,11 @@ def _create_attributes_sound(
     user_data: Any = None,
 ) -> None:
     def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
+        # TODO check if inside soundbank, offer to copy
         sound.source_id = int(wem_path.stem)
         sound.media_size = wem_path.stat().st_size
         dpg.set_value(sender, wem_path.stem)
-        on_node_changed(
-            tag,
-        )
+        on_node_changed(tag, sound, user_data)
 
     add_generic_widget(
         Path,
