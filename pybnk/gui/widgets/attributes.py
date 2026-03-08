@@ -38,7 +38,7 @@ def create_attribute_widgets(
     tag: str = 0,
     parent: str = 0,
     user_data: Any = None,
-) -> None:
+) -> str:
     if not tag:
         tag = dpg.generate_uuid()
 
@@ -143,6 +143,29 @@ def create_attribute_widgets(
         dpg.add_child_window(height=-30, border=False)
         dpg.add_button(label="Reset")
 
+    return tag
+
+
+def add_node_link(
+    node: Node,
+    on_node_selected: Callable[[str, Node, Any], None],
+    *,
+    tag: str = 0,
+    user_data: Any = None,
+) -> str:
+    if not tag:
+        tag = dpg.generate_uuid()
+
+    dpg.add_button(
+        label=str(node),
+        small=True,
+        callback=lambda s, a, u: on_node_selected(tag, u, user_data),
+        user_data=node,
+        tag=tag,
+    )
+    dpg.bind_item_theme(dpg.last_item(), style.themes.link_button)
+    return tag
+
 
 def _create_type_specific_attributes(
     bnk: Soundbank,
@@ -213,7 +236,7 @@ def _create_type_specific_attributes(
 
 def _create_attributes_music_switch_container(
     bnk: Soundbank,
-    node: SwitchContainer,
+    node: MusicSwitchContainer,
     properties: dict[str, property],
     on_node_changed: Callable[[str, Node, Any], None],
     on_node_selected: Callable[[str, Node, Any], None],
@@ -223,13 +246,44 @@ def _create_attributes_music_switch_container(
     user_data: Any = None,
 ) -> None:
     properties.pop("arguments", None)
-    args = [f"{get_name_for_hash(a, '?')} ({a})" for a in node.arguments]
-    dpg.add_listbox(args, label="arguments")  # TODO
+    args = node.arguments
+    names = {a: get_name_for_hash(a, f"#{a}") for a in node.arguments}
+
+    def delve(tree_node: dict, level: int) -> None:
+        if level == len(args):
+            # Leaf
+            nid = tree_node["node_id"]
+            leaf_node = bnk.get(nid)
+
+            if leaf_node:
+                add_node_link(leaf_node, on_node_selected, user_data=user_data)
+            else:
+                dpg.add_text(f"(ext) {nid}")
+        else:
+            # Branch
+            arg = args[level]
+            arg_name = names[arg]
+            val = tree_node["key"]
+            if val == 0:
+                val_name = "*"
+            else:
+                val_name = get_name_for_hash(val, f"#{val}")
+
+            with dpg.tree_node(label=f"{arg_name} = {val_name}"):
+                for child in tree_node["children"]:
+                    delve(child, level + 1)
+
+    dpg.add_text("Decision Tree")
+    delve(node.decision_tree, 0)
+
+    dpg.add_spacer(height=3)
+    dpg.add_separator()
+    dpg.add_spacer(height=3)
 
 
 def _create_attributes_sound(
     bnk: Soundbank,
-    node: SwitchContainer,
+    node: Sound,
     properties: dict[str, property],
     on_node_changed: Callable[[str, Node, Any], None],
     on_node_selected: Callable[[str, Node, Any], None],
@@ -260,7 +314,9 @@ def _create_attributes_sound(
 
     add_wav_player(lambda: node.get_source_path(bnk))
 
-    dpg.add_spacer(height=5)
+    dpg.add_spacer(height=3)
+    dpg.add_separator()
+    dpg.add_spacer(height=3)
 
 
 def _create_attributes_switch_container(
@@ -299,16 +355,10 @@ def _create_attributes_switch_container(
                 for nid in nodes:
                     switch_node = bnk.get(nid)
                     if switch_node:
-                        dpg.add_button(
-                            label=str(switch_node),
-                            small=True,
-                            callback=lambda s, a, u: on_node_selected(
-                                tag, u, user_data
-                            ),
-                            user_data=node,
-                        )
-                        dpg.bind_item_theme(dpg.last_item(), style.themes.link_button)
+                        add_node_link(switch_node, on_node_selected, user_data=user_data)
                     else:
                         dpg.add_text(f"(ext) {nid}")
 
-    dpg.add_spacer(height=5)
+    dpg.add_spacer(height=3)
+    dpg.add_separator()
+    dpg.add_spacer(height=3)

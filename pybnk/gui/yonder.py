@@ -42,7 +42,6 @@ from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
-# TODO player
 # TODO boss music
 # TODO ambience
 # TODO specialized attribute handling (e.g. replacing wems)
@@ -246,7 +245,7 @@ class BanksOfYonder:
                 tag=f"{tag}_events_window",
             ):
                 with dpg.tab_bar():
-                    with dpg.tab(label="Play"):
+                    with dpg.tab(label="Events"):
                         dpg.add_input_text(
                             hint="Filter...",
                             width=-1,

@@ -204,7 +204,7 @@ class MusicSwitchContainer(WwiseNode):
         list[int]
             List of child segment hash IDs.
         """
-        self.base_params["children/items"]
+        self.music_params["children/items"]
 
     def add_argument(self, group_id: int, group_type: str = "State") -> None:
         """Add a state group argument dimension.
@@ -312,10 +312,10 @@ class MusicSwitchContainer(WwiseNode):
                 children_set.add(segment_id)
 
         # Update the children list
-        children = self.base_params["children/items"]
+        children = self.music_params["children/items"]
         children.clear()
         children.extend(sorted(c for c in children_set if c > 0))
-        self.base_params["children/count"] = len(children)
+        self.music_params["children/count"] = len(children)
 
     def _rebuild_nested_structure(self, flattened: list) -> dict:
         """Rebuild nested structure from flattened array.

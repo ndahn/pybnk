@@ -110,7 +110,7 @@ def init_themes():
 
     with dpg.theme() as themes.link_button:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (3, 4, 94), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(dpg.mvThemeCol_Text, light_blue, category=dpg.mvThemeCat_Core)
             dpg.add_theme_color(dpg.mvThemeCol_Button, (0, 0, 0, 0), category=dpg.mvThemeCat_Core)
             dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255, 40), category=dpg.mvThemeCat_Core)
             dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255, 80), category=dpg.mvThemeCat_Core)
