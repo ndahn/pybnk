@@ -2,12 +2,13 @@ from typing import Any
 from pathlib import Path
 from dearpygui import dearpygui as dpg
 
-from pybnk import Soundbank, Node
+from pybnk import Soundbank
+from pybnk.node_types import Event
 from pybnk.transfer import copy_wwise_events
 from pybnk.hash import calc_hash
 from pybnk.gui import style
-from pybnk.gui.widgets import add_generic_widget
-from .select_node_dialog import select_node_dialog
+from pybnk.gui.widgets import add_generic_widget, add_paragraphs
+from .select_node_dialog import select_nodes_of_type
 
 
 def transfer_events_dialog(
@@ -34,18 +35,17 @@ def transfer_events_dialog(
             show_message("Select source bank first")
             return
 
-        # TODO
-        select_node_dialog(src_bnk.query, lambda s, a, u: None)
+        select_nodes_of_type(src_bnk, Event, on_nodes_selected, multiple=True)
 
-    def on_nodes_selected(sender: str, nodes: list[Node], user_data: Any) -> None:
+    def on_nodes_selected(sender: str, nodes: list[Event], user_data: Any) -> None:
         selected: list[str] = dpg.get_value(f"{tag}_source_ids").splitlines()
         src_ids = set()
-        
+
         for line in selected:
             h = line_to_hash(line)
             if h is not None:
                 src_ids.add(h)
-        
+
         for n in nodes:
             if n.id not in src_ids:
                 name = n.lookup_name(f"#{n.id}")
@@ -60,7 +60,7 @@ def transfer_events_dialog(
 
         if line.startswith("#"):
             return int(line[1:])
-        
+
         if not line.startswith(("Play_", "Stop_")):
             line = "Play_" + line
         return calc_hash(line)
@@ -133,7 +133,7 @@ def transfer_events_dialog(
             if src_explicit != dst_explicit:
                 show_message("Cannot pair explicit with implicit event names")
                 return
-            
+
             if src_explicit:
                 event_map[line_to_hash(sid)] = did
             else:
@@ -158,14 +158,14 @@ def transfer_events_dialog(
         on_close=lambda: dpg.delete_item(window),
     ) as window:
         add_generic_widget(
-            Path, 
+            Path,
             "Source Soundbank",
             on_source_bnk_selected,
             filetypes={"Soundbanks (.bnk, .json)": ["*.bnk", "*.json"]},
             tag=f"{tag}_source_bnk",
         )
         add_generic_widget(
-            Path, 
+            Path,
             "Destination Soundbank",
             on_dest_bnk_selected,
             filetypes={"Soundbanks (.bnk, .json)": ["*.bnk", "*.json"]},
@@ -193,12 +193,12 @@ def transfer_events_dialog(
             callback=select_nodes,
         )
 
+        dpg.add_text("""\
+Transfer event structures from one soundbank to another. Usually you'll enter a wwise ID (x123456789) to copy all events associated with it. You may also use a #Hash or full name to copy individual events instead.""", wrap=580, color=style.light_blue)
+
+        dpg.add_spacer(height=3)
         dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
-            dpg.add_button(
-                label="Cancel",
-                callback=lambda: dpg.delete_item(window),
-            )
+            dpg.add_button(label="Transfer!", callback=on_okay, tag=f"{tag}_button_okay")

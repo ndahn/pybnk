@@ -1,16 +1,15 @@
 from typing import Any, Callable, Iterable, Type, TypeVar
 from dearpygui import dearpygui as dpg
-
 from pybnk import Soundbank, Node
-
 
 _T = TypeVar("_T", bound=Type[Node])
 
 
-def select_node_dialog(
+def select_nodes_dialog(
     get_items: Callable[[str], Iterable[Node]],
-    on_node_selected: Callable[[str, Node, Any], None],
+    on_nodes_selected: Callable[[str, Node | list[Node], Any], None],
     *,
+    multiple: bool = False,
     max_items: int = 200,
     title: str = "Select Node",
     tag: str = 0,
@@ -20,9 +19,59 @@ def select_node_dialog(
         tag = dpg.generate_uuid()
 
     items: dict[str, Node] = {}
-    selected_item: Node = None
 
-    def on_filter_changed(sender: str, filt: str, user_data: Any) -> None:
+    # Maps row_tag -> item key for lookup
+    row_tags: dict[int, str] = {}
+    selected_keys: set[str] = set()
+
+    def _set_row_highlight(row_tag: int, selected: bool) -> None:
+        dpg.highlight_table_row(
+            f"{tag}_table",
+            list(row_tags.keys()).index(row_tag),
+            (100, 149, 237, 80) if selected else (0, 0, 0, 0),
+        )
+
+    def _rebuild_table() -> None:
+        row_tags.clear()
+        selected_keys.clear()
+
+        # Remove all existing rows
+        for child in dpg.get_item_children(f"{tag}_table", slot=1) or []:
+            dpg.delete_item(child)
+
+        for key, node in items.items():
+            with dpg.table_row(parent=f"{tag}_table") as row:
+                row_tags[row] = key
+                dpg.add_selectable(
+                    label=key,
+                    span_columns=True,
+                    callback=_on_row_clicked,
+                    user_data=row,
+                )
+
+    def _on_row_clicked(sender: int, value: bool, row_tag: int) -> None:
+        key = row_tags.get(row_tag)
+        if key is None:
+            return
+
+        if multiple:
+            if key in selected_keys:
+                selected_keys.discard(key)
+                dpg.set_value(sender, False)
+            else:
+                selected_keys.add(key)
+                dpg.set_value(sender, True)
+        else:
+            # Deselect all others first
+            for sibling in dpg.get_item_children(f"{tag}_table", slot=1):
+                for sel in dpg.get_item_children(sibling, slot=1):
+                    dpg.set_value(sel, False)
+
+            selected_keys.clear()
+            selected_keys.add(key)
+            dpg.set_value(sender, True)
+
+    def on_filter_changed(sender: int, filt: str, _user_data: Any) -> None:
         items.clear()
         items.update(
             {
@@ -31,23 +80,25 @@ def select_node_dialog(
                 if i < max_items
             }
         )
-        dpg.configure_item(f"{tag}_items", items=list(items.keys()))
-
-    def on_item_selected(sender: str, item: str, user_data: Any) -> None:
-        nonlocal selected_item
-        selected_item = items[item]
+        _rebuild_table()
 
     def on_okay() -> None:
-        if not selected_item:
+        if not selected_keys:
             return
-
-        on_node_selected(tag, selected_item, user_data)
+        
+        if multiple:
+            result = [items[k] for k in selected_keys if k in items]
+            on_nodes_selected(tag, result, user_data)
+        else:
+            key = next(iter(selected_keys), None)
+            on_nodes_selected(tag, items[key], user_data)
+        
         dpg.delete_item(window)
 
     with dpg.window(
         label=title,
-        width=250,
-        height=400,
+        width=350,
+        height=450,
         autosize=True,
         no_saved_settings=True,
         tag=tag,
@@ -58,11 +109,26 @@ def select_node_dialog(
             hint="Filter...",
             tag=f"{tag}_filter",
         )
-        dpg.add_listbox(
-            callback=on_item_selected,
-            num_items=15,
-            tag=f"{tag}_items",
-        )
+
+        with dpg.table(
+            tag=f"{tag}_table",
+            header_row=False,
+            scrollY=True,
+            freeze_rows=1,
+            height=300,
+            policy=dpg.mvTable_SizingStretchProp,
+        ):
+            dpg.add_table_column(
+                label="Node (id)",
+                width_stretch=True,
+            )
+
+        if multiple:
+            dpg.add_text(
+                "Hold Ctrl or click multiple rows to select several nodes.",
+                wrap=330,
+                color=(180, 180, 180, 200),
+            )
 
         dpg.add_separator()
 
@@ -77,11 +143,12 @@ def select_node_dialog(
     return tag
 
 
-def select_node_of_type(
+def select_nodes_of_type(
     bnk: Soundbank,
     node_type: _T,
-    on_node_selected: Callable[[str, _T, Any], None],
+    on_node_selected: Callable[[str, _T | list[_T], Any], None],
     *,
+    multiple: bool = False,
     tag: str = 0,
     user_data: Any = None,
 ) -> str:
@@ -93,9 +160,6 @@ def select_node_of_type(
 
         return [n for n in candidates if filt in f"{n.lookup_name('')}{n.id}"]
 
-    return select_node_dialog(
-        get_nodes,
-        on_node_selected,
-        tag=tag,
-        user_data=user_data
+    return select_nodes_dialog(
+        get_nodes, on_node_selected, multiple=multiple, tag=tag, user_data=user_data
     )

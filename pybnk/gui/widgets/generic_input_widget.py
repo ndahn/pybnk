@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk.node import Node, NodeLike
 from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
-from pybnk.gui.dialogs.select_node_dialog import select_node_dialog
+from pybnk.gui.dialogs.select_node_dialog import select_nodes_dialog
 from .flags_widget import add_flag_checkboxes
 
 
@@ -173,8 +173,8 @@ def add_generic_widget(
                 tag=tag,
             )
             dpg.add_button(
-                #arrow=True,
-                #direction=dpg.mvDir_Right,
+                # arrow=True,
+                # direction=dpg.mvDir_Right,
                 label="Browse",
                 callback=select_file,
             )
@@ -189,7 +189,7 @@ def add_generic_widget(
         default = str(default)
 
         def select_node() -> None:
-            select_node_dialog()  # TODO needs soundbank
+            select_nodes_dialog()  # TODO needs soundbank
             pass
 
         with dpg.group(horizontal=True, parent=parent):
