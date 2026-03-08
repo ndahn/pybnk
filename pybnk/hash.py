@@ -42,10 +42,10 @@ def load_lookup_table(path: Path = None) -> dict[int, str]:
     return table
 
 
-def get_name_for_hash(h: int, default: Any = None) -> str:
+def lookup_name(h: int, default: Any = None) -> str:
     global _lookup_table
 
     if not _lookup_table:
         _lookup_table = load_lookup_table()
-    
+
     return _lookup_table.get(h, default)

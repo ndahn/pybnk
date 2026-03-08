@@ -3,7 +3,7 @@ import json
 import copy
 from collections import deque
 
-from pybnk.hash import calc_hash, get_name_for_hash
+from pybnk.hash import calc_hash, lookup_name
 from pybnk.util import resource_data
 
 
@@ -162,7 +162,7 @@ class Node:
     def lookup_name(self, default: str = None) -> str:
         name = self._attr["id"].get("String")
         if not name:
-            name = get_name_for_hash(self.id)
+            name = lookup_name(self.id)
 
         if name is None:
             return default

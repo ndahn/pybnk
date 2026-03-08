@@ -3,7 +3,7 @@ __version__ = "0.0.1"
 
 from .node import Node
 from .soundbank import Soundbank
-from .hash import calc_hash, get_name_for_hash
+from .hash import calc_hash, lookup_name
 from . import convenience
 from . import transfer
 from . import wem

@@ -5,7 +5,7 @@ from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
-from pybnk.hash import get_name_for_hash
+from pybnk.hash import lookup_name
 from pybnk.node_types import (
     Action,
     ActorMixer,
@@ -246,14 +246,16 @@ def _create_attributes_music_switch_container(
 ) -> None:
     from pybnk.gui.dialogs.create_state_path_dialog import create_state_path_dialog
 
-    def on_state_path_created(sender: str, state_path: list[str], path_node_id: int) -> None:
+    def on_state_path_created(
+        sender: str, state_path: list[str], path_node_id: int
+    ) -> None:
         node.add_branch(state_path, path_node_id)
         # Regenerate
         on_node_selected(tag, node, user_data)
 
     properties.pop("arguments", None)
     args = node.arguments
-    names = {a: get_name_for_hash(a, f"#{a}") for a in node.arguments}
+    names = {a: lookup_name(a, f"#{a}") for a in node.arguments}
 
     def delve(tree_node: dict, level: int) -> None:
         if level == len(args) - 1:
@@ -276,7 +278,7 @@ def _create_attributes_music_switch_container(
             if val == 0:
                 val_name = "*"
             else:
-                val_name = get_name_for_hash(val, f"#{val}")
+                val_name = lookup_name(val, f"#{val}")
 
             with dpg.tree_node(label=f"{arg_name} = {val_name}"):
                 for child in tree_node["children"]:
@@ -364,7 +366,7 @@ def _create_attributes_switch_container(
 
     with dpg.tree_node(label="Switches"):
         for switch, nodes in node.switch_mappings.items():
-            label = f"{len(nodes)} - {get_name_for_hash(switch, '?')} ({switch})"
+            label = f"{len(nodes)} - {lookup_name(switch, '?')} ({switch})"
             with dpg.tree_node(
                 label=label,
                 show=bool(nodes),
@@ -373,7 +375,9 @@ def _create_attributes_switch_container(
                 for nid in nodes:
                     switch_node = bnk.get(nid)
                     if switch_node:
-                        add_node_link(switch_node, on_node_selected, user_data=user_data)
+                        add_node_link(
+                            switch_node, on_node_selected, user_data=user_data
+                        )
                     else:
                         dpg.add_text(f"(ext) {nid}")
 

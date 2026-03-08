@@ -3,7 +3,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Node
 from pybnk.node_types import MusicSwitchContainer
-from pybnk.hash import get_name_for_hash, calc_hash
+from pybnk.hash import lookup_name, calc_hash
 from pybnk.gui import style
 from pybnk.gui.widgets import add_generic_widget
 
@@ -45,7 +45,7 @@ def create_state_path_dialog(
 
         keys = []
         for arg in node.arguments:
-            name = get_name_for_hash(arg, f"#{arg}")
+            name = lookup_name(arg, f"#{arg}")
             key: str = dpg.get_value(f"{tag}_arg_{arg}")
 
             if not key:
@@ -77,15 +77,11 @@ def create_state_path_dialog(
         tag=tag,
         on_close=lambda: dpg.delete_item(window),
     ) as window:
-        # For these decision trees all branches have the same length, 
+        # For these decision trees all branches have the same length,
         # which makes it so much easier for us!
         for arg in node.arguments:
-            name = get_name_for_hash(arg, f"#{arg}")
-            dpg.add_input_text(
-                label=name,
-                default_value="*",
-                tag=f"{tag}_arg_{arg}"
-            )
+            name = lookup_name(arg, f"#{arg}")
+            dpg.add_input_text(label=name, default_value="*", tag=f"{tag}_arg_{arg}")
 
         dpg.add_spacer(height=3)
         add_generic_widget(Node, "Node", on_node_selected, default=0)
