@@ -245,6 +245,13 @@ def _create_attributes_music_switch_container(
     parent: str = 0,
     user_data: Any = None,
 ) -> None:
+    from pybnk.gui.dialogs.create_state_path_dialog import create_state_path_dialog
+    
+    def on_state_path_created(sender: str, state_path: list[str], path_node_id: int) -> None:
+        node.add_branch(state_path, path_node_id)
+        # Regenerate
+        on_node_selected(tag, node, user_data)
+
     properties.pop("arguments", None)
     args = node.arguments
     names = {a: get_name_for_hash(a, f"#{a}") for a in node.arguments}
@@ -275,6 +282,12 @@ def _create_attributes_music_switch_container(
 
     dpg.add_text("Decision Tree")
     delve(node.decision_tree, 0)
+
+    dpg.add_spacer(height=3)
+    dpg.add_button(
+        label="Add State Path",
+        callback=lambda: create_state_path_dialog(node, on_state_path_created),
+    )
 
     dpg.add_spacer(height=3)
     dpg.add_separator()

@@ -168,6 +168,7 @@ def add_generic_widget(
                 decimal=True,
                 readonly=readonly,
                 enabled=not readonly,
+                callback=lambda s, a, u: callback(s, Path(a), u),
                 user_data=user_data,
                 tag=tag,
             )
@@ -196,6 +197,7 @@ def add_generic_widget(
                 decimal=True,
                 readonly=readonly,
                 enabled=not readonly,
+                callback=lambda s, a, u: callback(s, int(a), u),
                 user_data=user_data,
                 tag=tag,
             )
