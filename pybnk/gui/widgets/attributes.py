@@ -178,7 +178,6 @@ def _create_type_specific_attributes(
     parent: str = 0,
     user_data: Any = None,
 ) -> None:
-    # TODO
     if isinstance(node, Action):
         pass
     elif isinstance(node, ActorMixer):
@@ -246,7 +245,7 @@ def _create_attributes_music_switch_container(
     user_data: Any = None,
 ) -> None:
     from pybnk.gui.dialogs.create_state_path_dialog import create_state_path_dialog
-    
+
     def on_state_path_created(sender: str, state_path: list[str], path_node_id: int) -> None:
         node.add_branch(state_path, path_node_id)
         # Regenerate
@@ -257,13 +256,16 @@ def _create_attributes_music_switch_container(
     names = {a: get_name_for_hash(a, f"#{a}") for a in node.arguments}
 
     def delve(tree_node: dict, level: int) -> None:
-        if level == len(args):
+        if level == len(args) - 1:
             # Leaf
             nid = tree_node["node_id"]
             leaf_node = bnk.get(nid)
 
+            # TODO should be an input field
             if leaf_node:
                 add_node_link(leaf_node, on_node_selected, user_data=user_data)
+            elif nid == 0:
+                dpg.add_text("<None>")
             else:
                 dpg.add_text(f"(ext) {nid}")
         else:
@@ -280,14 +282,17 @@ def _create_attributes_music_switch_container(
                 for child in tree_node["children"]:
                     delve(child, level + 1)
 
-    dpg.add_text("Decision Tree")
-    delve(node.decision_tree, 0)
+    with dpg.tree_node(label="Decision Tree"):
+        for child in node.decision_tree["children"]:
+            delve(child, 0)
 
     dpg.add_spacer(height=3)
     dpg.add_button(
         label="Add State Path",
         callback=lambda: create_state_path_dialog(node, on_state_path_created),
     )
+
+    # TODO transition rules
 
     dpg.add_spacer(height=3)
     dpg.add_separator()
