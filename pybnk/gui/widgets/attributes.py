@@ -368,6 +368,7 @@ def _create_attributes_music_track(
         sender: str, wem_path: Path, info: tuple[int, MusicTrack]
     ) -> None:
         # TODO check if inside soundbank, offer to copy
+        # TODO if prefetch streaming create snippet
         index, track = info
         source_details = track.sources[index]["media_information"]
         source_details["source_id"] = int(wem_path.stem)
@@ -406,6 +407,7 @@ def _create_attributes_sound(
 ) -> None:
     def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
         # TODO check if inside soundbank, offer to copy
+        # TODO if prefetch streaming create snippet
         sound.source_id = int(wem_path.stem)
         sound.media_size = wem_path.stat().st_size
         dpg.set_value(sender, wem_path.stem)

@@ -46,6 +46,7 @@ from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 # TODO streaming audio
 # TODO boss music
 # TODO ambience
+# TODO settings (wem sources, hash dict sources, etc.)
 # TODO graph visualization
 # TODO attenuation curve editor
 # TODO setup RTCPs
