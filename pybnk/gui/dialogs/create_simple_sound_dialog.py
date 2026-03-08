@@ -8,7 +8,7 @@ from pybnk.node_types import Event, ActorMixer
 from pybnk.gui import style
 from pybnk.gui.widgets import add_properties_table, add_filepaths_table
 from pybnk.enums import property_defaults
-from .select_node_dialog import select_nodes_of_type
+from .select_nodes_dialog import select_nodes_of_type
 
 
 def create_simple_sound_dialog(

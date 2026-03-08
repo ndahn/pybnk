@@ -5,7 +5,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk.node import Node, NodeLike
 from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
-from pybnk.gui.dialogs.select_node_dialog import select_nodes_dialog
+from pybnk.gui.dialogs.select_nodes_dialog import select_nodes_dialog
 from .flags_widget import add_flag_checkboxes
 
 

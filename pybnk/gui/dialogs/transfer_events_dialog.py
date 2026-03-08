@@ -8,7 +8,7 @@ from pybnk.transfer import copy_wwise_events
 from pybnk.hash import calc_hash
 from pybnk.gui import style
 from pybnk.gui.widgets import add_generic_widget, add_paragraphs
-from .select_node_dialog import select_nodes_of_type
+from .select_nodes_dialog import select_nodes_of_type
 
 
 def transfer_events_dialog(
@@ -193,12 +193,18 @@ def transfer_events_dialog(
             callback=select_nodes,
         )
 
-        dpg.add_text("""\
-Transfer event structures from one soundbank to another. Usually you'll enter a wwise ID (x123456789) to copy all events associated with it. You may also use a #Hash or full name to copy individual events instead.""", wrap=580, color=style.light_blue)
+        dpg.add_text(
+            """\
+Transfer event structures from one soundbank to another. Usually you'll enter a wwise ID (x123456789) to copy all events associated with it. You may also use a #Hash or full name to copy individual events instead.""",
+            wrap=580,
+            color=style.light_blue,
+        )
 
         dpg.add_spacer(height=3)
         dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Transfer!", callback=on_okay, tag=f"{tag}_button_okay")
+            dpg.add_button(
+                label="Transfer!", callback=on_okay, tag=f"{tag}_button_okay"
+            )
