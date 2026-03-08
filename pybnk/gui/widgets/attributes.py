@@ -172,7 +172,7 @@ def add_node_link(
     return tag
 
 
-def get_source_path(bnk: Soundbank, source: dict) -> Path:
+def get_sound_path(bnk: Soundbank, source: dict) -> Path:
     from pybnk.gui.dialogs.file_dialog import open_file_dialog
     global _streaming_dir
 
@@ -386,7 +386,7 @@ def _create_attributes_music_track(
             user_data=(i, node),
         )
 
-        add_wav_player(lambda idx=i: get_source_path(node.sources[idx]))
+        add_wav_player(lambda idx=i: get_sound_path(node.sources[idx]))
 
     dpg.add_spacer(height=3)
     dpg.add_separator()
@@ -423,7 +423,7 @@ def _create_attributes_sound(
     properties.pop("media_size")
     properties.pop("source_id")
 
-    add_wav_player(lambda: get_source_path(bnk, node.source_info))
+    add_wav_player(lambda: get_sound_path(bnk, node.source_info))
 
     dpg.add_spacer(height=3)
     dpg.add_separator()
