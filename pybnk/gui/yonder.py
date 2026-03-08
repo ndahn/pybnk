@@ -39,6 +39,7 @@ from pybnk.gui.dialogs.file_dialog import (
 )
 from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dialog
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
+from pybnk.gui.dialogs.transfer_events_dialog import transfer_events_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
@@ -173,8 +174,7 @@ class BanksOfYonder:
                 )
                 dpg.add_menu_item(
                     label="Mass Transfer",
-                    callback=None,  # TODO self._open_mass_transfer_dialog,
-                    enabled=False,  # TODO
+                    callback=self._open_transfer_events_dialog,
                 )
                 dpg.add_menu_item(
                     label="Convert Audio Files",
@@ -1031,6 +1031,18 @@ class BanksOfYonder:
             return
 
         calc_hash_dialog(tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_transfer_events_dialog(self) -> None:
+        tag = f"{self.tag}_transfer_events_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        transfer_events_dialog(tag=tag)
 
         dpg.split_frame()
         center_window(tag)

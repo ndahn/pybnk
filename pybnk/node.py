@@ -150,7 +150,7 @@ class Node:
 
     def copy(self, new_id: int = None, parent: int = None) -> "Node":
         attr = copy.deepcopy(self._attr)
-        n = Node(attr)
+        n = Node.wrap(attr)
 
         if new_id is not None:
             n.id = new_id

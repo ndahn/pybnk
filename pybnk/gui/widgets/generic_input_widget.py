@@ -173,8 +173,9 @@ def add_generic_widget(
                 tag=tag,
             )
             dpg.add_button(
-                arrow=True,
-                direction=dpg.mvDir_Right,
+                #arrow=True,
+                #direction=dpg.mvDir_Right,
+                label="Browse",
                 callback=select_file,
             )
             dpg.add_text(label)

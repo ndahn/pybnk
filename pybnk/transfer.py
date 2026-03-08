@@ -25,8 +25,8 @@ def extract_structure(bnk: Soundbank, entrypoint) -> list[Node]:
 def copy_event(
     src_bnk: Soundbank,
     dst_bnk: Soundbank,
-    event: Node,
-) -> Node:
+    event: Event,
+) -> Event:
     event = event.copy()
     actions = [src_bnk[aid].copy() for aid in event["actions"]]
 
@@ -135,36 +135,30 @@ def copy_wems(
 def copy_wwise_events(
     src_bnk: Soundbank,
     dst_bnk: Soundbank,
-    wwise_map: dict[str, str],
+    wwise_map: dict[int | str, str],
 ) -> None:
     wems = []
 
     for wwise_src, wwise_dst in wwise_map.items():
-        # Play event
-        play_evt_name = f"Play_{wwise_src}"
-        play_evt = src_bnk[play_evt_name].copy()
-        play_evt.name = f"Play_{wwise_dst}"
-        play_evt = copy_event(src_bnk, dst_bnk, play_evt)
+        evt: Event = src_bnk[wwise_src].cast()
+        if not isinstance(evt, Event):
+            raise ValueError(f"{wwise_src} is not an Event")
 
-        # Stop event
-        stop_evt_name = f"Stop_{wwise_src}"
-        stop_evt = src_bnk[stop_evt_name].copy()
-        stop_evt.name = f"Stop_{wwise_dst}"
-        stop_evt = copy_event(src_bnk, dst_bnk, stop_evt)
+        # Copy the event and its actions
+        evt = copy_event(src_bnk, dst_bnk, evt)
 
         # Collect the structures attached to each action
-        for action_id in play_evt["actions"]:
-            action = dst_bnk[action_id]  # already copied to dst
-            action_bnk_id = action["params/Play/bank_id"]
-
+        for action_id in evt.actions:
+            action: Action = src_bnk[action_id]
+            
             # NOTE action_bnk_id will already be translated from src_bnk to dst_bnk
-            if action_bnk_id != dst_bnk.id:
+            if action.bank_id != dst_bnk.id:
                 logger.warning(
-                    f"Action {action.id} references node in external soundbank {action_bnk_id}"
+                    f"Action {action.id} references external soundbank {action.bank_id}"
                 )
-                return
+                continue
 
-            entrypoint = src_bnk[action["external_id"]]
+            entrypoint = src_bnk[action.target_id]
             new_wems = copy_node_structure(src_bnk, dst_bnk, entrypoint)
             wems.extend(w for _, w in new_wems)
 

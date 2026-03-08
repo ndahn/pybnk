@@ -1,5 +1,6 @@
 from typing import Any, Callable, TYPE_CHECKING
 import sys
+import re
 from pathlib import Path
 from dataclasses import dataclass
 from docstring_parser import parse as doc_parse
@@ -9,6 +10,8 @@ import logging
 import subprocess
 import shutil
 import networkx as nx
+
+from pybnk.enums import SoundType
 
 if TYPE_CHECKING:
     from pybnk import Soundbank
@@ -51,6 +54,10 @@ def repack_soundbank(bnk2json_exe: Path, bnk_dir: Path) -> Path:
     return bnk_dir.parent / (bnk_dir.stem + ".bnk")
 
 
+def is_event_name_valid(name: str) -> bool:
+    return bool(re.match(rf"{SoundType.values()}[0-9]+"))
+
+
 def format_hierarchy(bnk: "Soundbank", graph: nx.DiGraph) -> str:
     visited = set()
     ret = ""
@@ -67,7 +74,7 @@ def format_hierarchy(bnk: "Soundbank", graph: nx.DiGraph) -> str:
         for i, child in enumerate(children):
             is_last = i == len(children) - 1
             branch = "└──" if is_last else "├──"
-            ret += (f"{prefix}{branch} {child}\n")
+            ret += f"{prefix}{branch} {child}\n"
 
             new_prefix = prefix + ("    " if is_last else "│   ")
             delve(child, new_prefix)

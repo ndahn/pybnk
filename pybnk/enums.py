@@ -20,6 +20,10 @@ class SoundType(StrEnum):
     GEOMETRY_ASSET = "g"
     DYNAMIC_DIALOG = "d"
 
+    @classmethod
+    def values(cls) -> str:
+        return "".join(s.value for s in cls)
+
 
 # Not a flag, just a convenient way to map the known types
 class ActionType(IntFlag):
@@ -36,7 +40,9 @@ ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
 CurveType: TypeAlias = Literal["Linear", "SCurve", "Log1", "Log3", "Sine", "Constant"]
 SourceType: TypeAlias = Literal["Embedded", "Streaming", "PrefetchStreaming"]
 PluginType: TypeAlias = Literal["VORBIS", "PCM"]
-VirtualQueueBehavior: TypeAlias = Literal["Resume", "PlayFromElapsedTime", "PlayFromBeginning"]
+VirtualQueueBehavior: TypeAlias = Literal[
+    "Resume", "PlayFromElapsedTime", "PlayFromBeginning"
+]
 
 
 property_defaults = {
