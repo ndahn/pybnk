@@ -26,7 +26,7 @@ def add_wav_player(
     player: WavPlayer = None
 
     def create_player(audio: Path) -> WavPlayer:
-        if not audio.is_file():
+        if audio is None or not audio.is_file():
             logger.error(f"Audio {audio} does not exist")
             return None
 

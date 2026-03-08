@@ -89,6 +89,10 @@ class Sound(WwiseNode):
         return sound
 
     @property
+    def source_info(self) -> dict:
+        return self["bank_source_data"]
+
+    @property
     def source_id(self) -> int:
         """Media source ID.
 

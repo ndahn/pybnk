@@ -4,7 +4,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk.gui import style
 from pybnk.gui.config import Config
-from pybnk.gui.dialogs.file_dialog import choose_folder
+from pybnk.gui.dialogs.file_dialog import choose_folder, open_file_dialog
 from pybnk.gui.widgets import add_filepaths_table, loading_indicator
 from pybnk.util import logger
 from pybnk.wem import wav2wem, trim_silence, set_volume, create_prefetch_snippet
@@ -36,7 +36,7 @@ def convert_wavs_dialog(
     def choose_output_dir() -> None:
         nonlocal output_dir
 
-        ret = choose_folder(title="Select output directory", default_dir=output_dir)
+        ret = choose_folder(title="Select output directory")
         if ret:
             output_dir = Path(ret)
             dpg.set_value(f"{tag}_output_dir", str(output_dir))

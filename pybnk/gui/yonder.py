@@ -801,8 +801,8 @@ class BanksOfYonder:
             create_attribute_widgets(
                 self.bnk,
                 node,
-                lambda s,a,u: self.update_json_panel(),
-                lambda s,a,u: self.select_node(a),
+                lambda s, a, u: self.update_json_panel(),
+                lambda s, a, u: self.select_node(a),
                 tag=f"{self.tag}_attributes_",
                 parent=f"{self.tag}_attributes",
             )
