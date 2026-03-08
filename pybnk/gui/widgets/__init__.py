@@ -1,3 +1,4 @@
+from .attributes import create_attribute_widgets
 from .filepaths_table import add_filepaths_table
 from .flags_widget import add_flag_checkboxes
 from .generic_input_widget import add_generic_widget

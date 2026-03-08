@@ -5,7 +5,7 @@ import atexit
 from dearpygui import dearpygui as dpg
 
 from pybnk.util import logger
-from pybnk.gui.config import Config
+from pybnk.gui.config import get_config
 from pybnk.wem import wem2wav
 from pybnk.player import WavPlayer
 
@@ -15,7 +15,6 @@ atexit.register(_wav_tmp_dir.cleanup)
 
 
 def add_wav_player(
-    config: Config,
     get_sound: Callable[[], Path],
     *,
     tag: str = 0,
@@ -34,7 +33,7 @@ def add_wav_player(
         if audio.name.endswith(".wem"):
             wav = Path(_wav_tmp_dir.name) / (audio.stem + ".wav")
             if not wav.is_file():
-                vgmstream = config.locate_vgmstream()
+                vgmstream = get_config().locate_vgmstream()
                 logger.info(f"Converting {audio} to wav for playback")
                 wav = wem2wav(Path(vgmstream), [audio], Path(_wav_tmp_dir.name))[0]
         elif audio.name.endswith(".wav"):
@@ -80,6 +79,10 @@ def add_wav_player(
         if not player or not player.playing:
             return
 
+        if not dpg.does_item_exist(f"{tag}_progress"):
+            player.stop()
+            return
+        
         dpg.configure_item(
             f"{tag}_progress", default_value=player.position, max_value=player.duration
         )

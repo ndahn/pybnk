@@ -3,45 +3,28 @@ import sys
 import logging
 import json
 from pathlib import Path
-from collections import deque
 import subprocess
 import pyperclip
 import networkx as nx
-from docstring_parser import parse as doc_parse
 from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank, Node
 from pybnk.node_types import (
     Action,
-    ActorMixer,
-    Attenuation,
-    Bus,
     Event,
-    LayerContainer,
-    MusicRandomSequenceContainer,
-    MusicSegment,
-    MusicSwitchContainer,
-    MusicTrack,
-    RandomSequenceContainer,
-    Sound,
-    SwitchContainer,
     WwiseNode,
 )
-from pybnk.hash import get_name_for_hash
+
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
-from pybnk.enums import ActionType
 from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
 from pybnk.gui.helpers import center_window
 from pybnk.gui.widgets import (
-    add_generic_widget,
-    add_properties_table,
+    create_attribute_widgets,
     loading_indicator,
-    add_paragraphs,
     table_tree_node,
     add_lazy_table_tree_node,
     set_foldable_row_status,
-    add_wav_player,
 )
 from pybnk.gui import style
 from pybnk.gui.style import themes
@@ -813,167 +796,17 @@ class BanksOfYonder:
 
         self._selected_node = node
         self._set_component_highlight(f"{self.tag}_json", False)
-        self._create_attribute_widgets()
 
-    def _create_attribute_widgets(self) -> None:
         dpg.delete_item(f"{self.tag}_attributes", children_only=True, slot=1)
-        node = self._selected_node
-
-        if not node:
-            return
-
-        def update_node_name(sender: str, new_name: str, user_data: Any) -> None:
-            if not new_name:
-                return
-
-            node.name = new_name
-            dpg.set_value(f"{self.tag}_attr_hash", str(node.id))
-
-        def on_properties_changed(
-            sender: str, properties: dict[str, float], node: WwiseNode
-        ) -> None:
-            for key, val in properties.items():
-                node.set_property(key, val)
-
-        with dpg.group(parent=f"{self.tag}_attributes"):
-            # Heading
-            dpg.add_text(node.type)
-            if node.__class__.__doc__:
-                with dpg.tooltip(dpg.last_item()):
-                    add_paragraphs(node.__class__.__doc__)
-
-            if not isinstance(node, WwiseNode):
-                dpg.add_input_text(
-                    label="Name",
-                    default_value=node.lookup_name("<?>"),
-                    callback=update_node_name,
-                )
-
-            dpg.add_input_text(
-                label="Hash",
-                default_value=str(node.id),
-                readonly=True,
-                enabled=False,
-                tag=f"{self.tag}_attr_hash",
+        if node:
+            create_attribute_widgets(
+                self.bnk,
+                node,
+                lambda s,a,u: self.update_json_panel(),
+                lambda s,a,u: self.select_node(a),
+                tag=f"{self.tag}_attributes_",
+                parent=f"{self.tag}_attributes",
             )
-
-            dpg.add_spacer(height=3)
-            dpg.add_separator()
-            dpg.add_spacer(height=3)
-
-            # Find all exposed python properties, including those from base classes
-            properties: dict[str, property] = {}
-            todo = deque([node.__class__])
-            while todo:
-                c = todo.popleft()
-                for name, prop in c.__dict__.items():
-                    if name in ("id", "name", "type", "parent"):
-                        continue
-                    if isinstance(prop, property):
-                        properties.setdefault(name, prop)
-
-                todo.extend(c.__bases__)
-
-            # This may remove or add properties that are handled differently
-            self._create_type_specific_attributes(node, properties)
-
-            for name, prop in properties.items():
-                value_type = prop.fget.__annotations__["return"]
-                value = prop.fget(node)
-                readonly = prop.fset is None
-                doc = doc_parse(prop.__doc__)
-
-                def set_property(sender: str, new_value: Any, prop: property):
-                    prop.fset(node, new_value)
-                    self.update_json_panel()
-
-                try:
-                    widget = add_generic_widget(
-                        value_type,
-                        name,
-                        set_property,
-                        default=value,
-                        readonly=readonly,
-                        user_data=prop,
-                    )
-                except Exception:
-                    continue
-
-                if widget and doc:
-                    with dpg.tooltip(dpg.last_item()):
-                        dpg.add_text(doc.short_description)
-
-            if isinstance(node, WwiseNode):
-                dpg.add_spacer(height=5)
-                add_properties_table(
-                    node.properties,
-                    on_properties_changed,
-                    user_data=node,
-                )
-
-            dpg.add_child_window(height=-30, border=False)
-            dpg.add_button(label="Reset")
-
-    def _create_type_specific_attributes(
-        self, node: Node, properties: dict[str, property]
-    ) -> None:
-        # TODO
-        if isinstance(node, Action):
-            pass
-        elif isinstance(node, ActorMixer):
-            pass
-        elif isinstance(node, Attenuation):
-            pass
-        elif isinstance(node, Bus):
-            pass
-        elif isinstance(node, Event):
-            pass
-        elif isinstance(node, LayerContainer):
-            pass
-        elif isinstance(node, MusicRandomSequenceContainer):
-            pass
-        elif isinstance(node, MusicSegment):
-            pass
-        elif isinstance(node, MusicSwitchContainer):
-            properties.pop("arguments", None)
-            args = [f"{get_name_for_hash(a, '?')} ({a})" for a in node.arguments]
-            dpg.add_listbox(args, label="arguments")  # TODO
-
-        elif isinstance(node, MusicTrack):
-            pass
-        elif isinstance(node, RandomSequenceContainer):
-            pass
-        elif isinstance(node, Sound):
-
-            def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
-                sound.source_id = int(wem_path.stem)
-                sound.media_size = wem_path.stat().st_size
-                dpg.set_value(sender, wem_path.stem)
-                self.update_json_panel()
-
-            add_generic_widget(
-                Path,
-                "source_id",
-                on_wem_selected,
-                default=str(node.source_id),
-                filetypes={"WEMs (.wem)": "*.wem"},
-                readonly=True,
-                user_data=node,
-            )
-            properties.pop("media_size")
-            properties.pop("source_id")
-
-            add_wav_player(
-                self.config,
-                lambda: node.get_source_path(self.bnk),
-            )
-
-            dpg.add_spacer(height=5)
-        elif isinstance(node, SwitchContainer):
-            switch_ids = node.switch_mappings.keys()
-            items = [f"{get_name_for_hash(s, '?')} ({s})" for s in switch_ids]
-            dpg.add_listbox(items, label="Switches")  # TODO
-            dpg.add_spacer(height=5)
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
