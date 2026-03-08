@@ -43,14 +43,12 @@ from pybnk.gui.dialogs.transfer_events_dialog import transfer_events_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 
 
+# TODO streaming audio
 # TODO boss music
 # TODO ambience
-# TODO specialized attribute handling (e.g. replacing wems)
-# TODO mass transfer
-# TODO setup RTCPs
-# TODO streaming audio
+# TODO graph visualization
 # TODO attenuation curve editor
-# TODO action graph visualization
+# TODO setup RTCPs
 # TODO localizations
 
 

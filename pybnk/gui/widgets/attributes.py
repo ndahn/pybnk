@@ -386,7 +386,7 @@ def _create_attributes_music_track(
             user_data=(i, node),
         )
 
-        add_wav_player(lambda idx=i: get_sound_path(node.sources[idx]))
+        add_wav_player(lambda idx=i: get_sound_path(bnk, node.sources[idx]))
 
     dpg.add_spacer(height=3)
     dpg.add_separator()
