@@ -1,7 +1,17 @@
 from pathlib import Path
 
 from pybnk import Soundbank, Node
-from pybnk.node_types import Event, Action, RandomSequenceContainer, Sound
+from pybnk.node_types import (
+    Event,
+    Action,
+    RandomSequenceContainer,
+    Sound,
+    MusicSwitchContainer,
+    MusicRandomSequenceContainer,
+    MusicSegment,
+    MusicTrack,
+)
+from pybnk.hash import lookup_name, calc_hash
 from pybnk.util import logger
 
 
@@ -86,3 +96,73 @@ def create_simple_sound(
         actor_mixer.cast().add_child(rsc)
 
     return ((play, stop), rsc, sounds)
+
+
+def create_boss_bgm(
+    bnk: Soundbank,
+    master: MusicSwitchContainer,
+    state_path: str | list[str | int],
+    tracks: list[Path] | Path,
+) -> list[Node]:
+    # Prepare the new master state path
+    if isinstance(state_path, str):
+        bgm_enemy_type = state_path
+        state_path: list[str] = []
+        for arg in master.arguments:
+            if lookup_name(arg) == "BgmEnemyType":
+                state_path.append(bgm_enemy_type)
+            else:
+                state_path.append("*")
+
+    # Setup the boss phase music manager
+    boss_msc = MusicSwitchContainer.new(bnk.new_id())
+    boss_msc.add_argument(calc_hash("BossBattleState"))
+
+    if isinstance(tracks, Path):
+        tracks: list[Path] = tracks
+
+    boss_phases = ["*"]
+    if len(tracks) > 1:
+        # Heatup
+        boss_phases += [f"HU{i + 1}" for i in range(len(tracks) - 1)]
+
+    boss_state_keys = MusicSwitchContainer.parse_state_path(boss_phases)
+    children = []
+
+    for phase, bgm in zip(boss_state_keys, tracks):
+        phase_mrs = MusicRandomSequenceContainer.new(bnk.new_id())
+
+        # Each phase contains two segments, one playing while the boss is alive,
+        # a second one that plays when the boss is defeated
+        # TODO how to add wems to game/mod?
+        phase_alive_seg = MusicSegment.new(bnk.new_id())
+        phase_alive_track = MusicTrack.new(bnk.new_id(), int(bgm.stem))
+        # TODO add track to segment
+
+        phase_death_seg = MusicSegment.new(bnk.new_id())
+        phase_death_track = MusicTrack.new(bnk.new_id(), int(bgm.stem))
+        # TODO add track to segment
+
+        # TODO check how to setup MRS
+        phase_mrs.add_playlist_item(phase_alive_seg.id)
+        phase_mrs.add_playlist_item(phase_death_seg.id)
+
+        # TODO setup transition rules
+
+        boss_msc.add_branch([phase], phase_mrs.id)
+        children.extend(
+            [
+                phase_mrs,
+                phase_alive_seg,
+                phase_alive_track,
+                phase_death_seg,
+                phase_death_track,
+            ]
+        )
+
+    # Add new bgm decision branch to master
+    master_state_keys: list[int] = MusicSwitchContainer.parse_state_path(state_path)
+    master.add_branch(master_state_keys, boss_msc.id)
+
+    bnk.add_nodes(boss_msc, *children)
+    return (boss_msc, children)

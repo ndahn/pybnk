@@ -1,4 +1,5 @@
 from pybnk import Node
+from pybnk.hash import calc_hash
 from pybnk.util import logger, PathDict
 from .wwise_node import WwiseNode
 
@@ -10,6 +11,22 @@ class MusicSwitchContainer(WwiseNode):
     state using a decision tree. Supports complex transition rules between
     segments and multi-dimensional state-based selection.
     """
+    @staticmethod
+    def parse_state_path(state_path: list[str]) -> list[int]:
+        keys = []
+        for val in state_path:
+            if val == "*":
+                keys.append(0)
+            elif val.startswith("#"):
+                try:
+                    keys.append(int(val[1:]))
+                except ValueError:
+                    raise ValueError(f"{val}: value is not a valid hash")
+            else:
+                keys.append(calc_hash(val))
+
+        return keys
+
 
     @classmethod
     def new(

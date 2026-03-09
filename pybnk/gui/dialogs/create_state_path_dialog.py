@@ -66,7 +66,7 @@ def create_state_path_dialog(
             keys.append(key)
 
         if raw:
-            keys = parse_state_path(keys)
+            keys = MusicSwitchContainer.parse_state_path(keys)
 
         callback(tag, keys, leaf_node_id)
         dpg.delete_item(window)

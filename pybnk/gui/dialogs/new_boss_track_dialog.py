@@ -5,9 +5,10 @@ from dearpygui import dearpygui as dpg
 from pybnk import Soundbank
 from pybnk.node_types import MusicSwitchContainer
 from pybnk.hash import calc_hash
+from pybnk.convenience import create_boss_bgm
 from pybnk.gui import style
 from pybnk.gui.widgets import add_generic_widget, add_filepaths_table, add_node_widget
-from .create_state_path_dialog import create_state_path_dialog, parse_state_path
+from .create_state_path_dialog import create_state_path_dialog
 
 
 def new_boss_track_dialog(
@@ -136,15 +137,11 @@ def new_boss_track_dialog(
             show_message("BgmEnemyType not set")
             return
         
-        state_keys = parse_state_path(current_state_path)
+        if not bgm_tracks:
+            show_message("Must add at least one BGM track")
+            return
 
-        # TODO
-        # create a new MusicSwitchContainer for the boss
-        # add branches for BossBattleState (* plus one entry per additional track)
-        #   - for each branch create a MusicRandomSequence conainer
-        #     - create two MusicSegments + MusicTracks per container
-        #   - add transition rules
-
+        create_boss_bgm(bnk, msc, current_state_path, bgm_tracks)
         dpg.delete_item(window)
 
     with dpg.window(
@@ -178,7 +175,6 @@ def new_boss_track_dialog(
             default_value="*",
             tag=f"{tag}_bgm_enemy_type",
         )
-        # TODO visualization?
         dpg.add_button(
             label="State Path",
             callback=edit_state_path,
