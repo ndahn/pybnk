@@ -13,8 +13,6 @@ class MusicRandomSequenceContainer(WwiseNode):
     def new(
         cls,
         nid: int,
-        tempo: float = 120.0,
-        time_signature: tuple[int, int] = (4, 4),
         parent: int | Node = None,
     ) -> "MusicRandomSequenceContainer":
         """Create a new MusicRandomSequenceContainer node.
@@ -23,10 +21,6 @@ class MusicRandomSequenceContainer(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        tempo : float, default=120.0
-            Tempo in BPM.
-        time_signature : tuple[int, int], default=(4, 4)
-            Time signature (beat_count, beat_value).
         parent : int | Node, default=None
             Parent node.
 
@@ -39,8 +33,6 @@ class MusicRandomSequenceContainer(WwiseNode):
 
         container = cls(temp)
         container.id = nid
-        container.tempo = tempo
-        container.time_signature = time_signature
         if parent is not None:
             container.parent = parent
 
@@ -53,59 +45,6 @@ class MusicRandomSequenceContainer(WwiseNode):
     @property
     def music_params(self) -> PathDict:
         return PathDict(self["music_trans_node_params/music_node_params"])
-
-    @property
-    def tempo(self) -> float:
-        """Tempo in BPM.
-
-        Returns
-        -------
-        float
-            Tempo in beats per minute.
-        """
-        return self.music_params["meter_info/tempo"]
-
-    @tempo.setter
-    def tempo(self, value: float) -> None:
-        self.music_params["meter_info/tempo"] = value
-
-    @property
-    def time_signature(self) -> tuple[int, int]:
-        """Time signature.
-
-        Returns
-        -------
-        tuple[int, int]
-            (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
-        """
-        beat_count = self.music_params["meter_info/time_signature_beat_count"
-        ]
-        beat_value = self.music_params["meter_info/time_signature_beat_value"
-        ]
-        return (beat_count, beat_value)
-
-    @time_signature.setter
-    def time_signature(self, value: tuple[int, int]) -> None:
-        beat_count, beat_value = value
-        self.music_params["meter_info/time_signature_beat_count"
-        ] = beat_count
-        self.music_params["meter_info/time_signature_beat_value"
-        ] = beat_value
-
-    @property
-    def grid_period(self) -> float:
-        """Grid period in milliseconds.
-
-        Returns
-        -------
-        float
-            Grid period in ms.
-        """
-        return self.music_params["meter_info/grid_period"]
-
-    @grid_period.setter
-    def grid_period(self, value: float) -> None:
-        self.music_params["meter_info/grid_period"] = value
 
     @property
     def playlist_items(self) -> list[dict]:

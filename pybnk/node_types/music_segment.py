@@ -14,8 +14,6 @@ class MusicSegment(WwiseNode):
         cls,
         nid: int,
         duration: float = 1000.0,
-        tempo: float = 120.0,
-        time_signature: tuple[int, int] = (4, 4),
         parent: int | Node = None,
     ) -> "MusicSegment":
         """Create a new MusicSegment node.
@@ -26,10 +24,6 @@ class MusicSegment(WwiseNode):
             Node ID (hash).
         duration : float, default=1000.0
             Segment duration in milliseconds.
-        tempo : float, default=120.0
-            Tempo in BPM.
-        time_signature : tuple[int, int], default=(4, 4)
-            Time signature (beat_count, beat_value).
         parent : int | Node, default=None
             Parent node.
 
@@ -43,8 +37,6 @@ class MusicSegment(WwiseNode):
         segment = cls(temp)
         segment.id = nid
         segment.duration = duration
-        segment.tempo = tempo
-        segment.time_signature = time_signature
         if parent is not None:
             segment.parent = parent
 
@@ -72,55 +64,6 @@ class MusicSegment(WwiseNode):
     @duration.setter
     def duration(self, value: float) -> None:
         self["duration"] = value
-
-    @property
-    def tempo(self) -> float:
-        """Tempo in BPM.
-
-        Returns
-        -------
-        float
-            Tempo in beats per minute.
-        """
-        return self.music_params["meter_info/tempo"]
-
-    @tempo.setter
-    def tempo(self, value: float) -> None:
-        self.music_params["meter_info/tempo"] = value
-
-    @property
-    def time_signature(self) -> tuple[int, int]:
-        """Time signature.
-
-        Returns
-        -------
-        tuple[int, int]
-            (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
-        """
-        beat_count = self.music_params["meter_info/time_signature_beat_count"]
-        beat_value = self.music_params["meter_info/time_signature_beat_value"]
-        return (beat_count, beat_value)
-
-    @time_signature.setter
-    def time_signature(self, value: tuple[int, int]) -> None:
-        beat_count, beat_value = value
-        self.music_params["meter_info/time_signature_beat_count"] = beat_count
-        self.music_params["meter_info/time_signature_beat_value"] = beat_value
-
-    @property
-    def grid_period(self) -> float:
-        """Grid period in milliseconds.
-
-        Returns
-        -------
-        float
-            Grid period in ms.
-        """
-        return self.music_params["meter_info/grid_period"]
-
-    @grid_period.setter
-    def grid_period(self, value: float) -> None:
-        self.music_params["meter_info/grid_period"] = value
 
     @property
     def markers(self) -> list[dict]:

@@ -115,8 +115,7 @@ def create_boss_bgm(
                 state_path.append("*")
 
     # Setup the boss phase music manager
-    boss_msc = MusicSwitchContainer.new(bnk.new_id())
-    boss_msc.add_argument(calc_hash("BossBattleState"))
+    boss_msc = MusicSwitchContainer.new(bnk.new_id(), ["BossBattleState"])
 
     if isinstance(tracks, Path):
         tracks: list[Path] = tracks

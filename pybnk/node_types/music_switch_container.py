@@ -15,7 +15,9 @@ class MusicSwitchContainer(WwiseNode):
     def parse_state_path(state_path: list[str]) -> list[int]:
         keys = []
         for val in state_path:
-            if val == "*":
+            if isinstance(val, int):
+                keys.append(val)
+            elif val == "*":
                 keys.append(0)
             elif val.startswith("#"):
                 try:
@@ -32,8 +34,7 @@ class MusicSwitchContainer(WwiseNode):
     def new(
         cls,
         nid: int,
-        tempo: float = 120.0,
-        time_signature: tuple[int, int] = (4, 4),
+        arguments: list[str | int] = None,
         parent_id: int = 0,
     ) -> "MusicSwitchContainer":
         """Create a new MusicSwitchContainer node.
@@ -42,10 +43,8 @@ class MusicSwitchContainer(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        tempo : float, default=120.0
-            Tempo in BPM.
-        time_signature : tuple[int, int], default=(4, 4)
-            Time signature (beat_count, beat_value).
+        arguments : list[str | int], default=None
+            Arguments this container will switch on.
         parent_id : int, default=0
             Parent node ID.
 
@@ -56,8 +55,9 @@ class MusicSwitchContainer(WwiseNode):
         """
         node = cls.from_template(nid, "MusicSwitchContainer")
         container = cls(node.dict)
-        container.tempo = tempo
-        container.time_signature = time_signature
+        if arguments:
+            for key in MusicSwitchContainer.parse_state_path(arguments):
+                container.add_argument(key)
         if parent_id != 0:
             container.parent = parent_id
         return container
@@ -71,55 +71,6 @@ class MusicSwitchContainer(WwiseNode):
     @property
     def music_params(self) -> PathDict:
         return PathDict(self["music_trans_node_params/music_node_params"])
-
-    @property
-    def tempo(self) -> float:
-        """Get or set the tempo in BPM.
-
-        Returns
-        -------
-        float
-            Tempo in beats per minute.
-        """
-        self.music_params["meter_info/tempo"]
-
-    @tempo.setter
-    def tempo(self, value: float) -> None:
-        self.music_params["meter_info/tempo"] = value
-
-    @property
-    def time_signature(self) -> tuple[int, int]:
-        """Get or set the time signature.
-
-        Returns
-        -------
-        tuple[int, int]
-            (beat_count, beat_value) e.g., (4, 4) for 4/4 time.
-        """
-        beat_count = self.music_params["meter_info/time_signature_beat_count"]
-        beat_value = self.music_params["meter_info/time_signature_beat_value"]
-        return (beat_count, beat_value)
-
-    @time_signature.setter
-    def time_signature(self, value: tuple[int, int]) -> None:
-        beat_count, beat_value = value
-        self.music_params["meter_info/time_signature_beat_count"] = beat_count
-        self.music_params["meter_info/time_signature_beat_value"] = beat_value
-
-    @property
-    def grid_period(self) -> float:
-        """Get or set the grid period in milliseconds.
-
-        Returns
-        -------
-        float
-            Grid period in ms.
-        """
-        self.music_params["meter_info/grid_period"]
-
-    @grid_period.setter
-    def grid_period(self, value: float) -> None:
-        self.music_params["meter_info/grid_period"] = value
 
     @property
     def continue_playback(self) -> bool:
