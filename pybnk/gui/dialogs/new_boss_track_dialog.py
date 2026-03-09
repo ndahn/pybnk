@@ -75,6 +75,7 @@ def new_boss_track_dialog(
         if msc:
             current_state_path[bgm_enemy_type_idx] = value
 
+        dpg.set_value(f"{tag}_bgm_enemy_type", value)
         show_message()
 
     def edit_state_path() -> None:
@@ -169,12 +170,27 @@ def new_boss_track_dialog(
             node_type=MusicSwitchContainer,
         )
 
-        dpg.add_input_text(
-            label="BgmEnemyType",
+        with dpg.group(horizontal=True):
+            dpg.add_input_text(
+                callback=on_bgmenemytype_changed,
+                default_value="*",
+                tag=f"{tag}_bgm_enemy_type",
+            )
+            dpg.add_combo([
+                "EventBoss_Reserved15",
+                "EventBoss_Reserved14",
+                "EventBoss_Reserved13",
+                "EventBoss_Reserved12",
+                "EventBoss_Reserved11",
+                "EventBoss_Reserved10",
+                "EventBoss_Reserved09",
+                "EventBoss_Reserved08",
+                "Reserved",
+            ],
+            no_preview=True,
             callback=on_bgmenemytype_changed,
-            default_value="*",
-            tag=f"{tag}_bgm_enemy_type",
-        )
+            )
+            dpg.add_text("BgmEnemyType")
         dpg.add_button(
             label="State Path",
             callback=edit_state_path,
