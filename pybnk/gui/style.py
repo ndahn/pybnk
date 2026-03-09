@@ -1,3 +1,5 @@
+from typing import Any
+import colorsys
 from dearpygui import dearpygui as dpg
 
 
@@ -59,15 +61,13 @@ def init_themes():
     ]
 
     # https://coolors.co/18181d-202229-32333c-1b97ea
-    shades = [
-        (24, 24, 29),
-        (32, 34, 41),
-        (50, 51, 60)
-    ]
+    shades = [(24, 24, 29), (32, 34, 41), (50, 51, 60)]
 
     with dpg.theme() as global_theme:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_style(dpg.mvStyleVar_FrameRounding, 2, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(
+                dpg.mvStyleVar_FrameRounding, 2, category=dpg.mvThemeCat_Core
+            )
 
             for shade, elements in zip(shades, bg_elements):
                 for elem in elements:
@@ -89,33 +89,103 @@ def init_themes():
         with dpg.theme_component(dpg.mvCheckbox, enabled_state=False):
             dpg.add_theme_color(dpg.mvThemeCol_Text, [168, 168, 168])
             dpg.add_theme_color(dpg.mvThemeCol_Button, [96, 96, 96])
-    
+
     dpg.bind_theme(global_theme)
 
     # Additional themes
     with dpg.theme() as themes.notification_frame:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 7, 0, category=dpg.mvThemeCat_Core)
-            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 4, 4, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(
+                dpg.mvStyleVar_WindowPadding, 7, 0, category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_style(
+                dpg.mvStyleVar_FramePadding, 4, 4, category=dpg.mvThemeCat_Core
+            )
 
     with dpg.theme() as themes.item_default:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (255, 255, 255), category=dpg.mvThemeCat_Core)
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (0, 0, 0), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Text, (255, 255, 255), category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Border, (0, 0, 0), category=dpg.mvThemeCat_Core
+            )
 
     with dpg.theme() as themes.item_blue:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_Text, (27, 151, 234), category=dpg.mvThemeCat_Core)
-            dpg.add_theme_color(dpg.mvThemeCol_Border, (27, 151, 234), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Text, (27, 151, 234), category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Border, (27, 151, 234), category=dpg.mvThemeCat_Core
+            )
 
     with dpg.theme() as themes.link_button:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_color(dpg.mvThemeCol_Text, light_blue, category=dpg.mvThemeCat_Core)
-            dpg.add_theme_color(dpg.mvThemeCol_Button, (0, 0, 0, 0), category=dpg.mvThemeCat_Core)
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonHovered, (255, 255, 255, 40), category=dpg.mvThemeCat_Core)
-            dpg.add_theme_color(dpg.mvThemeCol_ButtonActive, (255, 255, 255, 80), category=dpg.mvThemeCat_Core)
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Text, light_blue, category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_color(
+                dpg.mvThemeCol_Button, (0, 0, 0, 0), category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_color(
+                dpg.mvThemeCol_ButtonHovered,
+                (255, 255, 255, 40),
+                category=dpg.mvThemeCat_Core,
+            )
+            dpg.add_theme_color(
+                dpg.mvThemeCol_ButtonActive,
+                (255, 255, 255, 80),
+                category=dpg.mvThemeCat_Core,
+            )
 
     with dpg.theme() as themes.no_padding:
         with dpg.theme_component(dpg.mvAll):
-            dpg.add_theme_style(dpg.mvStyleVar_WindowPadding, 0, 0, category=dpg.mvThemeCat_Core)
-            dpg.add_theme_style(dpg.mvStyleVar_FramePadding, 0, 0, category=dpg.mvThemeCat_Core)
+            dpg.add_theme_style(
+                dpg.mvStyleVar_WindowPadding, 0, 0, category=dpg.mvThemeCat_Core
+            )
+            dpg.add_theme_style(
+                dpg.mvStyleVar_FramePadding, 0, 0, category=dpg.mvThemeCat_Core
+            )
+
+
+class HighContrastColorGenerator:
+    """Generates RGB colors with a certain distance apart so that subsequent colors are visually distinct."""
+
+    def __init__(
+        self,
+        initial_hue: float = 0.0,
+        hue_step: float = 0.61803398875,
+        saturation: float = 1.0,
+        value: float = 1.0,
+    ):
+        # 0.61803398875: golden ratio conjugate, ensures well-spaced hues
+        self.hue_step = hue_step
+        self.hue = initial_hue
+        self.saturation = saturation
+        self.value = value
+        self.initial_hue = initial_hue
+        self.cache = {}
+
+    def __iter__(self):
+        """Allows the class to be used as an iterable."""
+        return self
+
+    def reset(self) -> None:
+        self.hue = self.initial_hue
+        self.cache.clear()
+
+    def __next__(self) -> tuple[int, int, int]:
+        """Generates the next high-contrast color."""
+        self.hue = (self.hue + self.hue_step) % 1
+        r, g, b = colorsys.hsv_to_rgb(self.hue, self.saturation, self.value)
+        return (int(r * 255), int(g * 255), int(b * 255))
+
+    def __call__(self, key: Any = None) -> tuple[int, int, int]:
+        """Allows calling the instance directly to get the next color."""
+        if key is not None:
+            if key not in self.cache:
+                self.cache[key] = next(self)
+            return self.cache[key]
+
+        return next(self)

@@ -28,6 +28,7 @@ def edit_transition_dialog(
             add_row(table, src_id, rule_key)
         
         add_footer(table, rule_key)
+        dpg.configure_item(table, height=min(150, 30 + len(rule[rule_key]) * 30))
 
     def on_remove_clicked(sender: str, app_data: Any, info: tuple[str, int, str]) -> None:
         table, id, rule_key = info
@@ -113,7 +114,6 @@ def edit_transition_dialog(
             label="Fade offset (ms)",
             default_value=src_rule.get("fade_offet", 0),
             tag=f"{tag}_src_fade_offset",
-            width=120,
             callback=lambda s, a, u: src_rule.update({"fade_offet": a}),
         )
         dpg.add_combo(
@@ -138,7 +138,6 @@ def edit_transition_dialog(
             label="Fade offset (ms)",
             default_value=dst_rule.get("fade_offet", 0),
             tag=f"{tag}_dst_fade_offset",
-            width=120,
             callback=lambda s, a, u: dst_rule.update({"fade_offet": a}),
         )
         dpg.add_combo(

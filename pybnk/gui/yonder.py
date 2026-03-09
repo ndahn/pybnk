@@ -346,6 +346,7 @@ class BanksOfYonder:
             popup=True,
             show=False,
             min_size=(50, 20),
+            no_saved_settings=True,
             tag=f"{tag}_context_menu",
         ):
             dpg.add_menu_item(

@@ -4,6 +4,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank
 from pybnk.node_types import MusicSwitchContainer, MusicRandomSequenceContainer
+from pybnk.gui import style
 from pybnk.gui.dialogs.edit_transition_dialog import edit_transition_dialog
 
 
@@ -49,8 +50,6 @@ def add_transition_matrix(
     node: TransitionNode,
     on_transition_rules_changed: Callable[[str, TransitionNode, Any], None] = None,
     *,
-    short_transition: int = 0,
-    long_transition: int = 3000,
     parent: str | int = 0,
     tag: str | int = 0,
     user_data: Any = None,
@@ -59,22 +58,18 @@ def add_transition_matrix(
         tag = dpg.generate_uuid()
 
     cell_size = 30
-    table_h = min(400, cell_size * 1.8 + len(node.children) * (cell_size + 5))
+    table_h = min(400, 60 + cell_size * 1.8 + len(node.children) * (cell_size + 5))
+    color_gen = style.HighContrastColorGenerator(0.4, 0.27, saturation=0.7, value=0.6)
+    color_cache = {}
 
-    def get_transition_time_color(transition_time: int) -> tuple[int, int, int, int]:
-        # Interpolate from red (low time) to blue (high time)
-        if long_transition == short_transition:
-            t = 0.5
-        else:
-            t = (transition_time - short_transition) / (
-                long_transition - short_transition
-            )
+    def get_rule_color(rule: dict, rule_idx: int) -> tuple[int, int, int, int]:
+        color = color_cache.get(rule_idx)
 
-        r = int(200 * (1 - t))
-        g = int(60 * (1 - abs(t - 0.5) * 2))
-        b = int(200 * t)
+        if not color:
+            color = color_gen()
+            color_cache[rule_idx] = color
 
-        return (r, g, b, 200)
+        return color
 
     def find_best_rule(
         rules: list[dict],
@@ -120,8 +115,8 @@ def add_transition_matrix(
         return (best_rule_idx, best_rule)
 
     def id_label(id: int) -> str:
-        if id == "-1":
-            return "*"
+        if id == -1:
+            return "any"
 
         return str(id)
 
@@ -156,25 +151,80 @@ def add_transition_matrix(
 
         return theme_tag
 
+    def add_rule_for_cell(
+        sender: str, app_data: Any, cell_info: tuple[int, int, int]
+    ) -> None:
+        src, dst, _ = cell_info
+
+        new_rule = deepcopy(_base_transition_rule)
+        new_rule["source_ids"] = [src]
+        new_rule["destination_ids"] = [dst]
+
+        edit_transition_dialog(node, new_rule, on_rule_changed, user_data=True)
+
+    def delete_rule_for_cell(
+        sender: str, app_data: Any, cell_info: tuple[int, int, int]
+    ) -> None:
+        _, _, rule_idx = cell_info
+        # Rule 0 (any -> any) cannot be deleted
+        if rule_idx > 0:
+            node.transition_rules.pop(rule_idx)
+            regenerate()
+
+    def open_context_menu(
+        sender: str, app_data: Any, cell_info: tuple[int, int, int]
+    ) -> None:
+        with dpg.window(
+            popup=True,
+            min_size=(50, 20),
+            no_saved_settings=True,
+            tag=f"{tag}_context_menu",
+            on_close=lambda: dpg.delete_item(context_win)
+        ) as context_win:
+            dpg.add_menu_item(
+                label="Add rule",
+                callback=add_rule_for_cell,
+                user_data=cell_info,
+            )
+            dpg.add_menu_item(
+                label="Delete rule",
+                callback=delete_rule_for_cell,
+                user_data=cell_info,
+            )
+
+    def register_context_menu(tag: str, cell_info: tuple[int, int, int]) -> None:
+        registry = f"{tag}_handlers"
+
+        if not dpg.does_item_exist(registry):
+            dpg.add_item_handler_registry(tag=registry)
+
+        dpg.add_item_clicked_handler(
+            dpg.mvMouseButton_Right,
+            callback=open_context_menu,
+            user_data=cell_info,
+            parent=registry,
+        )
+        dpg.bind_item_handler_registry(tag, registry)
+
     def open_edit_transition_dialog(sender: str, app_data: Any, rule: dict) -> None:
         is_new = not rule
         if is_new:
             rule = deepcopy(_base_transition_rule)
-            
+
         edit_transition_dialog(node, rule, on_rule_changed, user_data=is_new)
 
     def on_rule_changed(sender: str, rule: dict, is_new: bool) -> None:
         if is_new:
             node.transition_rules.append(rule)
-        
+
         if on_transition_rules_changed:
             on_transition_rules_changed(tag, node, user_data)
 
         regenerate()
 
     def regenerate() -> None:
+        dpg.delete_item(tag, children_only=True, slot=0)
         dpg.delete_item(tag, children_only=True, slot=1)
-        dpg.delete_item(tag, children_only=True, slot=2)
 
         dpg.push_container_stack(tag)
 
@@ -192,17 +242,13 @@ def add_transition_matrix(
                 init_width_or_weight=cell_size,
             )
 
-        # Non-selectable column header
-        with dpg.table_row():
-            dpg.add_text(label="S\\D")
-            for dst in children:
-                dpg.add_text(id_label(dst))
-
         # One row per source ID
         for src in children:
             with dpg.table_row():
                 # Row header cell
                 dpg.add_text(id_label(src))
+                with dpg.tooltip(dpg.last_item()):
+                    dpg.add_text(id_label(src))
 
                 for dst in children:
                     rule_idx, rule = find_best_rule(node.transition_rules, src, dst)
@@ -215,34 +261,43 @@ def add_transition_matrix(
                             "transition_time"
                         ]
                         total_time = src_trans_time + dst_trans_time
-                        color = get_transition_time_color(total_time)
+                        color = get_rule_color(rule, rule_idx)
                         cell_label = get_cell_label(rule)
                     else:
                         color = (60, 60, 60, 200)
                         cell_label = ""
                         total_time = 0
 
-                    btn_tag = dpg.generate_uuid()
                     theme_tag = make_cell_theme(color)
 
-                    # TODO add right click action to add new rule
-                    dpg.add_button(
+                    btn = dpg.add_button(
                         label=cell_label,
-                        tag=btn_tag,
                         width=cell_size - 4,
                         height=cell_size - 4,
                         callback=open_edit_transition_dialog,
                         user_data=rule,
                     )
-                    dpg.bind_item_theme(btn_tag, theme_tag)
+                    register_context_menu(btn, (src, dst, rule_idx))
+                    dpg.bind_item_theme(btn, theme_tag)
 
                     if rule:
+                        sources = rule["source_ids"]
+                        if len(sources) == 1:
+                            source_label = id_label(sources[0])
+                        else:
+                            source_label = f"[{len(sources)}]"
+
+                        destinations = rule["destination_ids"]
+                        if len(destinations) == 1:
+                            dest_label = id_label(destinations[0])
+                        else:
+                            dest_label = f"({len(destinations)})"
+
                         trans_seg = rule["transition_object"]["segment_id"]
-                        with dpg.tooltip(btn_tag):
+
+                        with dpg.tooltip(btn):
                             dpg.add_text(f"Rule #{rule_idx}")
-                            dpg.add_spacer(height=3)
-                            dpg.add_text(f"Source: {id_label(src)}")
-                            dpg.add_text(f"Destination: {id_label(dst)}")
+                            dpg.add_text(f"{source_label} -> {dest_label}")
                             dpg.add_text(f"Total transition time: {total_time}ms")
                             dpg.add_text(f"Transition segment: {trans_seg}")
 
@@ -250,7 +305,7 @@ def add_transition_matrix(
 
     dpg.add_text("Transition rules")
     dpg.add_table(
-        header_row=False,
+        header_row=True,
         no_pad_innerX=True,
         scrollX=True,
         scrollY=True,

@@ -160,7 +160,7 @@ def create_boss_bgm(
         )
 
     # To disable the boss music 
-    boss_msc.add_branc(["NoBattle"], 0)
+    boss_msc.add_branch(["NoBattle"], 0)
 
     # Add new bgm decision branch to master
     master_state_keys: list[int] = MusicSwitchContainer.parse_state_path(state_path)

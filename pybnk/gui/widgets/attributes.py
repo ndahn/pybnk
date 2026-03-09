@@ -143,9 +143,6 @@ def create_attribute_widgets(
                 user_data=node,
             )
 
-        dpg.add_child_window(height=-30, border=False)
-        dpg.add_button(label="Reset")
-
     return tag
 
 
