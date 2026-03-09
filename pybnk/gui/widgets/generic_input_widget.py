@@ -3,10 +3,8 @@ from enum import Enum, IntFlag
 from pathlib import Path
 from dearpygui import dearpygui as dpg
 
-from pybnk.node import Node, NodeLike
 from pybnk.gui.helpers import shorten_path
 from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
-from pybnk.gui.dialogs.select_nodes_dialog import select_nodes_dialog
 from .flags_widget import add_flag_checkboxes
 
 
@@ -165,7 +163,7 @@ def add_generic_widget(
 
         with dpg.group(horizontal=True, parent=parent):
             dpg.add_input_text(
-                default_value=default,
+                default_value=shorten_path(default) if default else "",
                 decimal=True,
                 readonly=readonly,
                 enabled=not readonly,
@@ -178,35 +176,6 @@ def add_generic_widget(
                 # direction=dpg.mvDir_Right,
                 label="Browse",
                 callback=select_file,
-            )
-            dpg.add_text(label)
-    elif value_type is NodeLike or issubclass(value_type, Node):
-        if isinstance(default, Node):
-            default = default.id
-
-        if default is None:
-            default = "0"
-
-        default = str(default)
-
-        def select_node() -> None:
-            select_nodes_dialog()  # TODO needs soundbank
-            pass
-
-        with dpg.group(horizontal=True, parent=parent):
-            dpg.add_input_text(
-                default_value=default,
-                decimal=True,
-                readonly=readonly,
-                enabled=not readonly,
-                callback=lambda s, a, u: callback(s, int(a), u),
-                user_data=user_data,
-                tag=tag,
-            )
-            dpg.add_button(
-                arrow=True,
-                direction=dpg.mvDir_Right,
-                callback=select_node,
             )
             dpg.add_text(label)
     else:

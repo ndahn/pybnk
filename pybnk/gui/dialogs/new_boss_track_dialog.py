@@ -1,0 +1,207 @@
+from typing import Any
+from pathlib import Path
+from dearpygui import dearpygui as dpg
+
+from pybnk import Soundbank
+from pybnk.node_types import MusicSwitchContainer
+from pybnk.hash import calc_hash
+from pybnk.gui import style
+from pybnk.gui.widgets import add_generic_widget, add_filepaths_table, add_node_widget
+from .create_state_path_dialog import create_state_path_dialog, parse_state_path
+
+
+def new_boss_track_dialog(
+    bnk: Soundbank,
+    *,
+    title: str = "New Event",
+    tag: str = None,
+) -> str:
+    if tag in (None, 0, ""):
+        tag = dpg.generate_uuid()
+
+    msc: MusicSwitchContainer = None
+    bgm_enemy_type_hash = calc_hash("BgmEnemyType")
+    bgm_enemy_type_idx: int = -1
+    current_state_path: list[str] = []
+    bgm_tracks: list[Path] = []
+
+    def on_soundbank_selected(sender: str, path: Path, user_data: Any) -> None:
+        nonlocal bnk
+        bnk = Soundbank.load(path)
+        # TODO reset other widgets
+        show_message()
+
+    def get_music_switch_containers(filt: str) -> list[MusicSwitchContainer]:
+        if not bnk:
+            show_message("No soundbank loaded")
+            return []
+
+        filt = f"type=MusicSwitchContainer arguments:*/group_id={bgm_enemy_type_hash} {filt}"
+        return list(bnk.query(filt))
+
+    def on_music_switch_container_selected(
+        sender: str, selected_msc: int | MusicSwitchContainer, user_data: Any
+    ) -> None:
+        nonlocal msc
+        nonlocal bgm_enemy_type_idx
+        nonlocal current_state_path
+
+        if isinstance(selected_msc, int):
+            selected_msc = bnk.get(selected_msc)
+
+        if not isinstance(selected_msc, MusicSwitchContainer):
+            show_message("Not a MusicSwitchContainer")
+            return
+
+        for i, arg in enumerate(selected_msc.arguments):
+            if arg == bgm_enemy_type_hash:
+                bgm_enemy_type_idx = i
+                break
+        else:
+            show_message("MSC does not have a BgmEnemyType argument")
+            return
+
+        msc = selected_msc
+        current_state_path = ["*" for _ in msc.arguments]
+        current_state_path[bgm_enemy_type_idx] = dpg.get_value(f"{tag}_bgm_enemy_type")
+        show_message()
+
+    def on_bgmenemytype_changed(sender: str, value: str, user_data: Any) -> None:
+        if not value or value == "*":
+            show_message("BgmEnemyType must not be empty")
+            return
+
+        if msc:
+            current_state_path[bgm_enemy_type_idx] = value
+
+        show_message()
+
+    def edit_state_path() -> None:
+        if not bnk:
+            show_message("No soundbank loaded")
+            return
+
+        if not msc:
+            show_message("Select MusicSwitchContainer first")
+            return
+
+        create_state_path_dialog(
+            bnk,
+            msc,
+            on_statepath_selected,
+            state_path=current_state_path,
+            hide_node_id=True,
+        )
+
+    def on_statepath_selected(
+        sender: str, state_path: list[str], user_data: Any
+    ) -> None:
+        current_state_path.clear()
+        current_state_path.extend(state_path)
+        dpg.set_value(f"{tag}_bgm_enemy_type", state_path[bgm_enemy_type_idx])
+        show_message()
+
+    def on_phase_tracks_changed(
+        sender: str, tracks: list[Path], user_data: Any
+    ) -> None:
+        nonlocal bgm_tracks
+        bgm_tracks = tracks
+        show_message()
+
+    def show_message(
+        msg: str = None, color: tuple[int, int, int, int] = style.red
+    ) -> None:
+        if not msg:
+            dpg.hide_item(f"{tag}_notification")
+            return
+
+        dpg.configure_item(
+            f"{tag}_notification",
+            default_value=msg,
+            color=color,
+            show=True,
+        )
+
+    def on_okay() -> None:
+        if not bnk:
+            show_message("No soundbank loaded")
+            return
+
+        if not msc:
+            show_message("Select MusicSwitchContainer first")
+            return
+
+        bgm_enemy_type = dpg.get_value(f"{tag}_bgm_enemy_type")
+        if not bgm_enemy_type or bgm_enemy_type == "*":
+            show_message("BgmEnemyType not set")
+            return
+        
+        state_keys = parse_state_path(current_state_path)
+
+        # TODO
+        # create a new MusicSwitchContainer for the boss
+        # add branches for BossBattleState (* plus one entry per additional track)
+        #   - for each branch create a MusicRandomSequence conainer
+        #     - create two MusicSegments + MusicTracks per container
+        #   - add transition rules
+
+        dpg.delete_item(window)
+
+    with dpg.window(
+        label=title,
+        width=400,
+        height=400,
+        autosize=True,
+        no_saved_settings=True,
+        tag=tag,
+        on_close=lambda: dpg.delete_item(window),
+    ) as window:
+        add_generic_widget(
+            Path,
+            "Soundbank",
+            on_soundbank_selected,
+            default=bnk.bnk_dir if bnk else "",
+            filetypes={"Soundbanks (.bnk, .json)": ["*.bnk", "*.json"]},
+        )
+        dpg.add_separator()
+
+        add_node_widget(
+            get_music_switch_containers,
+            "MusicSwitchContainer",
+            on_music_switch_container_selected,
+            node_type=MusicSwitchContainer,
+        )
+
+        dpg.add_input_text(
+            label="BgmEnemyType",
+            callback=on_bgmenemytype_changed,
+            default_value="*",
+            tag=f"{tag}_bgm_enemy_type",
+        )
+        # TODO visualization?
+        dpg.add_button(
+            label="State Path",
+            callback=edit_state_path,
+        )
+
+        w = add_filepaths_table(
+            [],
+            on_phase_tracks_changed,
+            filetypes={"Audio (.wem, .wav)": ["*.wem", "*.wav"]},
+        )
+        with dpg.tooltip(w):
+            dpg.add_text(
+                "First track is the regular BGM, each subsequent track will be used for 'heatup' phases. Vanilla bosses have up to 3 phases controlled by the BossBattleState switch (None, HU1, HU2, ...).",
+                wrap=330,
+                color=style.light_blue,
+            )
+
+        dpg.add_separator()
+        dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
+
+        with dpg.group(horizontal=True):
+            dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
+            dpg.add_button(
+                label="Cancel",
+                callback=lambda: dpg.delete_item(window),
+            )

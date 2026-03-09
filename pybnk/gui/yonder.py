@@ -42,10 +42,10 @@ from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.transfer_events_dialog import transfer_events_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 from pybnk.gui.dialogs.settings_dialog import settings_dialog
+from pybnk.gui.dialogs.new_boss_track_dialog import new_boss_track_dialog
 
 
 # TODO streaming audio
-# TODO settings (wem sources, hash dict sources, etc.)
 # TODO boss music
 # TODO ambience
 # TODO graph visualization
@@ -166,7 +166,6 @@ class BanksOfYonder:
                 dpg.add_menu_item(
                     label="Boss Track",
                     callback=self._open_boss_track_dialog,
-                    enabled=False,  # TODO
                 )
                 dpg.add_menu_item(
                     label="Ambience Track",
@@ -1012,7 +1011,7 @@ class BanksOfYonder:
                 f"Added new boss track {nodes[0].lookup_name()} ({nodes[0].id})"
             )
 
-        create_boss_track_dialog(self.bnk, on_boss_track_created, tag=tag)
+        new_boss_track_dialog(self.bnk, tag=tag)
 
         dpg.split_frame()
         center_window(tag)

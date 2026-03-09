@@ -1,22 +1,32 @@
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from dearpygui import dearpygui as dpg
 
-from pybnk import Node
+from pybnk import Soundbank, Node
 from pybnk.node_types import MusicSwitchContainer
 from pybnk.hash import lookup_name, calc_hash
 from pybnk.gui import style
-from pybnk.gui.widgets import add_generic_widget
+from pybnk.gui.widgets import add_node_widget
 
 
 def create_state_path_dialog(
+    bnk: Soundbank,
     node: MusicSwitchContainer,
-    callback: Callable[[str, list[str], int], None],
+    callback: Callable[[str, list[str] | list[int], int], None],
     *,
+    state_path: list[str] = None,
+    hide_node_id: bool = False,
+    node_id: int = None,
+    raw: bool = False,
     title: str = "New State Path",
     tag: str = None,
 ) -> str:
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
+
+    if state_path and len(state_path) != len(node.arguments):
+        raise ValueError(
+            "State path must have the same length as MusicSwitchContainer arguments"
+        )
 
     leaf_node_id: int = 0
 
@@ -25,6 +35,9 @@ def create_state_path_dialog(
         if isinstance(leaf_node, Node):
             leaf_node = leaf_node.id
         leaf_node_id = leaf_node
+
+    def get_nodes(filt: str) -> Iterable[Node]:
+        yield from bnk.query(filt)
 
     def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
@@ -39,31 +52,21 @@ def create_state_path_dialog(
         )
 
     def on_okay() -> None:
-        if leaf_node_id <= 0:
+        if not hide_node_id and leaf_node_id <= 0:
             show_message("Leaf node ID not set")
             return
 
-        keys = []
+        keys: list[str] = []
         for arg in node.arguments:
-            name = lookup_name(arg, f"#{arg}")
             key: str = dpg.get_value(f"{tag}_arg_{arg}")
-
             if not key:
-                show_message(f"{name}: value must not be empty")
+                show_message("Keys must not be empty")
                 return
 
-            if key == "*":
-                key_val = 0
-            elif key.startswith("#"):
-                try:
-                    key_val = int(key[1:])
-                except ValueError:
-                    show_message(f"{name}: value is not a valid hash")
-                    return
-            else:
-                key_val = calc_hash(key)
+            keys.append(key)
 
-            keys.append(key_val)
+        if raw:
+            keys = parse_state_path(keys)
 
         callback(tag, keys, leaf_node_id)
         dpg.delete_item(window)
@@ -79,12 +82,23 @@ def create_state_path_dialog(
     ) as window:
         # For these decision trees all branches have the same length,
         # which makes it so much easier for us!
-        for arg in node.arguments:
+        for i, arg in enumerate(node.arguments):
             name = lookup_name(arg, f"#{arg}")
-            dpg.add_input_text(label=name, default_value="*", tag=f"{tag}_arg_{arg}")
+            default_val = state_path[i] if state_path else "*"
+            dpg.add_input_text(
+                label=name,
+                default_value=default_val,
+                tag=f"{tag}_arg_{arg}",
+            )
 
         dpg.add_spacer(height=3)
-        add_generic_widget(Node, "Node", on_node_selected, default=0)
+        if not hide_node_id:
+            add_node_widget(
+                get_nodes,
+                "Node",
+                on_node_selected,
+                default=node_id if node_id else 0,
+            )
 
         dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
@@ -95,3 +109,19 @@ def create_state_path_dialog(
                 label="Cancel",
                 callback=lambda: dpg.delete_item(window),
             )
+
+
+def parse_state_path(state_path: list[str]) -> list[int]:
+    keys = []
+    for val in state_path:
+        if val == "*":
+            keys.append(0)
+        elif val.startswith("#"):
+            try:
+                keys.append(int(val[1:]))
+            except ValueError:
+                raise ValueError(f"{val}: value is not a valid hash")
+        else:
+            keys.append(calc_hash(val))
+
+    return keys

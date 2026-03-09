@@ -284,16 +284,42 @@ def _create_attributes_music_switch_container(
 ) -> None:
     from pybnk.gui.dialogs.create_state_path_dialog import create_state_path_dialog
 
+    properties.pop("arguments")
+    properties.pop("tree_depth")
+
+    args = node.arguments
+    names = {a: lookup_name(a, f"#{a}") for a in node.arguments}
+
     def on_state_path_created(
-        sender: str, state_path: list[str], path_node_id: int
+        sender: str, state_path: list[int], path_node_id: int
     ) -> None:
         node.add_branch(state_path, path_node_id)
         # Regenerate
         on_node_selected(tag, node, user_data)
 
-    properties.pop("arguments", None)
-    args = node.arguments
-    names = {a: lookup_name(a, f"#{a}") for a in node.arguments}
+    def open_context_menu(sender: str, app_data: Any, info: tuple[str, Any]) -> None:
+        item, user_data = info
+        # TODO allow to edit state values and leaf nodes
+
+    def register_context_menu(tag: str, user_data: Any) -> None:
+        registry = f"{tag}_handlers"
+
+        if not dpg.does_item_exist(registry):
+            dpg.add_item_handler_registry(tag=registry)
+
+        dpg.add_item_clicked_handler(
+            dpg.mvMouseButton_Right,
+            callback=open_context_menu,
+            user_data=(tag, user_data),
+            parent=registry,
+        )
+        dpg.bind_item_handler_registry(tag, registry)
+
+    def get_key(tree_node: dict) -> str:
+        val = tree_node["key"]
+        if val == 0:
+            return "*"
+        return lookup_name(val, f"#{val}")
 
     def delve(tree_node: dict, level: int) -> None:
         if level == len(args) - 1:
@@ -301,35 +327,37 @@ def _create_attributes_music_switch_container(
             nid = tree_node["node_id"]
             leaf_node = bnk.get(nid)
 
-            # TODO should be an input field
-            if leaf_node:
-                add_node_link(leaf_node, on_node_selected, user_data=user_data)
-            elif nid == 0:
-                dpg.add_text("<None>")
-            else:
-                dpg.add_text(f"(ext) {nid}")
+            arg = args[level]
+            arg_name = names[arg]
+            val_name = get_key(tree_node)
+
+            with dpg.tree_node(label=f"{arg_name} = {val_name}"):
+                # TODO should be an input field
+                if leaf_node:
+                    add_node_link(leaf_node, on_node_selected, user_data=user_data)
+                elif nid == 0:
+                    dpg.add_text("<None>")
+                else:
+                    dpg.add_text(f"(ext) {nid}")
         else:
             # Branch
             arg = args[level]
             arg_name = names[arg]
-            val = tree_node["key"]
-            if val == 0:
-                val_name = "*"
-            else:
-                val_name = lookup_name(val, f"#{val}")
+            val_name = get_key(tree_node)
 
+            # TODO add context menu
             with dpg.tree_node(label=f"{arg_name} = {val_name}"):
                 for child in tree_node["children"]:
                     delve(child, level + 1)
 
-    with dpg.tree_node(label="Decision Tree"):
+    with dpg.tree_node(label="Decision Tree", default_open=True):
         for child in node.decision_tree["children"]:
             delve(child, 0)
 
     dpg.add_spacer(height=3)
     dpg.add_button(
         label="Add State Path",
-        callback=lambda: create_state_path_dialog(node, on_state_path_created),
+        callback=lambda: create_state_path_dialog(bnk, node, on_state_path_created, raw=True),
     )
 
     # TODO transition rules
@@ -391,6 +419,9 @@ def _create_attributes_sound(
     parent: str = 0,
     user_data: Any = None,
 ) -> None:
+    properties.pop("media_size")
+    properties.pop("source_id")
+
     def on_wem_selected(sender: str, wem_path: Path, sound: Sound) -> None:
         # TODO check if inside soundbank, offer to copy
         # TODO if prefetch streaming create snippet
@@ -408,9 +439,6 @@ def _create_attributes_sound(
         readonly=True,
         user_data=node,
     )
-    properties.pop("media_size")
-    properties.pop("source_id")
-
     add_wav_player(lambda: get_sound_path(bnk, node.source_info))
 
     dpg.add_spacer(height=3)

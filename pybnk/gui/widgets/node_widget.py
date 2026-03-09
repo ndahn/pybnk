@@ -1,0 +1,62 @@
+from typing import Any, Callable, Type, Iterable
+from dearpygui import dearpygui as dpg
+
+from pybnk.node import Node, NodeLike
+from pybnk.gui.dialogs.select_nodes_dialog import select_nodes_dialog
+
+
+def add_node_widget(
+    get_items: Callable[[str], Iterable[Node]],
+    label: str,
+    callback: Callable[[str, int | Node, Any], None],
+    *,
+    default: NodeLike = None,
+    node_type: Type[Node] = None,
+    readonly: bool = False,
+    parent: str = 0,
+    tag: str = 0,
+    user_data: Any = None,
+) -> str:
+    if not tag:
+        tag = dpg.generate_uuid()
+    
+    if isinstance(default, Node):
+        default = default.id
+
+    if default is None:
+        default = "0"
+
+    default = str(default)
+
+    def get_nodes(filt: str) -> Iterable[Node]:
+        for node in get_items(filt):
+            if not node_type or isinstance(node, node_type):
+                yield node
+
+    def on_node_selected(sender: str, node: Node, cb_user_data: Any) -> None:
+        dpg.set_value(tag, str(node.id))
+        callback(tag, node, user_data)
+
+    def select_node() -> None:
+        select_nodes_dialog(
+            get_nodes,
+            on_node_selected,
+            user_data=user_data,
+        )
+
+    with dpg.group(horizontal=True, parent=parent):
+        dpg.add_input_text(
+            default_value=default,
+            decimal=True,
+            readonly=readonly,
+            enabled=not readonly,
+            callback=lambda s, a, u: callback(tag, int(a), u),
+            user_data=user_data,
+            tag=tag,
+        )
+        dpg.add_button(
+            arrow=True,
+            direction=dpg.mvDir_Right,
+            callback=select_node,
+        )
+        dpg.add_text(label)

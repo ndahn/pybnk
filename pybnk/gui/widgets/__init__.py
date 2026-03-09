@@ -3,6 +3,7 @@ from .filepaths_table import add_filepaths_table
 from .flags_widget import add_flag_checkboxes
 from .generic_input_widget import add_generic_widget
 from .loading_indicator import loading_indicator
+from .node_widget import add_node_widget
 from .paragraphs import add_paragraphs, estimate_paragraph_height, get_paragraph_height
 from .player_widget import add_wav_player
 from .properties_table import add_properties_table
