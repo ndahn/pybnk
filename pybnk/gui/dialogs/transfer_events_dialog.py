@@ -7,7 +7,7 @@ from pybnk.node_types import Event
 from pybnk.transfer import copy_wwise_events
 from pybnk.hash import calc_hash
 from pybnk.gui import style
-from pybnk.gui.widgets import add_generic_widget, add_paragraphs
+from pybnk.gui.widgets import add_generic_widget
 from .select_nodes_dialog import select_nodes_of_type
 
 

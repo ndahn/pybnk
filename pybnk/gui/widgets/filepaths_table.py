@@ -2,18 +2,20 @@ from typing import Any, Callable
 from pathlib import Path
 from dearpygui import dearpygui as dpg
 
-from pybnk.gui.dialogs.file_dialog import open_multiple_dialog
+from pybnk.gui.helpers import shorten_path
+from pybnk.gui.dialogs.file_dialog import open_multiple_dialog, choose_folder
 
 
 def add_filepaths_table(
     initial_paths: list[Path],
     on_value_changed: Callable[[str, list[Path], Any], None],
     *,
+    folders: bool = False,
     title: str = "Files",
     filetypes: dict[str, str] = None,
     tag: str | int = 0,
     user_data: Any = None,
-) -> None:
+) -> str:
     if tag in (None, 0, ""):
         tag = dpg.generate_uuid()
 
@@ -33,9 +35,16 @@ def add_filepaths_table(
         on_value_changed(tag, list(current_paths), user_data)
 
     def on_add_clicked() -> None:
-        result = open_multiple_dialog(title=title, filetypes=filetypes)
+        if folders:
+            result = choose_folder(title=title)
+        else:
+            result = open_multiple_dialog(title=title, filetypes=filetypes)
+        
         if not result:
             return
+
+        if not isinstance(result, list):
+            result = [result]
 
         current_paths.extend(Path(p) for p in result if p)
         refresh_table()
@@ -44,7 +53,7 @@ def add_filepaths_table(
     def add_row(path: Path) -> None:
         with dpg.table_row(parent=tag):
             text_id = dpg.add_input_text(
-                default_value=f"{path.parent.name}/{path.name}",
+                default_value=shorten_path(path, maxlen=40),
                 enabled=False,
                 readonly=True,
                 width=-1,
@@ -74,3 +83,5 @@ def add_filepaths_table(
         for path in current_paths:
             add_row(path)
         add_footer()
+
+    return tag

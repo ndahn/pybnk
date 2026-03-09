@@ -125,7 +125,7 @@ def save_file_dialog(
     return ret
 
 
-def choose_folder(title: str = "Select folder", start_dir: str = None):
+def choose_folder(title: str = "Select folder", start_dir: str = None) -> str:
     """
     Open a folder selection dialog using the modern Windows IFileOpenDialog COM
     interface, which provides the full Explorer-style experience including drive

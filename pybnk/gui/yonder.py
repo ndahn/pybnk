@@ -18,7 +18,7 @@ from pybnk.node_types import (
 from pybnk.util import logger, unpack_soundbank, repack_soundbank
 from pybnk.query import query_nodes
 from pybnk.gui.config import Config, load_config
-from pybnk.gui.helpers import center_window
+from pybnk.gui.helpers import center_window, shorten_path
 from pybnk.gui.widgets import (
     create_attribute_widgets,
     loading_indicator,
@@ -41,12 +41,13 @@ from pybnk.gui.dialogs.create_simple_sound_dialog import create_simple_sound_dia
 from pybnk.gui.dialogs.calc_hash_dialog import calc_hash_dialog
 from pybnk.gui.dialogs.transfer_events_dialog import transfer_events_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
+from pybnk.gui.dialogs.settings_dialog import settings_dialog
 
 
 # TODO streaming audio
+# TODO settings (wem sources, hash dict sources, etc.)
 # TODO boss music
 # TODO ambience
-# TODO settings (wem sources, hash dict sources, etc.)
 # TODO graph visualization
 # TODO attenuation curve editor
 # TODO setup RTCPs
@@ -139,10 +140,17 @@ class BanksOfYonder:
                     callback=self._create_empty_soundbank,
                 )
 
-            with dpg.menu(label="Soundbank", tag=f"{self.tag}_menu_edit"):
+            with dpg.menu(label="Edit", tag=f"{self.tag}_menu_edit"):
                 dpg.add_menu_item(
                     label="Delete orphans",
                     callback=self._bank_delete_orphans,
+                    enabled=False,
+                    tag=f"{self.tag}_menu_delete_orphans"
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
+                    label="Settings",
+                    callback=self._open_settings_dialog,
                 )
 
             with dpg.menu(label="Create", tag=f"{self.tag}_menu_create"):
@@ -224,7 +232,7 @@ class BanksOfYonder:
             "_menu_file_save",
             "_menu_file_save_as",
             "_menu_file_repack",
-            "_menu_edit",
+            "_menu_delete_orphans",
             "_menu_create",
         ]:
             if enabled:
@@ -448,15 +456,7 @@ class BanksOfYonder:
         for i in range(10):
             if i < len(self.config.recent_files):
                 path = Path(self.config.recent_files[i])
-
-                parts = path.parts
-                short = parts[-1]
-
-                for p in reversed(parts[:-1]):
-                    short = Path(p, short)
-                    if len(str(short)) > 70:
-                        short = Path("...", short)
-                        break
+                short = shorten_path(path, maxlen=70)
 
                 dpg.add_menu_item(
                     label=str(short),
@@ -951,6 +951,18 @@ class BanksOfYonder:
             logger.info(f"Copied new node {node} to clipboard")
 
         create_node_dialog(self.bnk, on_node_created, tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_settings_dialog(self) -> None:
+        tag = f"{self.tag}_settings_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+
+        settings_dialog(tag=tag)
 
         dpg.split_frame()
         center_window(tag)

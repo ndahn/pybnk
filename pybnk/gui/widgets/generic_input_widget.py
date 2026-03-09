@@ -4,6 +4,7 @@ from pathlib import Path
 from dearpygui import dearpygui as dpg
 
 from pybnk.node import Node, NodeLike
+from pybnk.gui.helpers import shorten_path
 from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
 from pybnk.gui.dialogs.select_nodes_dialog import select_nodes_dialog
 from .flags_widget import add_flag_checkboxes
@@ -159,7 +160,7 @@ def add_generic_widget(
                 )
 
             if ret:
-                dpg.set_value(tag, ret)
+                dpg.set_value(tag, shorten_path(ret))
                 callback(tag, Path(ret), user_data)
 
         with dpg.group(horizontal=True, parent=parent):

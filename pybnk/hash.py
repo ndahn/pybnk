@@ -4,7 +4,7 @@ from pathlib import Path
 from pybnk.util import resource_data
 
 
-_lookup_table: dict[int, str] = {}
+global_hash_dict: dict[int, str] = {}
 
 
 def calc_hash(input: str) -> int:
@@ -43,9 +43,9 @@ def load_lookup_table(path: Path = None) -> dict[int, str]:
 
 
 def lookup_name(h: int, default: Any = None) -> str:
-    global _lookup_table
+    global global_hash_dict
 
-    if not _lookup_table:
-        _lookup_table = load_lookup_table()
+    if not global_hash_dict:
+        global_hash_dict.update(load_lookup_table())
 
-    return _lookup_table.get(h, default)
+    return global_hash_dict.get(h, default)

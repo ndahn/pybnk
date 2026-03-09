@@ -1,3 +1,4 @@
+from pathlib import Path
 from dearpygui import dearpygui as dpg
 
 
@@ -37,3 +38,19 @@ def center_window(window: str, parent: str = None) -> None:
             dpos[1] + (dsize[1] - psize[1]) / 2,
         ),
     )
+
+
+def shorten_path(path: str | Path, maxlen: int = 30) -> str:
+    if not path:
+        return ""
+    
+    parts = Path(path).parts
+    short = parts[-1]
+
+    for p in reversed(parts[:-1]):
+        short = Path(p, short)
+        if len(str(short)) > maxlen:
+            short = Path("...", short)
+            break
+
+    return str(short)

@@ -24,14 +24,11 @@ from pybnk.node_types import (
 )
 from pybnk.util import logger
 from pybnk.gui import style
+from pybnk.gui.config import get_config
 from .paragraphs import add_paragraphs
 from .generic_input_widget import add_generic_widget
 from .properties_table import add_properties_table
 from .player_widget import add_wav_player
-
-
-# Somewhat ugly, but it shouldn't be saved in the config nor in the soundbank
-_streaming_dir: Path = None
 
 
 def create_attribute_widgets(
@@ -173,41 +170,30 @@ def add_node_link(
 
 
 def get_sound_path(bnk: Soundbank, source: dict) -> Path:
-    from pybnk.gui.dialogs.file_dialog import open_file_dialog
-    global _streaming_dir
-
-    def locate_wem(wem: str) -> Path:
-        for subdir in ("wem", "enus/wem"):
-            p = _streaming_dir / subdir / wem[:2] / f"{wem}.wem"
-            if p.is_file():
-                return p
-
-        return None
-
     source_id = source["media_information"]["source_id"]
+    source_type = source["source_type"]
 
-    if source["source_type"] in ("Streaming", "PrefetchStreaming"):
-        if not _streaming_dir:
-            _streaming_dir = bnk.bnk_dir.parent
+    wem = bnk.bnk_dir / f"{source_id}.wem"
+    if source_type != "PrefetchStreaming" and wem.is_file():
+        return wem
 
-        wem_file = locate_wem(str(source_id))
+    # Find the largest external wem (if any)
+    ext_wem = max(
+        get_config().find_external_sounds(source_id),
+        key=lambda p: p.stat().st_size,
+        default=None,
+    )
+    if ext_wem:
+        return ext_wem
 
-        if not wem_file:
-            ret = open_file_dialog(
-                title="Find game folder", 
-                default_dir=str(bnk.bnk_dir.parent),
-                filetypes={"Executable (.exe)": "*.exe"},
-            )
-            if ret:
-                _streaming_dir = Path(ret).parent / "sd"
-                wem_file = locate_wem(str(source_id))
+    # In case we have a prefetch snippet but no streaming sound
+    if wem.is_file() and source_type == "PrefetchStreaming":
+        logger.warning(
+            f"Could not find streamed sound for {source_id}, playing prefetch snippet"
+        )
+        return wem
 
-        if wem_file:
-            logger.info(f"Located wem {source_id} at {wem_file}")
-
-        return wem_file
-    
-    return bnk.bnk_dir.parent / f"{source_id}.wem"
+    return None
 
 
 def _create_type_specific_attributes(
