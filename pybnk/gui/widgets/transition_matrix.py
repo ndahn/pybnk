@@ -228,10 +228,10 @@ def add_transition_matrix(
 
         dpg.push_container_stack(tag)
 
-        # Row-label column (no header text — the header row shows destination IDs)
-        dpg.add_table_column(width_fixed=True, init_width_or_weight=cell_size)
-
         children = [-1] + list(node.children)
+
+        # Row-label column (no header text — the header row shows destination IDs)
+        dpg.add_table_column()
 
         # One column per destination ID
         for dst in children:
@@ -246,9 +246,7 @@ def add_transition_matrix(
         for src in children:
             with dpg.table_row():
                 # Row header cell
-                dpg.add_text(id_label(src))
-                with dpg.tooltip(dpg.last_item()):
-                    dpg.add_text(id_label(src))
+                dpg.add_text(id_label(src) + " ")
 
                 for dst in children:
                     rule_idx, rule = find_best_rule(node.transition_rules, src, dst)

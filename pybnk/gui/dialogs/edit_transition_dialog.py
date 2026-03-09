@@ -107,12 +107,20 @@ def edit_transition_dialog(
         dpg.add_input_int(
             label="Transition time (ms)",
             default_value=src_rule["transition_time"],
+            min_value=0,
+            max_value=60000,
+            min_clamped=True,
+            max_clamped=True,
             tag=f"{tag}_src_transition_time",
             callback=lambda s, a, u: src_rule.update({"transition_time": a}),
         )
         dpg.add_input_int(
             label="Fade offset (ms)",
             default_value=src_rule.get("fade_offet", 0),
+            min_value=-60000,
+            max_value=60000,
+            min_clamped=True,
+            max_clamped=True,
             tag=f"{tag}_src_fade_offset",
             callback=lambda s, a, u: src_rule.update({"fade_offet": a}),
         )
@@ -131,12 +139,20 @@ def edit_transition_dialog(
         dpg.add_input_int(
             label="Transition time (ms)",
             default_value=dst_rule["transition_time"],
+            min_value=0,
+            max_value=60000,
+            min_clamped=True,
+            max_clamped=True,
             tag=f"{tag}_dst_transition_time",
             callback=lambda s, a, u: dst_rule.update({"transition_time": a}),
         )
         dpg.add_input_int(
             label="Fade offset (ms)",
             default_value=dst_rule.get("fade_offet", 0),
+            min_value=-60000,
+            max_value=60000,
+            min_clamped=True,
+            max_clamped=True,
             tag=f"{tag}_dst_fade_offset",
             callback=lambda s, a, u: dst_rule.update({"fade_offet": a}),
         )
