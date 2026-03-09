@@ -134,21 +134,6 @@ class WwiseNode(Node):
         self.base_params["adv_settings_params/max_instance_count"] = value
 
     @property
-    def use_virtual_behavior(self) -> bool:
-        """Whether virtual voice behavior is enabled.
-
-        Returns
-        -------
-        bool
-            True if virtual voices are used.
-        """
-        return self.base_params["adv_settings_params/use_virtual_behavior"]
-
-    @use_virtual_behavior.setter
-    def use_virtual_behavior(self, value: bool) -> None:
-        self.base_params["adv_settings_params/use_virtual_behavior"] = value
-
-    @property
     def virtual_queue_behavior(self) -> VirtualQueueBehavior:
         """Virtual voice queue behavior.
 
@@ -164,19 +149,19 @@ class WwiseNode(Node):
         self.base_params["adv_settings_params/virtual_queue_behavior"] = value
 
     @property
-    def has_aux(self) -> bool:
-        """Whether auxiliary sends are enabled.
+    def use_virtual_behavior(self) -> bool:
+        """Whether virtual voice behavior is enabled.
 
         Returns
         -------
         bool
-            True if aux sends are active.
+            True if virtual voices are used.
         """
-        return self.base_params["aux_params/has_aux"]
+        return self.base_params["adv_settings_params/use_virtual_behavior"]
 
-    @has_aux.setter
-    def has_aux(self, value: bool) -> None:
-        self.base_params["aux_params/has_aux"] = value
+    @use_virtual_behavior.setter
+    def use_virtual_behavior(self, value: bool) -> None:
+        self.base_params["adv_settings_params/use_virtual_behavior"] = value
 
     @property
     def override_bus(self) -> NodeLike:

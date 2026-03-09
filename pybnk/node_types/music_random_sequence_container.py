@@ -69,7 +69,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         return self["music_trans_node_params/transition_rules"]
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Music segments available for playback in this container.
 
         Returns
@@ -84,16 +84,6 @@ class MusicRandomSequenceContainer(WwiseNode):
 
         for playlist_item in self.playlist_items:
             children_set.add(playlist_item.get("segment_id", 0))
-
-        # Collect from transition rules
-        for rule in self["music_trans_node_params/transition_rules"]:
-            children_set.update(rule.get("source_ids", []))
-            children_set.update(rule.get("destination_ids", []))
-
-            # Transition object segment_id
-            segment_id = rule.get("transition_object", {}).get("segment_id", 0)
-            if segment_id > 0:
-                children_set.add(segment_id)
 
         # Update the children list
         children = self.base_params["children/items"]
@@ -143,6 +133,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         
         self["playlist_items"].append(item)
         self["playlist_item_count"] = len(self["playlist_items"])
+        self._update_children_list()
 
     def remove_playlist_item(self, playlist_item_id: int | Node) -> bool:
         """Disassociates a playlist item from this container.
@@ -165,6 +156,7 @@ class MusicRandomSequenceContainer(WwiseNode):
             if item["playlist_item_id"] == playlist_item_id:
                 items.pop(i)
                 self["playlist_item_count"] = len(items)
+                self._update_children_list()
                 return True
         
         return False
@@ -173,6 +165,86 @@ class MusicRandomSequenceContainer(WwiseNode):
         """Disassociates all playlist items from this container."""
         self["playlist_items"] = []
         self["playlist_item_count"] = 0
+        self._update_children_list()
+
+    def add_transition_rule(
+        self,
+        source_ids: int | list[int] = -1,
+        dest_ids: int | list[int] = -1,
+        source_transition_time: int = 0,
+        source_fade_offset: int = 0,
+        source_fade_curve: str = "Linear",
+        dest_transition_time: int = 0,
+        dest_fade_offset: int = 0,
+        dest_fade_curve: str = "Linear",
+        transition_segment: int | Node = 0,
+    ) -> None:
+        """Add a transition rule between segments.
+
+        Parameters
+        ----------
+        source_ids : int | list[int], default = -1
+            Source segment IDs (-1 = any).
+        dest_ids : int | list[int], default = -1
+            Destination segment IDs (-1 = any).
+        source_transition_time : int, default=0
+            Source fade out time in ms.
+        source_fade_offset : int, default=0
+            Delay in ms before the source starts fading out.
+        source_fade_curve : str, default="Linear"
+            Source fade out curve type.
+        dest_transition_time : int, default=0
+            Destination fade out time in ms.
+        dest_fade_offset : int, default=0
+            Delay in ms before the destination starts fading in.
+        dest_fade_curve : str, default="Linear"
+            Destination fade in curve type.
+        transition_segment: int | Node, default=0
+            A MusicSegment to play during the transition.
+        """
+        if isinstance(source_ids, int):
+            source_ids = [source_ids]
+
+        if isinstance(dest_ids, int):
+            dest_ids = [dest_ids]
+
+        rule = {
+            "source_transition_rule_count": len(source_ids),
+            "source_ids": source_ids,
+            "destination_transition_rule_count": len(dest_ids),
+            "destination_ids": dest_ids,
+            "source_transition_rule": {
+                "transition_time": source_transition_time,
+                "fade_curve": source_fade_curve,
+                "fade_offet": source_fade_offset,
+                "sync_type": "Immediate",
+                "clue_filter_hash": 0,
+                "play_post_exit": 0,
+            },
+            "destination_transition_rule": {
+                "transition_time": dest_transition_time,
+                "fade_curve": dest_fade_curve,
+                "fade_offet": dest_fade_offset,
+                "clue_filter_hash": 0,
+                "jump_to_id": 0,
+                "jump_to_type": 0,
+                "entry_type": 0,
+                "play_pre_entry": 0,
+                "destination_match_source_cue_name": 0,
+            },
+            "alloc_trans_object_flag": 0,
+            "transition_object": {
+                "segment_id": transition_segment,
+                "fade_out": {"transition_time": 0, "curve": "Log3", "offset": 0},
+                "fade_in": {"transition_time": 0, "curve": "Log3", "offset": 0},
+                "play_pre_entry": 0,
+                "play_post_exit": 0,
+            },
+        }
+        self["music_trans_node_params/transition_rules"].append(rule)
+        self["music_trans_node_params/transition_rule_count"] = len(
+            self["music_trans_node_params/transition_rules"]
+        )
 
     def get_references(self) -> list[tuple[str, int]]:
         paths = (

@@ -13,6 +13,11 @@ def settings_dialog(
     title: str = "Settings",
     tag: str = None,
 ) -> str:
+    if not tag:
+        tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
+
     config = get_config()
 
     def on_bankdirs_changed(sender: str, paths: list[Path], user_data: Any) -> None:
@@ -109,3 +114,5 @@ def settings_dialog(
 
         with dpg.group(horizontal=True):
             dpg.add_button(label="Save", callback=on_okay, tag=f"{tag}_button_okay")
+
+    return tag

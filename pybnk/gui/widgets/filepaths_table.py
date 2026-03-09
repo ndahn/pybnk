@@ -21,7 +21,7 @@ def add_filepaths_table(
 
     current_paths: list[Path] = list(initial_paths)
 
-    def refresh_table() -> None:
+    def refresh() -> None:
         dpg.delete_item(tag, children_only=True, slot=1)
         for path in current_paths:
             add_row(path)
@@ -31,7 +31,7 @@ def add_filepaths_table(
         idx = next(i for i, ids in enumerate(row_widgets) if ids[1] == sender)
         current_paths.pop(idx)
         row_widgets.pop(idx)
-        refresh_table()
+        refresh()
         on_value_changed(tag, list(current_paths), user_data)
 
     def on_add_clicked() -> None:
@@ -47,7 +47,7 @@ def add_filepaths_table(
             result = [result]
 
         current_paths.extend(Path(p) for p in result if p)
-        refresh_table()
+        refresh()
         on_value_changed(tag, list(current_paths), user_data)
 
     def add_row(path: Path) -> None:
@@ -79,9 +79,7 @@ def add_filepaths_table(
     ):
         dpg.add_table_column(label="File", width_stretch=True, init_width_or_weight=100)
         dpg.add_table_column(label="")
-
-        for path in current_paths:
-            add_row(path)
-        add_footer()
+        
+        refresh()
 
     return tag

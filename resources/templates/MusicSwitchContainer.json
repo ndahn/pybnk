@@ -108,8 +108,50 @@
           "stinger_count": 0,
           "stingers": []
         },
-        "transition_rule_count": 0,
-        "transition_rules": []
+        "transition_rule_count": 1,
+        "transition_rules": [
+          {
+            "source_transition_rule_count": 1,
+            "source_ids": [-1],
+            "destination_transition_rule_count": 1,
+            "destination_ids": [-1],
+            "source_transition_rule": {
+              "transition_time": 500,
+              "fade_curve": "Linear",
+              "fade_offet": 500,
+              "sync_type": "Immediate",
+              "clue_filter_hash": 0,
+              "play_post_exit": 0
+            },
+            "destination_transition_rule": {
+              "transition_time": 500,
+              "fade_curve": "Linear",
+              "fade_offet": 0,
+              "clue_filter_hash": 0,
+              "jump_to_id": 0,
+              "jump_to_type": 0,
+              "entry_type": 0,
+              "play_pre_entry": 0,
+              "destination_match_source_cue_name": 0
+            },
+            "alloc_trans_object_flag": 0,
+            "transition_object": {
+              "segment_id": 0,
+              "fade_out": {
+                "transition_time": 0,
+                "curve": "Log3",
+                "offset": 0
+              },
+              "fade_in": {
+                "transition_time": 0,
+                "curve": "Log3",
+                "offset": 0
+              },
+              "play_pre_entry": 0,
+              "play_post_exit": 0
+            }
+          }
+        ]
       },
       "continue_playback": 0,
       "tree_depth": 0,

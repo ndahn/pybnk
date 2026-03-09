@@ -61,7 +61,7 @@ class ActorMixer(WwiseNode):
         self.base_params["override_bus_id"] = value
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Child nodes organized under this mixer for shared processing.
 
         Returns

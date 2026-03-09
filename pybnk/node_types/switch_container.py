@@ -102,7 +102,7 @@ class SwitchContainer(WwiseNode):
         self["continuous_validation"] = int(value)
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Get list of child node IDs.
 
         Returns

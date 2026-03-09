@@ -16,8 +16,10 @@ def transfer_events_dialog(
     title: str = "Transfer Sounds",
     tag: str = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     src_bnk: Soundbank = None
     dst_bnk: Soundbank = None
@@ -208,3 +210,5 @@ Transfer event structures from one soundbank to another. Usually you'll enter a 
             dpg.add_button(
                 label="Transfer!", callback=on_okay, tag=f"{tag}_button_okay"
             )
+
+    return tag

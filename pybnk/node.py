@@ -4,7 +4,7 @@ import copy
 from collections import deque
 
 from pybnk.hash import calc_hash, lookup_name
-from pybnk.util import resource_data
+from pybnk.util import resource_data, deepmerge
 
 
 _undefined = object()
@@ -54,38 +54,7 @@ class Node:
     def update(self, data: dict, delete_missing: bool = False) -> None:
         # Merge with our attr so that references stay valid and the soundbank's
         # HIRC this node belongs to is updated, too
-        def merge(target, source):
-            if isinstance(target, dict) and isinstance(source, dict):
-                # Remove keys that don't exist in source
-                if delete_missing:
-                    keys_to_remove = set(target.keys()) - set(source.keys())
-                    for key in keys_to_remove:
-                        del target[key]
-
-                # Update or add keys from source
-                for key, value in source.items():
-                    if (
-                        key in target
-                        and isinstance(target[key], (dict, list))
-                        and isinstance(value, (dict, list))
-                    ):
-                        # Recursively update if both are containers
-                        merge(target[key], value)
-                    else:
-                        # Replace with new value
-                        target[key] = value
-
-            elif isinstance(target, list) and isinstance(source, list):
-                # Clear list and extend with new values
-                target.clear()
-                target.extend(source)
-            else:
-                # Type changed, replace old value
-                target[key] = source[key]
-
-            return target
-
-        merge(self._attr, data)
+        deepmerge(self._attr, data, delete_missing=delete_missing)
 
     @property
     def dict(self) -> dict:

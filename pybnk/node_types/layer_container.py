@@ -61,7 +61,7 @@ class LayerContainer(WwiseNode):
         self["is_continuous_validation"] = int(value)
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Child nodes that play as layers within this container.
 
         Returns

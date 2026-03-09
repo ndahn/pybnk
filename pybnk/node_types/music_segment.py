@@ -124,7 +124,7 @@ class MusicSegment(WwiseNode):
         self["marker_count"] = 0
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Music tracks within this segment.
 
         Returns

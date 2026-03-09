@@ -103,7 +103,7 @@ class RandomSequenceContainer(WwiseNode):
         self["avoid_repeat_count"] = value
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Child nodes available for random or sequential playback.
 
         Returns

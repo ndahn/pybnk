@@ -17,8 +17,10 @@ def convert_wavs_dialog(
     title: str = "Convert Wave Files",
     tag: str = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     output_dir: Path = None
     wav_paths: list[Path] = []

@@ -15,8 +15,10 @@ def select_nodes_dialog(
     tag: str = 0,
     user_data: Any = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     items: dict[str, Node] = {}
 

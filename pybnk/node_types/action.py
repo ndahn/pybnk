@@ -463,5 +463,9 @@ class Action(Node):
             params["except"]["exceptions"] = []
             params["except"]["count"] = 0
 
+    @property
+    def children(self) -> list[int]:
+        return [self["external_id"]]
+
     def get_references(self) -> list[tuple[str, int]]:
         return [("external_id", self.target_id)]

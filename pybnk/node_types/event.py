@@ -96,6 +96,10 @@ class Event(Node):
         self["actions"] = []
         self["action_count"] = 0
 
+    @property
+    def children(self) -> list[int]:
+        return self.actions
+
     def get_references(self) -> list[tuple[str, int]]:
         return [(f"actions:{i}", act) for i, act in enumerate(self.actions) if act > 0]
 

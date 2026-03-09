@@ -16,8 +16,10 @@ def new_wwise_event_dialog(
     title: str = "New Event",
     tag: str = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:

@@ -29,6 +29,7 @@ from .paragraphs import add_paragraphs
 from .generic_input_widget import add_generic_widget
 from .properties_table import add_properties_table
 from .player_widget import add_wav_player
+from .transition_matrix import add_transition_matrix
 
 
 def create_attribute_widgets(
@@ -220,7 +221,16 @@ def _create_type_specific_attributes(
     elif isinstance(node, LayerContainer):
         pass
     elif isinstance(node, MusicRandomSequenceContainer):
-        pass
+        _create_attributes_music_random_sequence_container(
+            bnk,
+            node,
+            properties,
+            on_node_changed,
+            on_node_selected,
+            tag=tag,
+            parent=parent,
+            user_data=user_data,
+        )
     elif isinstance(node, MusicSegment):
         pass
     elif isinstance(node, MusicSwitchContainer):
@@ -269,6 +279,24 @@ def _create_type_specific_attributes(
             parent=parent,
             user_data=user_data,
         )
+
+
+def _create_attributes_music_random_sequence_container(
+    bnk: Soundbank,
+    node: MusicRandomSequenceContainer,
+    properties: dict[str, property],
+    on_node_changed: Callable[[str, Node, Any], None],
+    on_node_selected: Callable[[str, Node, Any], None],
+    *,
+    tag: str = 0,
+    parent: str = 0,
+    user_data: Any = None,
+) -> None:
+    add_transition_matrix(bnk, node, None)
+
+    dpg.add_spacer(height=3)
+    dpg.add_separator()
+    dpg.add_spacer(height=3)
 
 
 def _create_attributes_music_switch_container(
@@ -357,10 +385,13 @@ def _create_attributes_music_switch_container(
     dpg.add_spacer(height=3)
     dpg.add_button(
         label="Add State Path",
-        callback=lambda: create_state_path_dialog(bnk, node, on_state_path_created, raw=True),
+        callback=lambda: create_state_path_dialog(
+            bnk, node, on_state_path_created, raw=True
+        ),
     )
 
-    # TODO transition rules
+    dpg.add_spacer(height=3)
+    add_transition_matrix(bnk, node, None)
 
     dpg.add_spacer(height=3)
     dpg.add_separator()

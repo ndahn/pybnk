@@ -15,8 +15,10 @@ def create_node_dialog(
     title: str = "Create Node",
     tag: str = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     nid = bnk.new_id()
     node_types = {t.__name__: t for t in WwiseNode.__subclasses__()}

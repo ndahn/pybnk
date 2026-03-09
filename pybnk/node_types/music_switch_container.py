@@ -165,7 +165,7 @@ class MusicSwitchContainer(WwiseNode):
         return self["music_trans_node_params/transition_rules"]
 
     @property
-    def children_ids(self) -> list[int]:
+    def children(self) -> list[int]:
         """Get list of child segment IDs.
 
         Returns
@@ -173,7 +173,7 @@ class MusicSwitchContainer(WwiseNode):
         list[int]
             List of child segment hash IDs.
         """
-        self.music_params["children/items"]
+        return self.music_params["children/items"]
 
     def add_argument(self, group_id: int, group_type: str = "State") -> None:
         """Add a state group argument dimension.
@@ -285,47 +285,62 @@ class MusicSwitchContainer(WwiseNode):
 
     def add_transition_rule(
         self,
-        source_ids: list[int],
-        destination_ids: list[int],
+        source_ids: int | list[int] = -1,
+        dest_ids: int | list[int] = -1,
         source_transition_time: int = 0,
-        destination_fade_offset: int = 0,
+        source_fade_offset: int = 0,
         source_fade_curve: str = "Linear",
-        sync_type: str = "Immediate",
+        dest_transition_time: int = 0,
+        dest_fade_offset: int = 0,
+        dest_fade_curve: str = "Linear",
+        transition_segment: int | Node = 0,
     ) -> None:
         """Add a transition rule between segments.
 
         Parameters
         ----------
-        source_ids : list[int]
+        source_ids : int | list[int], default = -1
             Source segment IDs (-1 = any).
-        destination_ids : list[int]
+        dest_ids : int | list[int], default = -1
             Destination segment IDs (-1 = any).
         source_transition_time : int, default=0
             Source fade out time in ms.
-        destination_fade_offset : int, default=0
-            Destination fade offset in ms.
+        source_fade_offset : int, default=0
+            Delay in ms before the source starts fading out.
         source_fade_curve : str, default="Linear"
-            Fade curve type.
-        sync_type : str, default="Immediate"
-            Sync type ('Immediate', 'ExitMarker', etc.).
+            Source fade out curve type.
+        dest_transition_time : int, default=0
+            Destination fade out time in ms.
+        dest_fade_offset : int, default=0
+            Delay in ms before the destination starts fading in.
+        dest_fade_curve : str, default="Linear"
+            Destination fade in curve type.
+        transition_segment: int | Node, default=0
+            A MusicSegment to play during the transition.
         """
+        if isinstance(source_ids, int):
+            source_ids = [source_ids]
+
+        if isinstance(dest_ids, int):
+            dest_ids = [dest_ids]
+
         rule = {
             "source_transition_rule_count": len(source_ids),
             "source_ids": source_ids,
-            "destination_transition_rule_count": len(destination_ids),
-            "destination_ids": destination_ids,
+            "destination_transition_rule_count": len(dest_ids),
+            "destination_ids": dest_ids,
             "source_transition_rule": {
                 "transition_time": source_transition_time,
                 "fade_curve": source_fade_curve,
-                "fade_offet": 0,
-                "sync_type": sync_type,
+                "fade_offet": source_fade_offset,
+                "sync_type": "Immediate",
                 "clue_filter_hash": 0,
                 "play_post_exit": 0,
             },
             "destination_transition_rule": {
-                "transition_time": 0,
-                "fade_curve": "Linear",
-                "fade_offet": destination_fade_offset,
+                "transition_time": dest_transition_time,
+                "fade_curve": dest_fade_curve,
+                "fade_offet": dest_fade_offset,
                 "clue_filter_hash": 0,
                 "jump_to_id": 0,
                 "jump_to_type": 0,
@@ -335,7 +350,7 @@ class MusicSwitchContainer(WwiseNode):
             },
             "alloc_trans_object_flag": 0,
             "transition_object": {
-                "segment_id": 0,
+                "segment_id": transition_segment,
                 "fade_out": {"transition_time": 0, "curve": "Log3", "offset": 0},
                 "fade_in": {"transition_time": 0, "curve": "Log3", "offset": 0},
                 "play_pre_entry": 0,
@@ -346,8 +361,6 @@ class MusicSwitchContainer(WwiseNode):
         self["music_trans_node_params/transition_rule_count"] = len(
             self["music_trans_node_params/transition_rules"]
         )
-
-        self._update_children_list()
 
     def get_references(self) -> list[tuple[str, int]]:
         paths = (
@@ -407,24 +420,6 @@ class MusicSwitchContainer(WwiseNode):
                 _collect_from_tree(child, children_set)
 
         _collect_from_tree(self["tree"], children_set)
-
-        # Collect from transition rules
-        for rule in self["music_trans_node_params/transition_rules"]:
-            # Source IDs
-            for sid in rule.get("source_ids", []):
-                if sid > 0:
-                    children_set.add(sid)
-
-            # Destination IDs
-            for did in rule.get("destination_ids", []):
-                if did > 0:
-                    children_set.add(did)
-
-            # Transition object segment_id
-            trans_obj = rule.get("transition_object", {})
-            segment_id = trans_obj.get("segment_id", 0)
-            if segment_id > 0:
-                children_set.add(segment_id)
 
         # Update the children list
         children = self.music_params["children/items"]

@@ -11,8 +11,10 @@ def calc_hash_dialog(
     title: str = "Calc Hash",
     tag: str = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
 
     def on_label_changed(sender: str, label: str, user_data: Any) -> None:
         h = calc_hash(label)

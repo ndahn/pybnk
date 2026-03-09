@@ -8,7 +8,9 @@ from pybnk.gui import style
 def about_dialog(*, tag: str = None, **window_args) -> str:
     if not tag:
         tag = f"about_dialog_{dpg.generate_uuid()}"
-
+    elif dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
+    
     color = (48, 48, 48, 255)
 
     if not dpg.does_item_exist("pybnk_splash"):
