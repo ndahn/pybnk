@@ -92,26 +92,6 @@ class MusicRandomSequenceContainer(WwiseNode):
         children.extend(sorted(c for c in children_set if c > 0))
         self.base_params["children/count"] = len(children)
 
-    def get_playlist_tree(self) -> list[dict]:
-        # TODO
-        idx = 0
-        stack = []
-        items = self.playlist_items
-        tree = []
-
-        def grab():
-            nonlocal idx
-            
-            node = items[idx]
-            idx += 1
-            
-            for i in range(node["child_count"]):
-                grab()
-
-        while idx < len(items):
-            tree.append(grab())
-
-
     def add_playlist_item(
         self,
         playlist_item_id: int,
