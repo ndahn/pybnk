@@ -127,10 +127,9 @@ def add_wav_player(
             )
 
         # Plot waveforms
+        # BUG slows/crashes dpg due to the series size
+        # TODO either downsample or render to an image
         for i, (signal, sign) in enumerate(zip(channels, [1, -1])):
-            # TODO colors
-            if i != 0:
-                break
             dpg.add_line_series(
                 time,
                 sign * signal,
@@ -191,7 +190,7 @@ def add_wav_player(
                         callback=on_marker_update,
                     )
 
-        # TODO theme
+        # BUG not visible
         dpg.add_button(
             pos=(10, 10),
             arrow=True,

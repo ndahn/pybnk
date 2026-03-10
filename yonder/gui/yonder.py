@@ -81,6 +81,8 @@ class BanksOfYonder:
 
         class LogHandler(logging.Handler):
             def emit(this, record: logging.LogRecord):
+                this.format(record)
+                
                 if record.levelno >= logging.ERROR:
                     color = style.red
                 elif record.levelno >= logging.WARNING:
@@ -144,6 +146,11 @@ class BanksOfYonder:
                 )
 
             with dpg.menu(label="Edit", tag=f"{self.tag}_menu_edit"):
+                dpg.add_menu_item(
+                    label="Verify soundbank",
+                    callback=self._bank_verify,
+                    tag=f"{self.tag}_menu_verify",
+                )
                 with dpg.menu(
                     label="Advanced", tag=f"{self.tag}_menu_advanced", enabled=False
                 ):
@@ -246,6 +253,7 @@ class BanksOfYonder:
             "_menu_file_save",
             "_menu_file_save_as",
             "_menu_file_repack",
+            "_menu_verify",
             "_menu_advanced",
             "_menu_create",
         ]:
@@ -850,6 +858,13 @@ class BanksOfYonder:
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
+
+    def _bank_verify(self) -> None:
+        loading = loading_indicator("Verifying...")
+        try:
+            self.bnk.verify()
+        finally:
+            dpg.delete_item(loading)
 
     def _bank_remove_unused_wems(self) -> None:
         self.bnk.remove_unused_wems()

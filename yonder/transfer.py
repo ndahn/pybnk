@@ -164,10 +164,9 @@ def copy_wwise_events(
 
     # Verify
     logger.info("\nVerifying soundbank...")
-    issues = dst_bnk.verify()
-    if issues:
-        for issue in issues:
-            logger.warning(f" - {issue}")
+    severity = dst_bnk.verify()
+    if severity > 0:
+        logger.warning(" - some issues were found in your soundbank. Check the log!")
     else:
         logger.info(" - seems surprisingly fine :o\n")
 

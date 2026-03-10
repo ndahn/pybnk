@@ -168,6 +168,10 @@ class Soundbank:
 
         # Solve the dependency graph
         self.solve()
+        okay = self.verify()
+        if not okay:
+            logger.warning("Some issues were found in your soundbank. Check the log!")
+
         self._apply_hirc_to_json()
 
         if not path:
@@ -497,77 +501,49 @@ class Soundbank:
 
         return extras
 
-    def verify(self, required_ids: list[int] = None) -> list[str]:
+    def verify(self) -> int:
+        severity = 0
         discovered_ids = set([0])
-        issues = []
 
-        required_ids: set = set(required_ids or [])
-        verified_ids = set()
-
-        # We check absolutely everything!
-        def delve(item: dict | list | Any, node_id: int, path: str):
-            if isinstance(item, list):
-                for idx, value in enumerate(item):
-                    delve(value, node_id, path + f"[{idx}]")
-
-            elif isinstance(item, dict):
-                for key, value in item.items():
-                    delve(value, node_id, path + "/" + key)
-
-            # There's like one 5-digit hash (possibly empty string?), all others are above 10 mio
-            elif isinstance(item, int) and item >= 1000000:
-                if path.endswith("source_id"):
-                    # WEMs won't appear in the HIRC
-                    pass
-
-                elif path.endswith("bank_id"):
-                    if item != self.id:
-                        # Not sure if this can be an issue
-                        issues.append(
-                            f"{node_id}:reference to external soundbank {item}"
-                        )
-
-                elif path.endswith("id/Hash"):
-                    if item in discovered_ids:
-                        issues.append(f"{node_id}: has duplicates")
-
-                elif path.endswith("id/String"):
-                    if calc_hash(item) in discovered_ids:
-                        issues.append(f"{node_id}: has duplicates")
-
-                elif path.endswith("direct_parent_id"):
-                    if item in discovered_ids:
-                        issues.append(f"{node_id}: is defined after its parent {item}")
-
-                elif item not in discovered_ids:
-                    issues.append(
-                        f"{node_id}: {path}: reference {item} does not exist (probably okay?)"
-                    )
+        logger.info(f"Verifying {self}...")
 
         for node in self._hirc:
             node_id = node.id
 
-            if node_id in discovered_ids:
-                issues.append(f"{node_id}: node has been defined before")
-                continue
+            if node_id <= 0:
+                logger.error(f"Invalid node ID {node_id}")
+            else:
+                if node_id in discovered_ids:
+                    logger.error(f"{node}: ID {node_id} has been defined before")
+                    severity = max(severity, 2)
+                
+                discovered_ids.add(node_id)
 
-            discovered_ids.add(node_id)
-            if node_id not in required_ids:
-                continue
+            parent_id = node.parent
+            if parent_id is not None:
+                if parent_id <= 0:
+                    logger.warning(f"{node}: node is orphaned")
+                    severity = max(severity, 1)
+                elif parent_id in discovered_ids:
+                    logger.error(f"{node}: defined after its parent {parent_id}")
+                    severity = max(severity, 2)
 
-            delve(node.body, node_id, "")
+            children = getattr(node, "children", [])
+            prev = -1
+            for child in children:
+                if child < prev:
+                    logger.error(f"{node}: children are not sorted")
+                    severity = max(severity, 2)
+                    break
 
-            # References to other objects will always be by hash
-            if isinstance(node_id, str):
-                node_id = calc_hash(node_id)
+        if severity == 0:
+            logger.info("Seems surprisingly fine - yay!")
+        elif severity == 1:
+            logger.warning("Found some potential issues, but probably okay")
+        else:
+            logger.error("Severe issues found, soundbank will most likely be broken")
 
-            verified_ids.add(node_id)
-
-        missing = required_ids.difference(verified_ids)
-        if missing:
-            issues.append(f"Expected nodes not found: {sorted(missing)}")
-
-        return issues
+        return severity
 
     def __iter__(self) -> Iterator[Node]:
         yield from self._hirc

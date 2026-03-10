@@ -18,9 +18,15 @@ if TYPE_CHECKING:
     from yonder import Soundbank
 
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="[%(levelname)s]\t%(message)s",
+    handlers=[
+        #logging.FileHandler(logfile),
+        logging.StreamHandler(),
+    ],
+)
 logger = logging.getLogger("yonder")
-logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
 
 
 def resource_dir() -> Path:
