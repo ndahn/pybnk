@@ -43,6 +43,7 @@ from pybnk.gui.dialogs.transfer_events_dialog import transfer_events_dialog
 from pybnk.gui.dialogs.convert_wav_dialog import convert_wavs_dialog
 from pybnk.gui.dialogs.settings_dialog import settings_dialog
 from pybnk.gui.dialogs.new_boss_track_dialog import new_boss_track_dialog
+from pybnk.gui.dialogs.export_sounds_dialog import export_sounds_dialog
 
 
 # TODO streaming audio
@@ -183,7 +184,11 @@ class BanksOfYonder:
                     callback=self._open_transfer_events_dialog,
                 )
                 dpg.add_menu_item(
-                    label="Convert Audio Files",
+                    label="Export Sounds",
+                    callback=self._open_export_sounds_dialog,
+                )
+                dpg.add_menu_item(
+                    label="Waves to Wems",
                     callback=self._open_convert_wavs_dialog,
                 )
 
@@ -1054,6 +1059,18 @@ class BanksOfYonder:
             return
 
         transfer_events_dialog(tag=tag)
+
+        dpg.split_frame()
+        center_window(tag)
+
+    def _open_export_sounds_dialog(self) -> None:
+        tag = f"{self.tag}_convert_wavs_dialog"
+        if dpg.does_item_exist(tag):
+            dpg.show_item(tag)
+            dpg.focus_item(tag)
+            return
+        
+        export_sounds_dialog(tag=tag)
 
         dpg.split_frame()
         center_window(tag)

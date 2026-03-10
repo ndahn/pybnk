@@ -279,6 +279,10 @@ class Soundbank:
 
         logger.info(f"Found and deleted {len(indices)} orphans")
 
+    def remove_unused_wems(self) -> None:
+        wems = self.wems()
+        # TODO
+
     def solve(self) -> None:
         g = self.get_full_tree()
         new_hirc = []

@@ -7,7 +7,7 @@ from pybnk.node_types import MusicSwitchContainer
 from pybnk.hash import calc_hash
 from pybnk.convenience import create_boss_bgm
 from pybnk.gui import style
-from pybnk.gui.widgets import add_generic_widget, add_filepaths_table, add_node_widget
+from pybnk.gui.widgets import add_filepaths_table, add_node_widget
 from .create_state_path_dialog import create_state_path_dialog
 
 
@@ -27,12 +27,6 @@ def new_boss_track_dialog(
     bgm_enemy_type_idx: int = -1
     current_state_path: list[str] = []
     bgm_tracks: list[Path] = []
-
-    def on_soundbank_selected(sender: str, path: Path, user_data: Any) -> None:
-        nonlocal bnk
-        bnk = Soundbank.load(path)
-        # TODO reset other widgets
-        show_message()
 
     def get_music_switch_containers(filt: str) -> list[MusicSwitchContainer]:
         if not bnk:
@@ -156,15 +150,6 @@ def new_boss_track_dialog(
         tag=tag,
         on_close=lambda: dpg.delete_item(window),
     ) as window:
-        add_generic_widget(
-            Path,
-            "Soundbank",
-            on_soundbank_selected,
-            default=bnk.bnk_dir if bnk else "",
-            filetypes={"Soundbanks (.bnk, .json)": ["*.bnk", "*.json"]},
-        )
-        dpg.add_separator()
-
         add_node_widget(
             get_music_switch_containers,
             "MusicSwitchContainer",
