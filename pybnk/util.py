@@ -1,4 +1,5 @@
 from typing import Any, Callable, TYPE_CHECKING
+from collections.abc import MutableMapping
 import sys
 import re
 from pathlib import Path
@@ -176,29 +177,37 @@ def deepmerge(base: dict, updates: dict, delete_missing: bool = False) -> None:
     merge(base, updates)
 
 
-class PathDict(dict):
-    @classmethod
-    def convert(cls, d: dict) -> "PathDict":
-        """Recursively converts a nested dict into a nested PathDict."""
-        pd = PathDict()
-        for key, value in d.items():
-            pd[key] = cls.convert(value) if isinstance(value, dict) else value
-        return pd
+class PathDict(MutableMapping):
+    def __init__(self, d: dict):
+        self._d = d
 
     def __getitem__(self, key: Any) -> Any:
         if isinstance(key, str) and "/" in key:
-            d = self
+            node = self._d
             for k in key.split("/"):
-                d = d[k]
-            return d
-
-        return super().__getitem__(key)
+                node = node[k]
+            return node
+        
+        return self._d[key]
 
     def __setitem__(self, key: Any, value: Any) -> None:
         if isinstance(key, str) and "/" in key:
-            d = self
-            for k in key.split("/")[:-1]:
-                d = d[k]
-            d[key.rsplit("/", maxsplit=1)[-1]] = value
+            *parts, last = key.split("/")
+            node = self._d
+            for k in parts:
+                node = node[k]
+            node[last] = value
         else:
-            super().__setitem__(key, value)
+            self._d[key] = value
+
+    def __delitem__(self, key):
+        del self._d[key]
+
+    def __iter__(self):
+        return iter(self._d)
+
+    def __len__(self):
+        return len(self._d)
+
+    def __getattr__(self, name) -> Any:
+        return getattr(self._d, name)

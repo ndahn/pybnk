@@ -46,8 +46,10 @@ from pybnk.gui.dialogs.new_boss_track_dialog import new_boss_track_dialog
 from pybnk.gui.dialogs.export_sounds_dialog import export_sounds_dialog
 
 
-# TODO streaming audio
-# TODO boss music
+# BUG direct parent ids not set
+# BUG plugin as hash
+# BUG properties not removed
+# BUG shortcuts
 # TODO ambience
 # TODO graph visualization
 # TODO attenuation curve editor
