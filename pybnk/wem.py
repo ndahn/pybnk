@@ -15,9 +15,14 @@ def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
         if not wem.endswith(".wem"):
             continue
 
-        # We allow adding a prefix to the wem ID to make them easier to handle
+        # We allow adding additional info to the wem filename to make them easier to handle
         if "_" in wem.name:
-            _, wem_id = wem.stem.rsplit("_", maxsplit=1)
+            for part in wem.name.split("_"):
+                try:
+                    wem_id = int(part)
+                    break
+                except ValueError:
+                    pass
             wem_id = int(wem_id)
         else:
             wem_id = int(wem.stem)
@@ -25,6 +30,7 @@ def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
         target_path = bnk.bnk_dir / f"{wem_id}.wem"
         shutil.copy(wem, target_path)
 
+        # FIXME need to find source_ids in MusicTracks and possibly other nodes as well
         sound_nodes = list(
             bnk.query(
                 f"type=Sound bank_source_data/media_information/source_id={wem_id}"

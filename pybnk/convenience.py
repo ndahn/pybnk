@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 from dataclasses import dataclass
 
 from pybnk import Soundbank, Node
@@ -129,6 +130,18 @@ def create_boss_bgm(
         dst_rule["fade_offset"] = dst_fade.offset
         dst_rule["fade_curve"] = dst_fade.curve
 
+    def copy_track(track: Path) -> None:
+        track_dir = bnk.bnk_dir.parent / "wem" / f"{track.stem[:2]}"
+        track_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy(track, track_dir)
+
+    if isinstance(tracks, Path):
+        tracks: list[Path] = tracks
+
+    for f in tracks:
+        if not f.name.endswith(".wem"):
+            raise ValueError("All tracks must be .wem files")
+
     # Prepare the new master state path
     if isinstance(state_path, str):
         bgm_enemy_type = state_path
@@ -144,9 +157,6 @@ def create_boss_bgm(
         bnk.new_id(), ["BossBattleState"], parent=master
     )
 
-    if isinstance(tracks, Path):
-        tracks: list[Path] = tracks
-
     # Default and heatup tracks
     boss_phases = ["*"]
     if len(tracks) > 1:
@@ -157,10 +167,11 @@ def create_boss_bgm(
     phase_masters: list[MusicRandomSequenceContainer] = []
 
     for i, (phase, bgm) in enumerate(zip(boss_state_keys, tracks)):
+        copy_track(bgm)
+        
         phase_mrs = MusicRandomSequenceContainer.new(bnk.new_id(), parent=boss_msc)
         phase_masters.append(phase_mrs)
 
-        # TODO how to add wems to game/mod?
         phase_seg = MusicSegment.new(bnk.new_id(), parent=phase_mrs)
         phase_track = MusicTrack.new(bnk.new_id(), int(bgm.stem), parent=phase_seg)
         phase_seg.add_child(phase_track)

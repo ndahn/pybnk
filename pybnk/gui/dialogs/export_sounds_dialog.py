@@ -7,7 +7,6 @@ from pybnk import Soundbank
 from pybnk.wem import wem2wav
 from pybnk.gui import style
 from pybnk.gui.config import get_config
-from pybnk.gui.dialogs.file_dialog import choose_folder
 from pybnk.gui.widgets import add_generic_widget, loading_indicator
 
 
@@ -31,13 +30,9 @@ def export_sounds_dialog(
         except Exception as e:
             show_message(str(e))
 
-    def choose_output_dir() -> None:
+    def on_outputdir_selected(sender: str, path: Path, user_data: Any) -> None:
         nonlocal output_dir
-
-        ret = choose_folder(title="Select output directory")
-        if ret:
-            output_dir = Path(ret)
-            dpg.set_value(f"{tag}_output_dir", str(output_dir))
+        output_dir = path
 
     def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
@@ -107,15 +102,12 @@ def export_sounds_dialog(
             on_soundbank_selected,
             filetypes={"Soundbanks (.bnk, .json)": ["*.bnk", "*.json"]},
         )
-
-        with dpg.group(horizontal=True):
-            dpg.add_input_text(readonly=True, enabled=False, tag=f"{tag}_output_dir")
-            dpg.add_button(
-                arrow=True,
-                direction=dpg.mvDir_Right,
-                callback=choose_output_dir,
-            )
-            dpg.add_text("Output directory")
+        add_generic_widget(
+            Path,
+            "Output dir",
+            on_outputdir_selected,
+            file_mode="folder",
+        )
 
         dpg.add_spacer(height=5)
 

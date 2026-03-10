@@ -5,8 +5,11 @@ from dearpygui import dearpygui as dpg
 from pybnk import Soundbank
 from pybnk.node_types import MusicSwitchContainer
 from pybnk.hash import calc_hash
+from pybnk.util import logger
 from pybnk.convenience import create_boss_bgm
+from pybnk.wem import wav2wem
 from pybnk.gui import style
+from pybnk.gui.config import get_config
 from pybnk.gui.widgets import add_filepaths_table, add_node_widget
 from .create_state_path_dialog import create_state_path_dialog
 
@@ -133,10 +136,20 @@ def new_boss_track_dialog(
         if not bgm_enemy_type or bgm_enemy_type == "*":
             show_message("BgmEnemyType not set")
             return
-        
+
         if not bgm_tracks:
             show_message("Must add at least one BGM track")
             return
+
+        show_message()
+
+        wavs = [(i, f) for i, f in enumerate(bgm_tracks) if f.name.endswith(".wav")]
+        if wavs:
+            logger.info(f"Converting {len(wavs)} wave files to wem")
+            wwise = get_config().locate_vgmstream()
+            out_dir = wav2wem(wwise, [w[1] for w in wavs])
+            for i, w in wavs:
+                bgm_tracks[i] = out_dir / f"{w.stem}.wem"
 
         create_boss_bgm(bnk, msc, current_state_path, bgm_tracks)
         dpg.delete_item(window)
@@ -163,19 +176,20 @@ def new_boss_track_dialog(
                 default_value="*",
                 tag=f"{tag}_bgm_enemy_type",
             )
-            dpg.add_combo([
-                "EventBoss_Reserved15",
-                "EventBoss_Reserved14",
-                "EventBoss_Reserved13",
-                "EventBoss_Reserved12",
-                "EventBoss_Reserved11",
-                "EventBoss_Reserved10",
-                "EventBoss_Reserved09",
-                "EventBoss_Reserved08",
-                "Reserved",
-            ],
-            no_preview=True,
-            callback=on_bgmenemytype_changed,
+            dpg.add_combo(
+                [
+                    "EventBoss_Reserved15",
+                    "EventBoss_Reserved14",
+                    "EventBoss_Reserved13",
+                    "EventBoss_Reserved12",
+                    "EventBoss_Reserved11",
+                    "EventBoss_Reserved10",
+                    "EventBoss_Reserved09",
+                    "EventBoss_Reserved08",
+                    "Reserved",
+                ],
+                no_preview=True,
+                callback=on_bgmenemytype_changed,
             )
             dpg.add_text("BgmEnemyType")
         dpg.add_button(

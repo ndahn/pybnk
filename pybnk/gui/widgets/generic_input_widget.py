@@ -4,7 +4,7 @@ from pathlib import Path
 from dearpygui import dearpygui as dpg
 
 from pybnk.gui.helpers import shorten_path
-from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog
+from pybnk.gui.dialogs.file_dialog import save_file_dialog, open_file_dialog, choose_folder
 from .flags_widget import add_flag_checkboxes
 
 
@@ -18,7 +18,7 @@ def add_generic_widget(
     readonly: bool = False,
     flags_as_int: bool = False,
     accept_on_enter: bool = False,
-    file_save: bool = False,
+    file_mode: Literal["open", "save", "folder"] = "open",
     filetypes: dict[str, str] = None,
     parent: str = 0,
     tag: str = 0,
@@ -144,18 +144,22 @@ def add_generic_widget(
             default = str(default)
 
         def select_file() -> None:
-            if file_save:
-                ret = save_file_dialog(
-                    title=label,
-                    default_file=default,
-                    filetypes=filetypes,
-                )
-            else:
+            if file_mode == "open":
                 ret = open_file_dialog(
                     title=label,
                     default_file=default,
                     filetypes=filetypes,
                 )
+            elif file_mode == "save":
+                ret = save_file_dialog(
+                    title=label,
+                    default_file=default,
+                    filetypes=filetypes,
+                )
+            elif file_mode == "folder":
+                ret = choose_folder(title=label)
+            else:
+                raise ValueError(f"Invalid file mode {file_mode}")
 
             if ret:
                 dpg.set_value(tag, shorten_path(ret))
