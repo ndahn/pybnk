@@ -3,10 +3,11 @@ networkx >= 3.6.0
 pydub >= 0.25.0
 audioop-lts >= 0.2.2
 crossfiledialog
-pywin32; sys_platform == "windows"
+pywin32; platform_system == "Windows"
 docstring_parser
 pyperclip
 lark
 rapidfuzz
 numpy
 sounddevice
+pyyaml
