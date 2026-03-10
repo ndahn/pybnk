@@ -2,8 +2,8 @@ from pathlib import Path
 import shutil
 import networkx as nx
 
-from pybnk import Soundbank
-from pybnk.util import logger
+from yonder import Soundbank
+from yonder.util import logger
 
 
 def collect_wems(bnk: Soundbank, event_names: list[str]):
@@ -73,9 +73,7 @@ def export_wems(
 
 if __name__ == "__main__":
     sd_dir = Path("E:/SteamLibrary/steamapps/common/ELDEN RING/Game/sd")
-    destination = Path(
-        "E:/Games/ER_Modding/Commissions/voicemod/audio/varre/wems"
-    )
+    destination = Path("E:/Games/ER_Modding/Commissions/voicemod/audio/varre/wems")
     bnk_dir = Path("../test/vc301/").absolute()
     events = [
         "Play_v301804000",

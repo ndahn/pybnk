@@ -1,8 +1,8 @@
 from dearpygui import dearpygui as dpg
 
-from pybnk.util import resource_dir
-from pybnk.gui.style import init_themes
-from pybnk.gui.yonder import BanksOfYonder
+from yonder.util import resource_dir
+from yonder.gui.style import init_themes
+from yonder.gui.yonder import BanksOfYonder
 
 
 def dpg_init():

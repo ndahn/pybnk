@@ -2,9 +2,9 @@
 import sys
 import traceback
 
-from pybnk import Soundbank
-from pybnk.hash import calc_hash
-from pybnk.transfer import copy_wwise_events
+from yonder import Soundbank
+from yonder.hash import calc_hash
+from yonder.transfer import copy_wwise_events
 
 
 # ------------------------------------------------------------------------------------------
@@ -63,7 +63,9 @@ def prune_ids(ids: list[str]) -> list[str]:
     return pruned
 
 
-def collect_event_map(src_bnk: Soundbank, dst_bnk: Soundbank, src_ids: list[str], dst_ids: list[str]) -> dict[int | str, str]:
+def collect_event_map(
+    src_bnk: Soundbank, dst_bnk: Soundbank, src_ids: list[str], dst_ids: list[str]
+) -> dict[int | str, str]:
     src_ids = prune_ids(src_ids)
     dst_ids = prune_ids(dst_ids)
 

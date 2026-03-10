@@ -1,0 +1,110 @@
+from typing import Any, Callable
+from pathlib import Path
+import tempfile
+import atexit
+from dearpygui import dearpygui as dpg
+
+from yonder.util import logger
+from yonder.gui.config import get_config
+from yonder.wem import wem2wav
+from yonder.player import WavPlayer
+
+
+_wav_tmp_dir = tempfile.TemporaryDirectory("_player", "yonder_")
+atexit.register(_wav_tmp_dir.cleanup)
+
+
+def add_wav_player(
+    get_sound: Callable[[], Path],
+    *,
+    tag: str = 0,
+) -> str:
+    if tag in (None, 0, ""):
+        tag = dpg.generate_uuid()
+
+    last_path: Path = None
+    player: WavPlayer = None
+
+    def create_player(audio: Path) -> WavPlayer:
+        if audio is None or not audio.is_file():
+            logger.error(f"Audio {audio} does not exist")
+            return None
+
+        if audio.name.endswith(".wem"):
+            wav = Path(_wav_tmp_dir.name) / (audio.stem + ".wav")
+            if not wav.is_file():
+                vgmstream = get_config().locate_vgmstream()
+                logger.info(f"Converting {audio} to wav for playback")
+                wav = wem2wav(Path(vgmstream), [audio], Path(_wav_tmp_dir.name))[0]
+        elif audio.name.endswith(".wav"):
+            wav = audio
+        else:
+            logger.error(f"Audio must be a wav or wem file ({audio})")
+            return None
+
+        player = WavPlayer(str(wav))
+        return player
+
+    def on_play_pause() -> None:
+        nonlocal player, last_path
+        audio = get_sound()
+
+        if player and last_path != audio:
+            # Audio changed
+            player.stop()
+            player = None
+
+        if not player:
+            player = create_player(audio)
+            if not player:
+                return
+
+            dpg.set_value(f"{tag}_total", f"{player.duration:.2f}")
+            last_path = audio
+
+        if player.playing:
+            player.pause()
+        else:
+            if player.position >= player.duration:
+                player.seek(0.0)
+
+            player.play()
+            progress_update()
+
+    def on_progress_changed(sender: str, progress: float, user_data: Any) -> None:
+        if player:
+            player.seek(progress)
+
+    def progress_update() -> None:
+        if not player or not player.playing:
+            return
+
+        if not dpg.does_item_exist(f"{tag}_progress"):
+            player.stop()
+            return
+
+        dpg.configure_item(
+            f"{tag}_progress", default_value=player.position, max_value=player.duration
+        )
+        dpg.set_frame_callback(dpg.get_frame_count() + 2, progress_update)
+
+    with dpg.group(horizontal=True, tag=tag):
+        dpg.add_button(
+            arrow=True,
+            direction=dpg.mvDir_Right,
+            callback=on_play_pause,
+            tag=f"{tag}_play_pause",
+        )
+
+        dpg.add_slider_float(
+            min_value=0.0,
+            max_value=1.0,
+            clamped=True,
+            no_input=True,
+            callback=on_progress_changed,
+            tag=f"{tag}_progress",
+        )
+        dpg.add_text(
+            "0.00",
+            tag=f"{tag}_total",
+        )

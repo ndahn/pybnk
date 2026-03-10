@@ -1,6 +1,6 @@
 @echo off
 CALL "%userprofile%\miniforge3\Scripts\activate.bat"
-CALL conda activate pybnk
+CALL conda activate yonder
 pip install pyinstaller
 
 REM "=== RUNNING PYINSTALLER ==="

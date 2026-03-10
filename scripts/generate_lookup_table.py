@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from pybnk.enums import SoundType
-from pybnk.hash import calc_hash
+from yonder.enums import SoundType
+from yonder.hash import calc_hash
 
 
 def generate_lookup_table(input: Path, output: Path) -> None:
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     output = res_dir / "lookup_dict.txt"
 
     import time
+
     now = time.time()
     generate_lookup_table(input, output)
     print(f"Generated new lookup table in {time.time() - now}s")
-
