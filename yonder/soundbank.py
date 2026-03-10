@@ -345,14 +345,16 @@ class Soundbank:
 
             # Sort by type first, then ID
             nodes.sort(key=lambda n: f"{n.type} {n.id}")
-            new_hirc.extend(n.dict for n in nodes)
+            new_hirc.extend(n for n in nodes)
 
         # Usually the actions follow the event referencing them, but this is much easier
         events.sort(key=lambda n: n.id)
-        new_hirc.extend(n.dict for n in events)
+        new_hirc.extend(n for n in events)
 
         actions.sort(key=lambda n: n.id)
-        new_hirc.extend(n.dict for n in actions)
+        new_hirc.extend(n for n in actions)
+
+        self._hirc = new_hirc
 
         logger.info(f"Solved structure for {len(g)} nodes ({len(events)} events)")
         self._regenerate_index_table()
@@ -522,7 +524,7 @@ class Soundbank:
             parent_id = node.parent
             if parent_id is not None:
                 if parent_id <= 0:
-                    logger.warning(f"{node}: node is orphaned")
+                    logger.warning(f"{node}: node has no parent")
                     severity = max(severity, 1)
                 elif parent_id in discovered_ids:
                     logger.error(f"{node}: defined after its parent {parent_id}")
