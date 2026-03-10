@@ -9,18 +9,8 @@
       "flags": 0,
       "source_count": 0,
       "sources": [],
-      "playlist_item_count": 1,
-      "playlist": [
-        {
-          "track_id": 0,
-          "source_id": -1,
-          "event_id": 0,
-          "play_at": 0.0,
-          "begin_trim_offset": 0.0,
-          "end_trim_offset": 1056.125,
-          "source_duration": 27943.875
-        }
-      ],
+      "playlist_item_count": 0,
+      "playlist": [],
       "subtrack_count": 1,
       "clip_item_count": 0,
       "clip_items": [],

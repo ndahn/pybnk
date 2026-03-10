@@ -142,19 +142,15 @@ class BanksOfYonder:
                 )
 
             with dpg.menu(label="Edit", tag=f"{self.tag}_menu_edit"):
-                # TODO place these in some advanced menu
-                dpg.add_menu_item(
-                    label="Delete unused wems",
-                    callback=self._bank_remove_unused_wems,
-                    enabled=False,
-                    tag=f"{self.tag}_menu_remove_unused_wems",
-                )
-                dpg.add_menu_item(
-                    label="Delete orphans",
-                    callback=self._bank_delete_orphans,
-                    enabled=False,
-                    tag=f"{self.tag}_menu_delete_orphans",
-                )
+                with dpg.menu(label="Advanced", tag=f"{self.tag}_menu_advanced", enabled=False):
+                    dpg.add_menu_item(
+                        label="Delete unused wems",
+                        callback=self._bank_remove_unused_wems,
+                    )
+                    dpg.add_menu_item(
+                        label="Delete orphans",
+                        callback=self._bank_delete_orphans,
+                    )
                 dpg.add_separator()
                 dpg.add_menu_item(
                     label="Settings",
@@ -243,8 +239,7 @@ class BanksOfYonder:
             "_menu_file_save",
             "_menu_file_save_as",
             "_menu_file_repack",
-            "_menu_remove_unused_wems",
-            "_menu_delete_orphans",
+            "_menu_advanced",
             "_menu_create",
         ]:
             if enabled:

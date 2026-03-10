@@ -13,7 +13,7 @@ class MusicSegment(WwiseNode):
     def new(
         cls,
         nid: int,
-        duration: float = 1000.0,
+        duration: float = 0.0,
         parent: int | Node = None,
     ) -> "MusicSegment":
         """Create a new MusicSegment node.
@@ -22,7 +22,7 @@ class MusicSegment(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        duration : float, default=1000.0
+        duration : float, default=0.0
             Segment duration in milliseconds.
         parent : int | Node, default=None
             Parent node.
@@ -91,7 +91,7 @@ class MusicSegment(WwiseNode):
         marker = {
             "id": marker_id,
             "position": position,
-            "string_length": len(name),
+            "string_length": len(name) + 1 if name else 0,
             "string": name,
         }
         self["markers"].append(marker)

@@ -9,6 +9,7 @@ import networkx as nx
 
 from pybnk.hash import calc_hash
 from pybnk.util import logger, resource_data
+from pybnk.enums import SourceType
 from pybnk.node import Node
 from pybnk.query import query_nodes
 
@@ -113,6 +114,27 @@ class Soundbank:
             wems.append(wid)
 
         return wems
+
+    def add_wem(self, wem: Path, source_type: SourceType) -> Path:
+        if source_type == "Embedded":
+            shutil.copy(wem, self.bnk_dir)
+            return self.bnk_dir / f"{wem.stem}.wem"
+
+        elif source_type == "Streaming":
+            streaming_dir = self.bnk_dir.parent / "wem" / wem.stem[:2]
+            streaming_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(wem, streaming_dir)
+            return streaming_dir / f"{wem.stem}.wem"
+
+        elif source_type == "PrefetchStreaming":
+            # Sounds in cs_smain are all <= 20kB
+            if wem.stat().st_size > 20000:
+                raise ValueError("Wem is too large for a prefetch snippet")
+            shutil.copy(wem, self.bnk_dir)
+            return self.bnk_dir / f"{wem.stem}.wem"
+            
+        else:
+            raise ValueError(f"Unknown source type {source_type}")
 
     def _apply_hirc_to_json(self) -> None:
         """Update this soundbank's json with its current HIRC."""

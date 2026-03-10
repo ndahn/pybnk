@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
-import os
 from pathlib import Path
+import shutil
 
 from pybnk.node import Node
 from pybnk.enums import SourceType, PluginType
@@ -21,8 +21,8 @@ class Sound(WwiseNode):
         cls,
         nid: int,
         source_id: int,
-        plugin: str = "VORBIS",
         source_type: SourceType = "Embedded",
+        plugin: str = "VORBIS",
         parent: int | Node = None,
     ) -> "Sound":
         """Create a new Sound node.
@@ -62,30 +62,13 @@ class Sound(WwiseNode):
         cls,
         nid: int,
         wem: Path,
-        mode: SourceType = "Embedded",
+        source_type: SourceType = "Embedded",
+        plugin: str = "VORBIS",
         parent: int | Node = None,
     ) -> "Sound":
-        wem_id = int(wem.name.rsplit(".")[0])
-        size = os.path.getsize(str(wem))
-
-        if mode == "Embedded":
-            pass
-        elif mode == "Streaming":
-            # TODO not used in ER I think?
-            pass
-        elif mode == "PrefetchStreaming":
-            # TODO create prefetch snippet
-            pass
-
-        # TODO source duration (in ms)
-        # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
-        # https://discord.com/channels/529802828278005773/1252503668515934249
-
-        sound = cls.new(nid, wem_id)
-        sound.media_size = size
-        if parent is not None:
-            sound.parent = parent
-
+        wem_id = int(wem.stem)
+        sound = cls.new(nid, wem_id, source_type, plugin=plugin, parent=parent)
+        sound.media_size = len(wem.read_bytes())
         return sound
 
     @property

@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 from pathlib import Path
+import shutil
 
 from pybnk.node import Node
 from pybnk.enums import SourceType
+from pybnk.wem import get_wem_metadata
 from .wwise_node import WwiseNode
 
 if TYPE_CHECKING:
@@ -19,9 +21,6 @@ class MusicTrack(WwiseNode):
     def new(
         cls,
         nid: int,
-        source_id: int = None,
-        plugin: str = "VORBIS",
-        source_type: str = "Streaming",
         parent: int | Node = None,
     ) -> "MusicTrack":
         """Create a new MusicTrack node.
@@ -30,12 +29,6 @@ class MusicTrack(WwiseNode):
         ----------
         nid : int
             Node ID (hash).
-        source_id : int
-            Media source ID.
-        plugin : str, default="VORBIS"
-            Codec plugin ('VORBIS', 'PCM', etc.).
-        source_type : str, default="Streaming"
-            Source type ('Streaming' or 'Embedded').
         parent : int | Node, default=None
             Parent node.
 
@@ -48,12 +41,38 @@ class MusicTrack(WwiseNode):
 
         track = cls(temp)
         track.id = nid
-        if source_id is not None:
-            track.add_source(source_id, source_type, plugin)
-            track.add_playlist_item(source_id)
 
         if parent is not None:
             track.parent = parent
+
+        return track
+
+    @classmethod
+    def new_from_wem(
+        cls,
+        nid: int,
+        wem: Path,
+        source_type: SourceType = "Streaming",
+        begin_trim: float = 0.0,
+        end_trim: float = 0.0,
+        parent: int | Node = None,
+    ) -> "MusicTrack":
+        wem_id = int(wem.stem)
+        meta = get_wem_metadata(wem)
+        size = meta["in_memory_size"]
+
+        track = cls.new(nid, parent=parent)
+        track.add_source(
+            wem_id,
+            source_type,
+            size
+        )
+        track.add_playlist_item(
+            wem_id,
+            meta["duration"] * 1000,  # ms
+            begin_trim=begin_trim,
+            end_trim=end_trim,
+        )
 
         return track
 
@@ -168,8 +187,7 @@ class MusicTrack(WwiseNode):
     def add_playlist_item(
         self,
         source_id: int,
-        play_at: float = 0.0,
-        source_duration: float = 0.0,
+        duration: float,
         begin_trim: float = 0.0,
         end_trim: float = 0.0,
     ) -> None:
@@ -179,9 +197,7 @@ class MusicTrack(WwiseNode):
         ----------
         source_id : int
             Source ID to play.
-        play_at : float, default=0.0
-            Start time in milliseconds.
-        source_duration : float, default=0.0
+        duration : float
             Duration in milliseconds.
         begin_trim : float, default=0.0
             Trim offset from beginning in ms.
@@ -192,10 +208,12 @@ class MusicTrack(WwiseNode):
             "track_id": 0,
             "source_id": source_id,
             "event_id": 0,
-            "play_at": play_at,
+            # According to bgm tutorial
+            # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
+            "play_at": -begin_trim,
             "begin_trim_offset": begin_trim,
             "end_trim_offset": end_trim,
-            "source_duration": source_duration,
+            "source_duration": duration,
         }
         self["playlist"].append(item)
         self["playlist_item_count"] = len(self["playlist"])

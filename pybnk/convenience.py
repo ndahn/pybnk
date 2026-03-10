@@ -74,7 +74,8 @@ def create_simple_sound(
 
     sounds = []
     for w in wems:
-        snd = Sound.new_from_wem(bnk.new_id(), w, rsc)
+        snd = Sound.new_from_wem(bnk.new_id(), w, parent=rsc)
+        bnk.add_wem(w)
         rsc.add_child(snd)
         sounds.append(snd)
 
@@ -113,12 +114,16 @@ def create_boss_bgm(
     master: MusicSwitchContainer,
     state_path: str | list[str | int],
     tracks: list[Path] | Path,
+    track_markers: list[tuple[float, float, float]] = None,
+    add_nobattle_state: bool = True,
     *,
     default_transition: tuple[Fade, Fade] = None,
     phase_transitions: list[tuple[Fade, Fade]] = None,
     self_transitions: list[tuple[Fade, Fade]] = None,
     repeat_transitions: list[tuple[Fade, Fade]] = None,
 ) -> list[Node]:
+    # An overview of what's happening:
+    # https://docs.google.com/document/d/1Dx8U9q6iEofPtKtZ0JI1kOedJYs9ifhlO7H5Knil5sg/edit?tab=t.0
     def apply_fades(rule: dict, src_fade: Fade, dst_fade: Fade) -> None:
         src_rule = rule["source_transition_rule"]
         src_rule["transition_time"] = src_fade.duration
@@ -129,11 +134,6 @@ def create_boss_bgm(
         dst_rule["transition_time"] = dst_fade.duration
         dst_rule["fade_offset"] = dst_fade.offset
         dst_rule["fade_curve"] = dst_fade.curve
-
-    def copy_track(track: Path) -> None:
-        track_dir = bnk.bnk_dir.parent / "wem" / f"{track.stem[:2]}"
-        track_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy(track, track_dir)
 
     if isinstance(tracks, Path):
         tracks: list[Path] = tracks
@@ -167,15 +167,29 @@ def create_boss_bgm(
     phase_masters: list[MusicRandomSequenceContainer] = []
 
     for i, (phase, bgm) in enumerate(zip(boss_state_keys, tracks)):
-        copy_track(bgm)
-        
         phase_mrs = MusicRandomSequenceContainer.new(bnk.new_id(), parent=boss_msc)
         phase_masters.append(phase_mrs)
 
+        # Setup the segment and music track
         phase_seg = MusicSegment.new(bnk.new_id(), parent=phase_mrs)
-        phase_track = MusicTrack.new(bnk.new_id(), int(bgm.stem), parent=phase_seg)
+        phase_track = MusicTrack.new_from_wem(bnk.new_id(), bgm, parent=phase_seg)
+        track_duration = phase_track.playlist[0]["source_duration"]
         phase_seg.add_child(phase_track)
+        phase_seg.duration = track_duration
 
+        # Add markers for looping
+        if track_markers and track_markers[i]:
+            loop_start, loop_end = track_markers[i]
+        else:
+            loop_start = 0.0
+            loop_end = track_duration
+
+        phase_seg.add_marker(43573010, loop_start * 1000)
+        # According to Shion this is probably just for testing
+        phase_seg.add_marker(3898567437, (track_duration - 3) * 1000, "LoopCheck")
+        phase_seg.add_marker(1539036744, loop_end * 1000)
+
+        # Add the segment to the music container's playlist
         item_key = phase_mrs.add_playlist_item(bnk.new_id(), 0, avoid_repeat=1)
         phase_mrs.add_playlist_item(
             bnk.new_id(), phase_seg.id, parent=item_key, ers_type=4294967295
@@ -189,6 +203,7 @@ def create_boss_bgm(
                 rule = phase_mrs.add_transition_rule(phase_seg.id, phase_seg.id)
                 apply_fades(rule, *repeat_transitions[i])
 
+        # Add this phase to the boss' music manager
         boss_msc.add_branch([phase], phase_mrs.id)
         children.extend(
             [
@@ -198,8 +213,9 @@ def create_boss_bgm(
             ]
         )
 
-    # To disable the boss music
-    boss_msc.add_branch(["NoBattle"], 0)
+    # To disable the boss music, presumably not used by bosses you can't run away from
+    if add_nobattle_state:
+        boss_msc.add_branch(["NoBattle"], 0)
 
     # Setup phase transition rules
     if default_transition:
@@ -230,5 +246,9 @@ def create_boss_bgm(
     master_state_keys: list[int] = MusicSwitchContainer.parse_state_path(state_path)
     master.add_branch(master_state_keys, boss_msc.id)
 
+    # Add nodes and wems to soundbank
     bnk.add_nodes(boss_msc, *children)
+    for bgm in tracks:
+        bnk.add_wem(bgm, "Streaming")
+
     return (boss_msc, children)

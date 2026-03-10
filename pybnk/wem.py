@@ -42,6 +42,87 @@ def import_wems(bnk: Soundbank, wems: list[Path]) -> None:
             node["bank_source_data/media_information/in_memory_media_size"] = wem_size
 
 
+def get_wem_metadata(wem: Path) -> float:
+    # Graciously taken from https://github.com/hcs64/ww2ogg/blob/master/src/wwriff.cpp
+    filesize = wem.stat().st_size
+    with wem.open("rb") as f:
+        data: bytes = f.read(4)
+        if data.decode() != "RIFF":
+            raise ValueError(f"Unexpected RIFF header {data}")
+        
+        # File size
+        riff_size = int.from_bytes(f.read(4)) + 8
+        if riff_size > filesize:
+            # Truncated file, but we don't really care as long as we can get the metadata
+            pass
+        
+        data = f.read(4)
+        if data.decode() != "WAVE":
+            raise ValueError(f"Unexpected WAVE header {data}")
+
+        offset = 12
+        fmt_section = -1
+        fmt_len = 0
+
+        while offset < riff_size:
+            f.seek(offset)
+            data = f.read(4)
+            chunk_size = int.from_bytes(f.read(4))
+
+            if data.decode() == "fmt ":
+                fmt_section = offset + 8
+                fmt_len = chunk_size
+                break
+            
+            offset += 8 + chunk_size
+
+        if fmt_section < 0:
+            raise ValueError("Could not locate fmt section")
+
+        f.seek(fmt_section)
+        
+        data = int.from_bytes(f.read(4))
+        if data != 0xffff:
+            raise ValueError(f"Expected 0xffff marker, got {data}")
+
+        channels = int.from_bytes(f.read(2))
+        sample_rate = int.from_bytes(f.read(4))
+        avg_bps = int.from_bytes(f.read(4))
+
+        data = int.from_bytes(f.read(4))
+        if data != 0x0:
+            raise ValueError(f"Expected 0x0000, got {data}")
+
+        fmt_extra_len = int.from_bytes(f.read(2))
+        if fmt_len - 0x12 != fmt_extra_len:
+            raise ValueError(f"Bad fmt extra length {fmt_extra_len}")
+
+        if fmt_len - 0x12 >= 2:
+            # unk
+            f.read(2)
+            if fmt_len - 0x12 >= 6:
+                # subtype
+                f.read(4)
+
+        if fmt_len == 0x28:
+            data = f.read(16)
+            signature = bytearray(data)
+            if signature != bytes([1,0,0,0, 0,0,0x10,0, 0x80,0,0,0xAA, 0,0x38,0x9b,0x71]):
+                raise ValueError(f"Expected signature not found, got {signature}")
+
+        samples = f.read(4)
+
+    return {
+        "channels": channels,
+        "sample_rate": sample_rate,
+        "avg_bps": avg_bps,
+        "samples": samples,
+        "duration": samples / sample_rate,
+        "filesize": filesize,
+        "in_memory_size": len(wem.read_bytes()),
+    }
+
+
 def set_volume(wav: Path, volume: float, *, out_file: Path = None) -> Path:
     audio: AudioSegment = AudioSegment.from_file(wav)
     audio = audio.apply_gain(volume)
