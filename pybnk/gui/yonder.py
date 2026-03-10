@@ -142,11 +142,18 @@ class BanksOfYonder:
                 )
 
             with dpg.menu(label="Edit", tag=f"{self.tag}_menu_edit"):
+                # TODO place these in some advanced menu
+                dpg.add_menu_item(
+                    label="Delete unused wems",
+                    callback=self._bank_remove_unused_wems,
+                    enabled=False,
+                    tag=f"{self.tag}_menu_remove_unused_wems",
+                )
                 dpg.add_menu_item(
                     label="Delete orphans",
                     callback=self._bank_delete_orphans,
                     enabled=False,
-                    tag=f"{self.tag}_menu_delete_orphans"
+                    tag=f"{self.tag}_menu_delete_orphans",
                 )
                 dpg.add_separator()
                 dpg.add_menu_item(
@@ -236,6 +243,7 @@ class BanksOfYonder:
             "_menu_file_save",
             "_menu_file_save_as",
             "_menu_file_repack",
+            "_menu_remove_unused_wems",
             "_menu_delete_orphans",
             "_menu_create",
         ]:
@@ -814,6 +822,10 @@ class BanksOfYonder:
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
 
+    def _bank_remove_unused_wems(self) -> None:
+        self.bnk.remove_unused_wems()
+        self.regenerate
+
     def _bank_delete_orphans(self) -> None:
         self.bnk.delete_orphans()
         self.regenerate()
@@ -1069,7 +1081,7 @@ class BanksOfYonder:
             dpg.show_item(tag)
             dpg.focus_item(tag)
             return
-        
+
         export_sounds_dialog(tag=tag)
 
         dpg.split_frame()

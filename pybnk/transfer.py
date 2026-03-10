@@ -1,4 +1,4 @@
-from pybnk import Soundbank, Node, calc_hash
+from pybnk import Soundbank, Node
 from pybnk.node_types import Event, Action
 from pybnk.wem import import_wems
 from pybnk.util import format_hierarchy, logger
