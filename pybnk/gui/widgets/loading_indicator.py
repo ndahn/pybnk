@@ -4,7 +4,7 @@ from pybnk.gui import style
 
 
 def loading_indicator(
-    label: str, color: tuple[int, int, int, int] = style.purple
+    label: str, color: tuple[int, int, int, int] = style.light_blue
 ) -> str:
     with dpg.window(
         modal=True,

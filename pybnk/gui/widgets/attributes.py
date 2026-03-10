@@ -27,6 +27,7 @@ from pybnk.gui import style
 from pybnk.gui.config import get_config
 from .paragraphs import add_paragraphs
 from .generic_input_widget import add_generic_widget
+from .loading_indicator import loading_indicator
 from .properties_table import add_properties_table
 from .player_widget import add_wav_player
 from .transition_matrix import add_transition_matrix
@@ -53,95 +54,105 @@ def create_attribute_widgets(
         dpg.set_value(f"{tag}_attr_hash", str(node.id))
 
     def on_node_properties_changed(
-        sender: str, properties: dict[str, float], node: WwiseNode
+        sender: str, new_props: dict[str, float], node: WwiseNode
     ) -> None:
-        for key, val in properties.items():
+        for key in list(node.properties.keys()):
+            if key not in new_props:
+                node.remove_property(key)
+
+        for key, val in new_props.items():
             node.set_property(key, val)
+
+        on_node_changed(tag, node, user_data)
 
     def set_property(sender: str, new_value: Any, prop: property):
         prop.fset(node, new_value)
         on_node_changed(tag, node, user_data)
 
-    with dpg.group(tag=tag, parent=parent):
-        # Heading
-        dpg.add_text(node.type)
-        if node.__class__.__doc__:
-            with dpg.tooltip(dpg.last_item()):
-                add_paragraphs(node.__class__.__doc__)
-
-        if not isinstance(node, WwiseNode):
-            dpg.add_input_text(
-                label="Name",
-                default_value=node.lookup_name("<?>"),
-                callback=update_node_name,
-            )
-
-        dpg.add_input_text(
-            label="Hash",
-            default_value=str(node.id),
-            readonly=True,
-            enabled=False,
-            tag=f"{tag}_attr_hash",
-        )
-
-        dpg.add_spacer(height=3)
-        dpg.add_separator()
-        dpg.add_spacer(height=3)
-
-        # Find all exposed python properties, including those from base classes
-        properties: dict[str, property] = {}
-        todo = deque([node.__class__])
-        while todo:
-            c = todo.popleft()
-            for name, prop in c.__dict__.items():
-                if name in ("id", "name", "type", "parent"):
-                    continue
-                if isinstance(prop, property):
-                    properties.setdefault(name, prop)
-
-            todo.extend(c.__bases__)
-
-        # This may remove or add properties that are handled differently
-        _create_type_specific_attributes(
-            bnk,
-            node,
-            properties,
-            on_node_changed,
-            on_node_selected,
-            tag=tag,
-            parent=parent,
-            user_data=user_data,
-        )
-
-        for name, prop in properties.items():
-            value_type = prop.fget.__annotations__["return"]
-            value = prop.fget(node)
-            readonly = prop.fset is None
-            doc = doc_parse(prop.__doc__)
-
-            try:
-                widget = add_generic_widget(
-                    value_type,
-                    name,
-                    set_property,
-                    default=value,
-                    readonly=readonly,
-                    user_data=prop,
-                )
-            except Exception:
-                continue
-
-            if widget and doc:
+    loading = loading_indicator("loading...")
+    try:
+        with dpg.group(tag=tag, parent=parent):
+            # Heading
+            dpg.add_text(node.type)
+            if node.__class__.__doc__:
                 with dpg.tooltip(dpg.last_item()):
-                    dpg.add_text(doc.short_description)
+                    add_paragraphs(node.__class__.__doc__)
 
-        if isinstance(node, WwiseNode):
-            dpg.add_spacer(height=5)
-            add_properties_table(
-                node.properties,
-                on_node_properties_changed,
-                user_data=node,
+            if not isinstance(node, WwiseNode):
+                dpg.add_input_text(
+                    label="Name",
+                    default_value=node.lookup_name("<?>"),
+                    callback=update_node_name,
+                )
+
+            dpg.add_input_text(
+                label="Hash",
+                default_value=str(node.id),
+                readonly=True,
+                enabled=False,
+                tag=f"{tag}_attr_hash",
             )
+
+            dpg.add_spacer(height=3)
+            dpg.add_separator()
+            dpg.add_spacer(height=3)
+
+            # Find all exposed python properties, including those from base classes
+            properties: dict[str, property] = {}
+            todo = deque([node.__class__])
+            while todo:
+                c = todo.popleft()
+                for name, prop in c.__dict__.items():
+                    if name in ("id", "name", "type", "parent"):
+                        continue
+                    if isinstance(prop, property):
+                        properties.setdefault(name, prop)
+
+                todo.extend(c.__bases__)
+
+            # This may remove or add properties that are handled differently
+            _create_type_specific_attributes(
+                bnk,
+                node,
+                properties,
+                on_node_changed,
+                on_node_selected,
+                tag=tag,
+                parent=parent,
+                user_data=user_data,
+            )
+
+            for name, prop in properties.items():
+                value_type = prop.fget.__annotations__["return"]
+                value = prop.fget(node)
+                readonly = prop.fset is None
+                doc = doc_parse(prop.__doc__)
+
+                try:
+                    widget = add_generic_widget(
+                        value_type,
+                        name,
+                        set_property,
+                        default=value,
+                        readonly=readonly,
+                        user_data=prop,
+                    )
+                except Exception:
+                    continue
+
+                if widget and doc:
+                    with dpg.tooltip(dpg.last_item()):
+                        dpg.add_text(doc.short_description)
+
+            if isinstance(node, WwiseNode):
+                dpg.add_spacer(height=5)
+                add_properties_table(
+                    node.properties,
+                    on_node_properties_changed,
+                    user_data=node,
+                )
+    finally:
+        dpg.delete_item(loading)
 
     return tag
 

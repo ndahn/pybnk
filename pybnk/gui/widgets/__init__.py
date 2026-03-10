@@ -13,3 +13,4 @@ from .table_tree_nodes import (
     add_lazy_table_tree_node,
     set_foldable_row_status,
 )
+from .transition_matrix import add_transition_matrix

@@ -2,6 +2,7 @@ from typing import Any, Type
 import sys
 import logging
 import json
+from copy import deepcopy
 from pathlib import Path
 import subprocess
 import pyperclip
@@ -46,10 +47,8 @@ from pybnk.gui.dialogs.new_boss_track_dialog import new_boss_track_dialog
 from pybnk.gui.dialogs.export_sounds_dialog import export_sounds_dialog
 
 
-# BUG direct parent ids not set
-# BUG plugin as hash
-# BUG properties not removed
-# BUG shortcuts
+# TODO jump to
+# TODO pin nodes
 # TODO ambience
 # TODO graph visualization
 # TODO attenuation curve editor
@@ -70,7 +69,7 @@ class BanksOfYonder:
         self.globals_map: dict[int, Event] = {}
         self._selected_root: str = None
         self._selected_node: Node = None
-        self._selected_node_backup: str = None
+        self._selected_node_backup: dict = None
 
         self.config: Config = load_config()
 
@@ -233,6 +232,9 @@ class BanksOfYonder:
                     label="About",
                     callback=self._open_about_dialog,
                 )
+
+        with dpg.handler_registry(tag=f"{self.tag}_shortcut_handler"):
+                dpg.add_key_press_handler(dpg.mvKey_None, callback=self._on_key_press)
 
         self._regenerate_recent_files_menu()
 
@@ -419,6 +421,34 @@ class BanksOfYonder:
                 tag=f"{tag}_context_delete",
             )
 
+    def _on_key_press(self, sender, key: int) -> None:
+        if dpg.is_key_down(dpg.mvKey_ModShift) and dpg.is_key_down(dpg.mvKey_ModCtrl):
+            if key == dpg.mvKey_S:
+                self._save_soundbank_as()
+
+        elif dpg.is_key_down(dpg.mvKey_ModCtrl):
+            if key == dpg.mvKey_O:
+                self._open_soundbank()
+            elif key == dpg.mvKey_S:
+                self._save_soundbank()
+            elif key == dpg.mvKey_N:
+                self._create_empty_soundbank()
+            # elif key == dpg.mvKey_Q:
+            #     self._exit_app()
+            # elif key == dpg.mvKey_Z:
+            #     self.undo()
+            # elif key == dpg.mvKey_Y:
+            #     self.redo()
+            # elif key == dpg.mvKey_F:
+            #     self.open_search_dialog()
+
+        elif dpg.is_key_down(dpg.mvKey_ModShift):
+            pass
+
+        else:
+            if key == dpg.mvKey_F4:
+                self._repack_soundbank()
+
     def _regenerate_recent_files_menu(self) -> None:
         dpg.delete_item(f"{self.tag}_menu_recent_files", slot=1, children_only=True)
         # dpg.split_frame()
@@ -522,7 +552,7 @@ class BanksOfYonder:
             filetypes={lang.json_files: "*.json"},
         )
         if path:
-            loading = loading_indicator("Saving soundbank...")
+            loading = loading_indicator("Saving soundbank...", color=style.purple)
             try:
                 logger.info(f"Saving soundbank to {path}")
                 self.bnk.save(path)
@@ -537,7 +567,7 @@ class BanksOfYonder:
         if not self.bnk:
             return
 
-        loading = loading_indicator("Repacking...")
+        loading = loading_indicator("Repacking...", color=style.purple)
         try:
             bnk2json = self.config.locate_bnk2json()
             repack_soundbank(bnk2json, self.bnk.bnk_dir)
@@ -582,7 +612,7 @@ class BanksOfYonder:
 
         if path.name.endswith(".bnk"):
             logger.info(f"Unpacking soundbank {path}")
-            loading = loading_indicator("Unpacking...")
+            loading = loading_indicator("Unpacking...", color=style.purple)
             try:
                 bnk2json = self.config.locate_bnk2json()
                 unpack_soundbank(bnk2json, path)
@@ -590,7 +620,7 @@ class BanksOfYonder:
                 dpg.delete_item(loading)
 
         logger.info(f"Loading soundbank {path}")
-        loading = loading_indicator("Loading soundbank...")
+        loading = loading_indicator("Loading soundbank...", color=style.purple)
         try:
             dpg.set_value(f"{self.tag}_events_filter", "")
             dpg.set_value(f"{self.tag}_globals_filter", "")
@@ -795,9 +825,8 @@ class BanksOfYonder:
 
         if isinstance(node, Node):
             node = node.cast()
-            data = node.json()
-            self._selected_node_backup = data
-            dpg.set_value(f"{self.tag}_json", data)
+            self._selected_node_backup = deepcopy(node.dict)
+            dpg.set_value(f"{self.tag}_json", node.json())
         else:
             self._selected_node_backup = None
             dpg.set_value(f"{self.tag}_json", "")
@@ -943,7 +972,7 @@ class BanksOfYonder:
     def node_reset_json(self) -> None:
         if self._selected_node:
             self._selected_node.update(self._selected_node_backup)
-            self.update_json_panel()
+            self.select_node(self._selected_node)
 
     def update_json_panel(self) -> None:
         value = ""
@@ -1107,3 +1136,8 @@ class BanksOfYonder:
 
         dpg.split_frame()
         center_window(tag)
+    
+    def _exit_app(self):
+        dpg.stop_dearpygui()
+        dpg.destroy_context()
+        sys.exit(0)
