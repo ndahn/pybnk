@@ -179,6 +179,7 @@ def wav2wem(
     waves: list[Path] | Path,
     out_dir: Path = None,
     conversion: Literal["PCM", "Vorbis Quality High"] = "Vorbis Quality High",
+    keep_proj_dir: bool = False,
 ) -> Path:
     if isinstance(waves, Path):
         waves = [waves]
@@ -211,7 +212,7 @@ def wav2wem(
     )
 
     # Create a wwise project if it doesn't exist yet
-    wproj_path = wav_dir / "pybnk/pybnk.wproj"
+    wproj_path = wav_dir / "pybnk_wav2wem/pybnk.wproj"
     if not wproj_path.is_file():
         subprocess.check_call(
             [str(wwise_exe), "create-new-project", str(wproj_path), "--quiet"]
@@ -237,8 +238,10 @@ def wav2wem(
         shutil.move(file, out_dir)
 
     # Cleanup
-    shutil.rmtree(wwise_out_dir)
     wsources_path.unlink()
+    shutil.rmtree(wwise_out_dir)
+    if not keep_proj_dir:
+        shutil.rmtree(wproj_path)
 
     return Path(out_dir)
 

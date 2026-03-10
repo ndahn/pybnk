@@ -38,7 +38,7 @@ def convert_wavs_dialog(
         nonlocal output_dir
         output_dir = path
 
-    def show_message(msg: str, color: tuple[int, int, int, int] = style.red) -> None:
+    def show_message(msg: str = None, color: tuple[int, int, int, int] = style.red) -> None:
         if not msg:
             dpg.hide_item(f"{tag}_notification")
             return
@@ -137,6 +137,7 @@ def convert_wavs_dialog(
             "Output dir",
             on_outputdir_selected,
             file_mode="folder",
+            tag=f"{tag}_output_dir",
         )
 
         dpg.add_spacer(height=5)

@@ -146,7 +146,7 @@ def new_boss_track_dialog(
         wavs = [(i, f) for i, f in enumerate(bgm_tracks) if f.name.endswith(".wav")]
         if wavs:
             logger.info(f"Converting {len(wavs)} wave files to wem")
-            wwise = get_config().locate_vgmstream()
+            wwise = get_config().locate_wwise()
             out_dir = wav2wem(wwise, [w[1] for w in wavs])
             for i, w in wavs:
                 bgm_tracks[i] = out_dir / f"{w.stem}.wem"
