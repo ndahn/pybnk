@@ -37,7 +37,19 @@ class ActionType(IntFlag):
 RtcpType: TypeAlias = Literal["GameParameter"]
 AccumulationType: TypeAlias = Literal["Additive"]
 ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
-CurveType: TypeAlias = Literal["Linear", "Log1", "Log2", "Log3", "SCurve", "Exp1", "Exp2", "Exp3", "Sin", "Constant"]
+CurveType: TypeAlias = Literal[
+    "Linear",
+    "Log1",
+    "Log2",
+    "Log3",
+    "SCurve",
+    "InvSCurve",
+    "Exp1",
+    "Exp2",
+    "Exp3",
+    "Sin",
+    "Constant",
+]
 SyncType: TypeAlias = Literal["Immediate", "NextGrid", "NextBar", "ExitCue"]
 SourceType: TypeAlias = Literal["Embedded", "Streaming", "PrefetchStreaming"]
 PluginType: TypeAlias = Literal["VORBIS", "PCM"]

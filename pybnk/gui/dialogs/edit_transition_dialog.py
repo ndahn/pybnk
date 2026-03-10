@@ -99,6 +99,7 @@ def edit_transition_dialog(
         height=400,
         autosize=True,
         no_saved_settings=True,
+        tag=tag,
         on_close=lambda: dpg.delete_item(window),
     ) as window:
         dpg.add_text("Source Transition Rule", color=(200, 120, 80, 255))

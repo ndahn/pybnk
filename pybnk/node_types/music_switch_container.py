@@ -1,6 +1,7 @@
 from pybnk import Node
 from pybnk.hash import calc_hash
 from pybnk.util import logger, PathDict
+from pybnk.enums import CurveType
 from .wwise_node import WwiseNode
 
 
@@ -35,7 +36,7 @@ class MusicSwitchContainer(WwiseNode):
         cls,
         nid: int,
         arguments: list[str | int] = None,
-        parent_id: int = 0,
+        parent: int | Node = None,
     ) -> "MusicSwitchContainer":
         """Create a new MusicSwitchContainer node.
 
@@ -45,8 +46,8 @@ class MusicSwitchContainer(WwiseNode):
             Node ID (hash).
         arguments : list[str | int], default=None
             Arguments this container will switch on.
-        parent_id : int, default=0
-            Parent node ID.
+        parent : int, default=None
+            Parent node.
 
         Returns
         -------
@@ -55,11 +56,13 @@ class MusicSwitchContainer(WwiseNode):
         """
         node = cls.from_template(nid, "MusicSwitchContainer")
         container = cls(node.dict)
+
         if arguments:
             for key in MusicSwitchContainer.parse_state_path(arguments):
                 container.add_argument(key)
-        if parent_id != 0:
-            container.parent = parent_id
+        if parent is not None:
+            container.parent = parent
+
         return container
 
     @property
@@ -289,12 +292,12 @@ class MusicSwitchContainer(WwiseNode):
         dest_ids: int | list[int] = -1,
         source_transition_time: int = 0,
         source_fade_offset: int = 0,
-        source_fade_curve: str = "Linear",
+        source_fade_curve: CurveType = "Linear",
         dest_transition_time: int = 0,
         dest_fade_offset: int = 0,
-        dest_fade_curve: str = "Linear",
+        dest_fade_curve: CurveType = "Linear",
         transition_segment: int | Node = 0,
-    ) -> None:
+    ) -> dict:
         """Add a transition rule between segments.
 
         Parameters
@@ -361,6 +364,8 @@ class MusicSwitchContainer(WwiseNode):
         self["music_trans_node_params/transition_rule_count"] = len(
             self["music_trans_node_params/transition_rules"]
         )
+
+        return rule
 
     def get_references(self) -> list[tuple[str, int]]:
         paths = (

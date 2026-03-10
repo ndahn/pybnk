@@ -154,6 +154,7 @@ class RandomSequenceContainer(WwiseNode):
             children.remove(child_id)
             self["children/count"] = len(children)
             return True
+        
         return False
 
     def clear_children(self) -> None:

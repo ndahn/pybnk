@@ -1,5 +1,6 @@
 from pybnk.node import Node
 from pybnk.util import logger, PathDict
+from pybnk.enums import CurveType
 from .wwise_node import WwiseNode
 
 
@@ -91,25 +92,51 @@ class MusicRandomSequenceContainer(WwiseNode):
         children.extend(sorted(c for c in children_set if c > 0))
         self.base_params["children/count"] = len(children)
 
+    def get_playlist_tree(self) -> list[dict]:
+        # TODO
+        idx = 0
+        stack = []
+        items = self.playlist_items
+        tree = []
+
+        def grab():
+            nonlocal idx
+            
+            node = items[idx]
+            idx += 1
+            
+            for i in range(node["child_count"]):
+                grab()
+
+        while idx < len(items):
+            tree.append(grab())
+
+
     def add_playlist_item(
         self,
-        segment_id: int | Node,
         playlist_item_id: int,
+        segment_id: int | Node,
         weight: int = 50000,
         avoid_repeat: int = 0,
-    ) -> None:
-        """Associates a segment with this playlist for random/sequential playback.
+        ers_type: int = 0,
+        parent: int = 0,
+    ) -> int:
+        """Associates a segment with this playlist for random/sequential playback. A playlist is actually a flattened tree structure where children inherit settings from their parents. Use the parent parameter to associate child items to their parents.
 
         Parameters
         ----------
-        segment_id : int | Node
-            Segment node ID.
         playlist_item_id : int
             Unique playlist item ID.
+        segment_id : int | Node
+            Segment node ID.
         weight : int, default=50000
             Relative weight for random selection.
         avoid_repeat : int, default=0
             Number of recent items to avoid repeating.
+        ers_type : int, default=0
+            Playlist playback type (0 - sequence, 1 - random, 2 - shuffle, 4294967295 - inherit).
+        parent : int, default=0
+            Which playlist item to associate the new item with (0 - root).
         """
         if isinstance(segment_id, Node):
             if segment_id.parent > 0 and segment_id.parent != self.id:
@@ -117,11 +144,11 @@ class MusicRandomSequenceContainer(WwiseNode):
             
             segment_id = segment_id.id
 
-        item = {
+        new_item = {
             "segment_id": segment_id,
             "playlist_item_id": playlist_item_id,
             "child_count": 0,
-            "ers_type": 0,
+            "ers_type": ers_type,
             "loop_base": 0,
             "loop_min": 0,
             "loop_max": 0,
@@ -131,9 +158,26 @@ class MusicRandomSequenceContainer(WwiseNode):
             "shuffle": 0,
         }
         
-        self["playlist_items"].append(item)
+        if parent > 0:
+            # Insert after parent
+            for idx, item in enumerate(self.playlist_items):
+                if item["playlist_item_id"] == parent:
+                    insert_idx = idx + 1
+                    parent_item = item
+                    break
+            else:
+                raise ValueError(f"No playlist item with key {parent}")
+
+            insert_idx += parent_item["child_count"]
+            parent_item["child_count"] += 1
+            self.playlist_items.insert(insert_idx, new_item)
+        else:
+            self["playlist_items"].append(new_item)
+        
         self["playlist_item_count"] = len(self["playlist_items"])
         self._update_children_list()
+
+        return playlist_item_id
 
     def remove_playlist_item(self, playlist_item_id: int | Node) -> bool:
         """Disassociates a playlist item from this container.
@@ -173,10 +217,10 @@ class MusicRandomSequenceContainer(WwiseNode):
         dest_ids: int | list[int] = -1,
         source_transition_time: int = 0,
         source_fade_offset: int = 0,
-        source_fade_curve: str = "Linear",
+        source_fade_curve: CurveType = "Linear",
         dest_transition_time: int = 0,
         dest_fade_offset: int = 0,
-        dest_fade_curve: str = "Linear",
+        dest_fade_curve: CurveType = "Linear",
         transition_segment: int | Node = 0,
     ) -> None:
         """Add a transition rule between segments.

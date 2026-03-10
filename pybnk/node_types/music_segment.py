@@ -1,5 +1,5 @@
 from pybnk.node import Node
-from pybnk.util import PathDict
+from pybnk.util import PathDict, logger
 from .wwise_node import WwiseNode
 
 
@@ -122,6 +122,55 @@ class MusicSegment(WwiseNode):
         """Removes all timing markers from the segment."""
         self["markers"] = []
         self["marker_count"] = 0
+
+    def add_child(self, child_id: int | Node) -> None:
+        """Associates a child node for random or sequential playback.
+
+        Parameters
+        ----------
+        child_id : int | Node
+            Child node ID or Node instance.
+        """
+        if isinstance(child_id, Node):
+            if child_id.parent > 0 and child_id.parent != self.id:
+                logger.warning(f"Adding already adopted child {child_id} to {self}")
+            
+            child_id = child_id.id
+
+        children: list[int] = self["music_node_params/children/items"]
+        if child_id not in children:
+            children.append(child_id)
+            self["music_node_params/children/count"] = len(children)
+            children.sort()
+
+    def remove_child(self, child_id: int | Node) -> bool:
+        """Disassociates a child node from this container.
+
+        Parameters
+        ----------
+        child_id : int | Node
+            Child node ID or Node instance to remove.
+
+        Returns
+        -------
+        bool
+            True if child was removed, False if not found.
+        """
+        if isinstance(child_id, Node):
+            child_id = child_id.id
+
+        children = self["music_node_params/children/items"]
+        if child_id in children:
+            children.remove(child_id)
+            self["music_node_params/children/count"] = len(children)
+            return True
+        
+        return False
+
+    def clear_children(self) -> None:
+        """Disassociates all children from this container."""
+        self["music_node_params/children/items"] = []
+        self["music_node_params/children/count"] = 0
 
     @property
     def children(self) -> list[int]:
