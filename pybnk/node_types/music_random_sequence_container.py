@@ -31,12 +31,13 @@ class MusicRandomSequenceContainer(WwiseNode):
             New MusicRandomSequenceContainer instance.
         """
         temp = cls.load_template(cls.__name__)
-
+        
         container = cls(temp)
         container.id = nid
         if parent is not None:
             container.parent = parent
 
+        logger.info(f"Created new node {container}")
         return container
 
     @property

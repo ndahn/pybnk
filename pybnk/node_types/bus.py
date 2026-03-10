@@ -1,8 +1,8 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
 
 
-# NOTE not a BaseNode
 class Bus(Node):
     """Audio bus for routing and mixing multiple sounds together.
 
@@ -33,7 +33,7 @@ class Bus(Node):
         bus = cls(temp)
         bus.id = nid
         bus.override_bus_id = parent_bus_id
-
+        logger.info(f"Created new node {bus}")
         return bus
 
     @property

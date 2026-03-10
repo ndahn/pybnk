@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 from pathlib import Path
-import shutil
 
 from pybnk.node import Node
 from pybnk.enums import SourceType
+from pybnk.util import logger
 from pybnk.wem import get_wem_metadata
 from .wwise_node import WwiseNode
 
@@ -41,10 +41,10 @@ class MusicTrack(WwiseNode):
 
         track = cls(temp)
         track.id = nid
-
         if parent is not None:
             track.parent = parent
 
+        logger.info(f"Created new node {track}")
         return track
 
     @classmethod

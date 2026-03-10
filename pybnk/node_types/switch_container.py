@@ -1,3 +1,4 @@
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 
@@ -35,10 +36,10 @@ class SwitchContainer(WwiseNode):
         container.id = nid
         container.group_id = group_id
         container.default_switch = default_switch
-
         if parent_id is not None:
             container.parent = parent_id
         
+        logger.info(f"Created new node {container}")
         return container
 
     @property

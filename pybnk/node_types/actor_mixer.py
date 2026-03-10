@@ -40,6 +40,7 @@ class ActorMixer(WwiseNode):
         if parent is not None:
             mixer.parent = parent
 
+        logger.info(f"Created new node {mixer}")
         return mixer
 
     @property

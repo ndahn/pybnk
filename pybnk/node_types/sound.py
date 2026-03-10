@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 from pathlib import Path
-import shutil
 
 from pybnk.node import Node
 from pybnk.enums import SourceType, PluginType
+from pybnk.util import logger
 from .wwise_node import WwiseNode
 
 if TYPE_CHECKING:
@@ -55,6 +55,7 @@ class Sound(WwiseNode):
         if parent is not None:
             sound.parent = parent
 
+        logger.info(f"Created new node {sound}")
         return sound
 
     @classmethod

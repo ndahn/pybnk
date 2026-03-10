@@ -1,4 +1,5 @@
 from pybnk.node import Node
+from pybnk.util import logger
 from pybnk.enums import SoundType
 
 
@@ -23,10 +24,9 @@ class Event(Node):
             New Event instance.
         """
         temp = cls.load_template(cls.__name__)
-
         event = cls(temp)
         event.name = name
-
+        logger.info(f"Created new node {event}")
         return event
 
     @classmethod

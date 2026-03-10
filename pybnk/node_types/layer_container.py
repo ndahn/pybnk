@@ -32,6 +32,7 @@ class LayerContainer(WwiseNode):
         if parent is not None:
             container.parent = parent
 
+        logger.info(f"Created new node {container}")
         return container
 
     @property

@@ -1,6 +1,7 @@
 from typing import Any
 from pybnk import Soundbank, Node
 from pybnk.enums import ActionType
+from pybnk.util import logger
 
 
 class Action(Node):
@@ -39,12 +40,12 @@ class Action(Node):
         action.id = nid
         action.action_type = 1027  # Play action type
         action.set("params/Play", {})
-
         action.target_id = target_id
         action.is_bus = False
         action.fade_curve = fade_curve
         action.bank_id = bank_id
 
+        logger.info(f"Created new node {action}")
         return action
 
     @classmethod
@@ -74,10 +75,10 @@ class Action(Node):
         action.action_type = 8451
         action.target_id = target_event_id
         action.set("params", "PlayEvent")
-
         if delay > 0:
             action.delay = delay
 
+        logger.info(f"Created new node {action}")
         return action
 
     @classmethod
@@ -132,6 +133,7 @@ class Action(Node):
             action.transition_time = transition_time
         action.bank_id = bank_id
 
+        logger.info(f"Created new node {action}")
         return action
 
     @classmethod
@@ -154,6 +156,7 @@ class Action(Node):
             }
         )
 
+        logger.info(f"Created new node {action}")
         return action
 
     @classmethod
@@ -188,12 +191,12 @@ class Action(Node):
         action.id = nid
         action.action_type = 1538  # Mute bus action type
         action.set("params/MuteM", {})
-
         action.target_id = target_bus_id
         action.is_bus = True
         action.fade_curve = fade_curve
         action.bank_id = bank_id
 
+        logger.info(f"Created new node {action}")
         return action
 
     # TODO SetVolumeM action 2562
@@ -245,6 +248,7 @@ class Action(Node):
         action.fade_curve = fade_curve
         action.bank_id = bank_id
 
+        logger.info(f"Created new node {action}")
         return action
 
     @classmethod
@@ -288,6 +292,7 @@ class Action(Node):
         action.fade_curve = fade_curve
         action.bank_id = bank_id
 
+        logger.info(f"Created new node {action}")
         return action
 
     @property

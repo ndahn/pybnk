@@ -1,8 +1,8 @@
 from pybnk.node import Node
 from pybnk.enums import RtcpType, AccumulationType, ScalingType, CurveType
+from pybnk.util import logger
 
 
-# NOTE not a BaseNode
 class Attenuation(Node):
     """Attenuation object defining distance-based audio falloff curves.
 
@@ -26,6 +26,7 @@ class Attenuation(Node):
         temp = cls.load_template(cls.__name__)
         attenuation = cls(temp)
         attenuation.id = nid
+        logger.info(f"Created new node {attenuation}")
         return attenuation
 
     @property

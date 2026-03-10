@@ -40,6 +40,7 @@ class MusicSegment(WwiseNode):
         if parent is not None:
             segment.parent = parent
 
+        logger.info(f"Created new node {segment}")
         return segment
 
     @property
