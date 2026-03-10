@@ -30,7 +30,6 @@ class MusicSwitchContainer(WwiseNode):
 
         return keys
 
-
     @classmethod
     def new(
         cls,
@@ -54,8 +53,9 @@ class MusicSwitchContainer(WwiseNode):
         MusicSwitchContainer
             New MusicSwitchContainer instance.
         """
-        node = cls.from_template(nid, "MusicSwitchContainer")
-        container = cls(node.dict)
+        temp = cls.load_template(cls.__name__)
+        container = cls(temp)
+        container.id = nid
 
         if arguments:
             for key in MusicSwitchContainer.parse_state_path(arguments):
@@ -242,12 +242,14 @@ class MusicSwitchContainer(WwiseNode):
         self._rebuild_tree_indices()
         self._update_children_list()
 
-    def add_branch(self, path: tuple[int], node_id: int | Node) -> None:
+    def add_branch(self, path: list[int | str], node_id: int | Node) -> None:
         if len(path) != len(self.arguments):
             raise ValueError("Path length must be equal to number of tree arguments")
 
+        path: list[int] = MusicSwitchContainer.parse_state_path(path)
         parent: dict = self.decision_tree
         offset = 0
+
         for i, key in enumerate(path):
             for child in parent["children"]:
                 if child["key"] == key:

@@ -78,7 +78,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         list[int]
             List of child segment hash IDs.
         """
-        return self["music_trans_node_params/music_node_params/children/items"]
+        return self.music_params["children/items"]
 
     def _update_children_list(self) -> None:
         children_set = set()
@@ -87,10 +87,10 @@ class MusicRandomSequenceContainer(WwiseNode):
             children_set.add(playlist_item.get("segment_id", 0))
 
         # Update the children list
-        children = self.base_params["children/items"]
+        children = self.music_params["children/items"]
         children.clear()
         children.extend(sorted(c for c in children_set if c > 0))
-        self.base_params["children/count"] = len(children)
+        self.music_params["children/count"] = len(children)
 
     def add_playlist_item(
         self,
@@ -280,7 +280,7 @@ class MusicRandomSequenceContainer(WwiseNode):
         )
         refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
 
-        children = self["music_trans_node_params/music_node_params/children/items"]
+        children = self.music_params["children/items"]
         for i, child_id in enumerate(children):
             refs.append(
                 (

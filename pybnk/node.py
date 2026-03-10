@@ -20,7 +20,7 @@ class Node:
             name = name[:-5]
 
         if name not in cls._templates:
-            template_txt = resource_data("templates/" + name)
+            template_txt = resource_data("templates/" + name + ".json")
             cls._templates[name] = json.loads(template_txt)
 
         return cls._templates[name]
