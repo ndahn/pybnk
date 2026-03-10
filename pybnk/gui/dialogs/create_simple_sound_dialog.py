@@ -8,8 +8,7 @@ from pybnk.node_types import Event, ActorMixer
 from pybnk.enums import property_defaults
 from pybnk.util import logger
 from pybnk.gui import style
-from pybnk.gui.widgets import add_properties_table, add_filepaths_table
-from .select_nodes_dialog import select_nodes_of_type
+from pybnk.gui.widgets import add_properties_table, add_filepaths_table, add_node_widget
 
 
 def create_simple_sound_dialog(
@@ -119,18 +118,12 @@ def create_simple_sound_dialog(
         )
 
         # Actor mixer selector
-        with dpg.group(horizontal=True):
-            dpg.add_input_text(
-                default_value="0", decimal=True, tag=f"{tag}_actor_mixer"
-            )
-            dpg.add_button(
-                arrow=True,
-                direction=dpg.mvDir_Right,
-                callback=lambda s, a, u: select_nodes_of_type(
-                    bnk, ActorMixer, on_amx_selected
-                ),
-            )
-            dpg.add_text("Actor Mixer")
+        add_node_widget(
+            bnk.query,
+            "ActorMixer",
+            on_amx_selected,
+            node_type=ActorMixer,
+        )
 
         # Avoid repeats
         dpg.add_checkbox(

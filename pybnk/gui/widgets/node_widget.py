@@ -8,8 +8,10 @@ from pybnk.gui.dialogs.select_nodes_dialog import select_nodes_dialog
 def add_node_widget(
     get_items: Callable[[str], Iterable[Node]],
     label: str,
-    callback: Callable[[str, int | Node, Any], None],
+    callback: Callable[[str, Node | list[Node], Any], None],
     *,
+    get_node_details: Callable[[Node], list[str]] = None,
+    multiple: bool = False,
     default: NodeLike = None,
     node_type: Type[Node] = None,
     readonly: bool = False,
@@ -41,6 +43,8 @@ def add_node_widget(
         select_nodes_dialog(
             get_nodes,
             on_node_selected,
+            get_node_details=get_node_details,
+            multiple=multiple,
             user_data=user_data,
         )
 

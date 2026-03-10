@@ -9,6 +9,7 @@ def select_nodes_dialog(
     get_items: Callable[[str], Iterable[Node]],
     on_nodes_selected: Callable[[str, Node | list[Node], Any], None],
     *,
+    get_node_details: Callable[[Node], list[str]] = None,
     multiple: bool = False,
     max_items: int = 200,
     title: str = "Select Node",
@@ -51,6 +52,13 @@ def select_nodes_dialog(
                     user_data=row,
                 )
 
+            if get_node_details:
+                details = get_node_details(node)
+                if details:
+                    with dpg.tooltip(dpg.last_item()):
+                        for line in details:
+                            dpg.add_text(line)
+
     def _on_row_clicked(sender: int, value: bool, row_tag: int) -> None:
         key = row_tags.get(row_tag)
         if key is None:
@@ -87,14 +95,14 @@ def select_nodes_dialog(
     def on_okay() -> None:
         if not selected_keys:
             return
-        
+
         if multiple:
             result = [items[k] for k in selected_keys if k in items]
             on_nodes_selected(tag, result, user_data)
         else:
             key = next(iter(selected_keys), None)
             on_nodes_selected(tag, items[key], user_data)
-        
+
         dpg.delete_item(window)
 
     with dpg.window(
@@ -150,6 +158,7 @@ def select_nodes_of_type(
     node_type: _T,
     on_node_selected: Callable[[str, _T | list[_T], Any], None],
     *,
+    get_node_details: Callable[[Node], list[str]] = None,
     multiple: bool = False,
     tag: str = 0,
     user_data: Any = None,
@@ -163,5 +172,10 @@ def select_nodes_of_type(
         return [n for n in candidates if filt in f"{n.lookup_name('')}{n.id}"]
 
     return select_nodes_dialog(
-        get_nodes, on_node_selected, multiple=multiple, tag=tag, user_data=user_data
+        get_nodes,
+        on_node_selected,
+        get_node_details=get_node_details,
+        multiple=multiple,
+        tag=tag,
+        user_data=user_data,
     )

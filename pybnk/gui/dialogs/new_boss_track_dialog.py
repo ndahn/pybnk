@@ -4,13 +4,13 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank
 from pybnk.node_types import MusicSwitchContainer
-from pybnk.hash import calc_hash
+from pybnk.hash import calc_hash, lookup_name
 from pybnk.util import logger
 from pybnk.convenience import create_boss_bgm
 from pybnk.wem import wav2wem
 from pybnk.gui import style
 from pybnk.gui.config import get_config
-from pybnk.gui.widgets import add_filepaths_table, add_node_widget
+from pybnk.gui.widgets import add_filepaths_table, add_node_widget, add_paragraphs
 from .create_state_path_dialog import create_state_path_dialog
 
 
@@ -38,6 +38,9 @@ def new_boss_track_dialog(
 
         filt = f"type=MusicSwitchContainer arguments:*/group_id={bgm_enemy_type_hash} {filt}"
         return list(bnk.query(filt))
+
+    def get_music_switch_container_details(msc: MusicSwitchContainer) -> list[str]:
+        return [lookup_name(s, f"#{s}") for s in msc.arguments]
 
     def on_music_switch_container_selected(
         sender: str, selected_msc: int | MusicSwitchContainer, user_data: Any
@@ -167,6 +170,7 @@ def new_boss_track_dialog(
             get_music_switch_containers,
             "MusicSwitchContainer",
             on_music_switch_container_selected,
+            get_node_details=get_music_switch_container_details,
             node_type=MusicSwitchContainer,
         )
 
@@ -211,6 +215,14 @@ def new_boss_track_dialog(
 
         dpg.add_separator()
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
+
+        add_paragraphs("""\
+            - Boss tracks need to be added to cs_smain.
+            - If multiple MusicSwitchContainers are available, find the one where all other bosses are handled. 
+            - Without a dll you can only use one of the reserved BgmEnemyType values. Otherwise, add your custom strings to the BgmBossChrIdConv param in smithbox.
+""",
+        color=style.light_blue)
+        dpg.add_spacer(height=5)
 
         with dpg.group(horizontal=True):
             dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
