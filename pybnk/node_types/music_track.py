@@ -62,11 +62,8 @@ class MusicTrack(WwiseNode):
         size = meta["in_memory_size"]
 
         track = cls.new(nid, parent=parent)
-        track.add_source(
-            wem_id,
-            source_type,
-            size
-        )
+        
+        track.add_source(wem_id, size, source_type)
         track.add_playlist_item(
             wem_id,
             meta["duration"] * 1000,  # ms
@@ -153,9 +150,9 @@ class MusicTrack(WwiseNode):
     def add_source(
         self,
         source_id: int,
+        media_size: int,
         source_type: SourceType = "Embedded",
         plugin: str = "VORBIS",
-        media_size: int = 0,
     ) -> None:
         """Associates an audio file with this track.
 
@@ -163,12 +160,12 @@ class MusicTrack(WwiseNode):
         ----------
         source_id : int
             Media source ID.
+        media_size : int
+            In-memory media size in bytes.
         source_type : SourceType
             Source type.
         plugin : str
             Codec plugin.
-        media_size : int, default=0
-            In-memory media size in bytes.
         """
         source = {
             "plugin": plugin,
