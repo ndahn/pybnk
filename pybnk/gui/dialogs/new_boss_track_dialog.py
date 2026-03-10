@@ -152,7 +152,7 @@ def new_boss_track_dialog(
                 bgm_tracks[i] = out_dir / f"{w.stem}.wem"
 
         create_boss_bgm(bnk, msc, current_state_path, bgm_tracks)
-        dpg.delete_item(window)
+        show_message("Yay!", color=style.blue)
 
     with dpg.window(
         label=title,

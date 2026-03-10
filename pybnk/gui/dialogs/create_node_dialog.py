@@ -3,7 +3,7 @@ from dearpygui import dearpygui as dpg
 
 from pybnk import Soundbank
 from pybnk.node_types import WwiseNode
-from pybnk.util import get_function_spec
+from pybnk.util import get_function_spec, logger
 from pybnk.gui import style
 from pybnk.gui.widgets import add_generic_widget
 
@@ -59,6 +59,7 @@ def create_node_dialog(
         node_args["nid"] = nid
         type_class = node_types[selected_type]
         node = type_class.new(**node_args)
+        logger.info(f"Created new node {node}")
 
         callback(node)
         dpg.delete_item(window)

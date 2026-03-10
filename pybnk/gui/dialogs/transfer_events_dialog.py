@@ -148,7 +148,7 @@ def transfer_events_dialog(
                     event_map[stop_evt] = f"Stop_{did}"
 
         copy_wwise_events(src_bnk, dst_bnk, event_map)
-        dpg.delete_item(window)
+        show_message("Yay!", color=style.blue)
 
     with dpg.window(
         label=title,

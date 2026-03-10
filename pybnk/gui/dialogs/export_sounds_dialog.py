@@ -83,7 +83,7 @@ def export_sounds_dialog(
                 for w in wems:
                     shutil.copy(w, output_dir)
 
-            show_message("Sucecss!", color=style.blue)
+            show_message("Yay!", color=style.blue)
         finally:
             dpg.delete_item(loading)
 

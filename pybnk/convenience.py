@@ -1,5 +1,4 @@
 from pathlib import Path
-import shutil
 from dataclasses import dataclass
 
 from pybnk import Soundbank, Node
@@ -32,6 +31,7 @@ def create_simple_sound(
     actor_mixer: int | Node,
     avoid_repeats: bool = False,
     properties: dict[str, float] = None,
+    quiet: bool = False,
 ) -> tuple[tuple[Event, Event], RandomSequenceContainer, list[Sound]]:
     """Create a new sound structure with one or more sounds in a RandomSequenceContainer controlled by a start and stop event.
 
@@ -75,7 +75,6 @@ def create_simple_sound(
     sounds = []
     for w in wems:
         snd = Sound.new_from_wem(bnk.new_id(), w, parent=rsc)
-        bnk.add_wem(w)
         rsc.add_child(snd)
         sounds.append(snd)
 
@@ -86,8 +85,6 @@ def create_simple_sound(
     stop = Event.new(f"Stop_{event_name}")
     stop_action = Action.new_stop_action(bnk.new_id(), rsc.id)
     stop.add_action(stop_action)
-
-    bnk.add_nodes(rsc, *sounds, play, play_action, stop, stop_action)
 
     # Add the RSC to the actor mixer
     if isinstance(actor_mixer, int):
@@ -105,6 +102,10 @@ def create_simple_sound(
                 amx_node.cast().add_child(rsc)
     elif isinstance(actor_mixer, Node):
         actor_mixer.cast().add_child(rsc)
+
+    bnk.add_nodes(rsc, *sounds, play, play_action, stop, stop_action)
+    for w in wems:
+        bnk.add_wem(w)
 
     return ((play, stop), rsc, sounds)
 

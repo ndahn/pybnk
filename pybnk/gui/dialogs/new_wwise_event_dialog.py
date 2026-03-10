@@ -46,6 +46,8 @@ def new_wwise_event_dialog(
                 show_message("Name not matching pattern (x123456789)")
                 return
 
+        show_message()
+
         new_nodes = []
         target_id = int(dpg.get_value(f"{tag}_target_id"))
 
@@ -71,7 +73,7 @@ def new_wwise_event_dialog(
 
         bnk.add_nodes(new_nodes)
         callback(new_nodes)
-        dpg.delete_item(window)
+        show_message("Yay!", color=style.blue)
 
     with dpg.window(
         label=title,

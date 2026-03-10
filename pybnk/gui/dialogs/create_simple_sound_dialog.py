@@ -5,9 +5,10 @@ from dearpygui import dearpygui as dpg
 from pybnk import Soundbank, calc_hash
 from pybnk.convenience import create_simple_sound
 from pybnk.node_types import Event, ActorMixer
+from pybnk.enums import property_defaults
+from pybnk.util import logger
 from pybnk.gui import style
 from pybnk.gui.widgets import add_properties_table, add_filepaths_table
-from pybnk.enums import property_defaults
 from .select_nodes_dialog import select_nodes_of_type
 
 
@@ -77,7 +78,7 @@ def create_simple_sound_dialog(
             show_message("No sounds specified")
             return
 
-        show_message(None)
+        show_message()
         avoid_repeats = dpg.get_value(f"{tag}_avoid_repeats")
 
         (play_evt, stop_evt), _, _ = create_simple_sound(
@@ -89,8 +90,10 @@ def create_simple_sound_dialog(
             properties=properties,
         )
 
+        logger.info(f"Created new sound {name} with {len(wem_paths)} sounds")
+
         callback(play_evt, stop_evt)
-        dpg.delete_item(window)
+        show_message("Yay!", color=style.blue)
 
     with dpg.window(
         label=title,

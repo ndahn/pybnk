@@ -66,6 +66,8 @@ def convert_wavs_dialog(
                 show_message("Wwise exe not found")
                 return
 
+        show_message()
+
         loading = loading_indicator("Converting...")
         try:
             out_files = list(wav_paths)
@@ -109,7 +111,7 @@ def convert_wavs_dialog(
         if callback:
             callback(out_files)
 
-        dpg.delete_item(window)
+        show_message("Yay!", color=style.blue)
 
     with dpg.window(
         label=title,
