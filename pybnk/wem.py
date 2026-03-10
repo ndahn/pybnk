@@ -51,7 +51,7 @@ def get_wem_metadata(wem: Path) -> float:
             raise ValueError(f"Unexpected RIFF header {data}")
         
         # File size
-        riff_size = int.from_bytes(f.read(4)) + 8
+        riff_size = int.from_bytes(f.read(4), "little") + 8
         if riff_size > filesize:
             # Truncated file, but we don't really care as long as we can get the metadata
             pass
@@ -67,7 +67,7 @@ def get_wem_metadata(wem: Path) -> float:
         while offset < riff_size:
             f.seek(offset)
             data = f.read(4)
-            chunk_size = int.from_bytes(f.read(4))
+            chunk_size = int.from_bytes(f.read(4), "little")
 
             if data.decode() == "fmt ":
                 fmt_section = offset + 8
@@ -81,19 +81,19 @@ def get_wem_metadata(wem: Path) -> float:
 
         f.seek(fmt_section)
         
-        data = int.from_bytes(f.read(4))
+        data = int.from_bytes(f.read(2), "little")
         if data != 0xffff:
             raise ValueError(f"Expected 0xffff marker, got {data}")
 
-        channels = int.from_bytes(f.read(2))
-        sample_rate = int.from_bytes(f.read(4))
-        avg_bps = int.from_bytes(f.read(4))
+        channels = int.from_bytes(f.read(2), "little")
+        sample_rate = int.from_bytes(f.read(4), "little")
+        avg_bps = int.from_bytes(f.read(4), "little")
 
-        data = int.from_bytes(f.read(4))
+        data = int.from_bytes(f.read(4), "little")
         if data != 0x0:
             raise ValueError(f"Expected 0x0000, got {data}")
 
-        fmt_extra_len = int.from_bytes(f.read(2))
+        fmt_extra_len = int.from_bytes(f.read(2), "little")
         if fmt_len - 0x12 != fmt_extra_len:
             raise ValueError(f"Bad fmt extra length {fmt_extra_len}")
 
@@ -110,9 +110,9 @@ def get_wem_metadata(wem: Path) -> float:
             if signature != bytes([1,0,0,0, 0,0,0x10,0, 0x80,0,0,0xAA, 0,0x38,0x9b,0x71]):
                 raise ValueError(f"Expected signature not found, got {signature}")
 
-        samples = f.read(4)
+        samples = int.from_bytes(f.read(4), "little")
 
-    return {
+    meta = {
         "channels": channels,
         "sample_rate": sample_rate,
         "avg_bps": avg_bps,
@@ -121,6 +121,7 @@ def get_wem_metadata(wem: Path) -> float:
         "filesize": filesize,
         "in_memory_size": len(wem.read_bytes()),
     }
+    return meta
 
 
 def set_volume(wav: Path, volume: float, *, out_file: Path = None) -> Path:
