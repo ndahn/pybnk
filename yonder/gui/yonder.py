@@ -47,13 +47,14 @@ from yonder.gui.dialogs.new_boss_track_dialog import new_boss_track_dialog
 from yonder.gui.dialogs.export_sounds_dialog import export_sounds_dialog
 
 
+# TODO boss bgm: loop markers, transition rules
 # TODO jump to
 # TODO pin nodes
-# TODO ambience
+# TODO better player
+# TODO new ambience track
 # TODO graph visualization
 # TODO attenuation curve editor
 # TODO setup RTCPs
-# TODO localizations
 
 
 class BanksOfYonder:
@@ -554,7 +555,7 @@ class BanksOfYonder:
             filetypes={lang.json_files: "*.json"},
         )
         if path:
-            loading = loading_indicator("Saving soundbank...", color=style.purple)
+            loading = loading_indicator("Saving soundbank...")
             try:
                 logger.info(f"Saving soundbank to {path}")
                 self.bnk.save(path)
@@ -569,7 +570,7 @@ class BanksOfYonder:
         if not self.bnk:
             return
 
-        loading = loading_indicator("Repacking...", color=style.purple)
+        loading = loading_indicator("Repacking...")
         try:
             bnk2json = self.config.locate_bnk2json()
             repack_soundbank(bnk2json, self.bnk.bnk_dir)
@@ -614,7 +615,7 @@ class BanksOfYonder:
 
         if path.name.endswith(".bnk"):
             logger.info(f"Unpacking soundbank {path}")
-            loading = loading_indicator("Unpacking...", color=style.purple)
+            loading = loading_indicator("Unpacking...")
             try:
                 bnk2json = self.config.locate_bnk2json()
                 unpack_soundbank(bnk2json, path)
@@ -622,7 +623,7 @@ class BanksOfYonder:
                 dpg.delete_item(loading)
 
         logger.info(f"Loading soundbank {path}")
-        loading = loading_indicator("Loading soundbank...", color=style.purple)
+        loading = loading_indicator("Loading soundbank...")
         try:
             dpg.set_value(f"{self.tag}_events_filter", "")
             dpg.set_value(f"{self.tag}_globals_filter", "")

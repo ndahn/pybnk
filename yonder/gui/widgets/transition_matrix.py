@@ -301,6 +301,7 @@ def add_transition_matrix(
 
         dpg.pop_container_stack()
 
+    # TODO consider using a heatmap for better performance instead
     dpg.add_text("Transition rules")
     dpg.add_table(
         header_row=True,

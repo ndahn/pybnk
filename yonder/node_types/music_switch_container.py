@@ -194,56 +194,6 @@ class MusicSwitchContainer(WwiseNode):
         self["group_types"].append(group_type)
         self["tree_depth"] = len(self["arguments"])
 
-    def set_decision_tree(self, tree_dict: dict) -> None:
-        """Set the decision tree structure.
-
-        This will flatten the tree and calculate correct first_child_index values
-        for serialization to Wwise soundbanks.
-
-        Parameters
-        ----------
-        tree_dict : dict
-            Complete tree structure with keys, node_ids, and children.
-        """
-
-        # Flatten the tree and calculate indices
-        def _flatten_tree_preorder(node: dict, flattened: list) -> None:
-            # Record this node's index and info
-            current_index = len(flattened)
-            children = node.get("children", [])
-
-            node_info = {
-                "index": current_index,
-                "key": node.get("key", 0),
-                "node_id": node.get("node_id", 0),
-                "first_child_index": len(flattened) + 1 if children else 0,
-                "child_count": len(children),
-                "weight": node.get("weight", 50),
-                "probability": node.get("probability", 100),
-                "children_indices": [],
-            }
-
-            flattened.append(node_info)
-
-            # Process children in order
-            for child in children:
-                child_index = len(flattened)
-                node_info["children_indices"].append(child_index)
-                _flatten_tree_preorder(child, flattened)
-
-        flattened = []
-        _flatten_tree_preorder(tree_dict, flattened)
-
-        # The root node needs the nested children for the JSON structure
-        # but the flattened array has the correct indices
-        root_with_children = self._rebuild_nested_structure(flattened)
-
-        self["tree"] = root_with_children
-        self["tree_size"] = len(flattened)
-
-        self._rebuild_tree_indices()
-        self._update_children_list()
-
     def add_branch(self, path: list[int | str], node_id: int | Node) -> None:
         if len(path) != len(self.arguments):
             raise ValueError("Path length must be equal to number of tree arguments")
@@ -392,21 +342,29 @@ class MusicSwitchContainer(WwiseNode):
 
         return refs
 
-    def _rebuild_tree_indices(self) -> list[dict]:
+    def _rebuild_tree_indices(self) -> int:
         """Recalculate the first_child_index attributes for tree nodes, which represents
         their indices within a flattened list representation."""
 
-        def delve(tree_node: dict, flattened: list) -> None:
+        def delve(tree_node: dict, offset: int) -> int:
             children = tree_node["children"]
-            tree_node["first_child_index"] = len(flattened) + 1 if children else 0
-            flattened.append(tree_node)
+            tree_node["child_count"] = len(children)
+            
+            if children:
+                tree_node["first_child_index"] = offset
+                offset += len(children)
+                
+                # Next sibling idx will come after all descendants
+                for child in tree_node["children"]:
+                    offset = delve(child, offset)
+            else:
+                # Leaf node
+                tree_node["first_child_index"] = 0
 
-            for child in children:
-                delve(child, flattened)
+            return offset
 
-        flat = []
-        delve(self.decision_tree, flat)
-        return flat
+        total = delve(self.decision_tree, 1)
+        return total
 
     def _update_children_list(self) -> None:
         """Update children list from all sources.

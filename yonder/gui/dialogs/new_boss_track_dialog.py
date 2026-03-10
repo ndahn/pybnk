@@ -154,6 +154,7 @@ def new_boss_track_dialog(
             for i, w in wavs:
                 bgm_tracks[i] = out_dir / f"{w.stem}.wem"
 
+        # TODO loop markers, transition rules
         create_boss_bgm(bnk, msc, current_state_path, bgm_tracks)
         show_message("Yay!", color=style.blue)
 
