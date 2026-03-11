@@ -191,7 +191,7 @@ class Soundbank:
 
     def new_id(self) -> int:
         while True:
-            id = randrange(10000000, 100000000)
+            id = randrange(100_000_000, 1_000_000_000)
             if id not in self._id2index:
                 return id
 
