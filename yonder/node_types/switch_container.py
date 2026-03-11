@@ -44,7 +44,7 @@ class SwitchContainer(WwiseNode):
 
     @property
     def group_type(self) -> int:
-        """Get or set the group type.
+        """Group type.
 
         Returns
         -------
@@ -59,7 +59,7 @@ class SwitchContainer(WwiseNode):
 
     @property
     def group_id(self) -> int:
-        """Get or set the switch group ID.
+        """Switch group ID.
 
         Returns
         -------
@@ -74,7 +74,7 @@ class SwitchContainer(WwiseNode):
 
     @property
     def default_switch(self) -> int:
-        """Get or set the default switch value.
+        """Default switch.
 
         Returns
         -------
@@ -89,7 +89,7 @@ class SwitchContainer(WwiseNode):
 
     @property
     def continuous_validation(self) -> bool:
-        """Get or set continuous validation flag.
+        """Whether to continuously validate the switches' state.
 
         Returns
         -------

@@ -167,7 +167,6 @@ class Soundbank:
         logger.info(f"Saving {self}")
 
         # Solve the dependency graph
-        self.solve()
         okay = self.verify()
         if not okay:
             logger.warning("Some issues were found in your soundbank. Check the log!")
@@ -316,49 +315,6 @@ class Soundbank:
 
         logger.info(f"Removed {len(removed)} unused wems")
 
-    def solve(self) -> None:
-        g = self.get_full_tree()
-        new_hirc = []
-
-        if not nx.is_directed_acyclic_graph(g):
-            logger.warning("HIRC is not acyclic")
-
-        # These will be appended at the very end
-        events: list[Node] = []
-        actions: list[Node] = []
-
-        # Reverse g so we get the children before their parents. This means that any objects
-        # with no references to other nodes (like Attenuations) will come at the very beginning.
-        # Since references must appear before the nodes referencing them this is exactly what
-        # we need.
-        for generation in nx.topological_generations(g.reverse()):
-            nodes: list[Node] = []
-
-            for nid in generation:
-                node = self[nid]
-                if node.type == "Event":
-                    events.append(node)
-                elif node.type == "Action":
-                    actions.append(node)
-                else:
-                    nodes.append(node)
-
-            # Sort by type first, then ID
-            nodes.sort(key=lambda n: f"{n.type} {n.id}")
-            new_hirc.extend(n for n in nodes)
-
-        # Usually the actions follow the event referencing them, but this is much easier
-        events.sort(key=lambda n: n.id)
-        new_hirc.extend(n for n in events)
-
-        actions.sort(key=lambda n: n.id)
-        new_hirc.extend(n for n in actions)
-
-        self._hirc = new_hirc
-
-        logger.info(f"Solved structure for {len(g)} nodes ({len(events)} events)")
-        self._regenerate_index_table()
-
     def get_full_tree(self, valid_only: bool = True) -> nx.DiGraph:
         g = nx.DiGraph()
 
@@ -503,11 +459,55 @@ class Soundbank:
 
         return extras
 
+    def solve(self) -> None:
+        g = self.get_full_tree()
+        new_hirc = []
+
+        if not nx.is_directed_acyclic_graph(g):
+            logger.warning("HIRC is not acyclic")
+
+        # These will be appended at the very end
+        events: list[Node] = []
+        actions: list[Node] = []
+
+        # Reverse g so we get the children before their parents. This means that any objects
+        # with no references to other nodes (like Attenuations) will come at the very beginning.
+        # Since references must appear before the nodes referencing them this is exactly what
+        # we need.
+        for generation in nx.topological_generations(g.reverse()):
+            nodes: list[Node] = []
+
+            for nid in generation:
+                node = self[nid]
+                if node.type == "Event":
+                    events.append(node)
+                elif node.type == "Action":
+                    actions.append(node)
+                else:
+                    nodes.append(node)
+
+            # Sort by type first, then ID
+            nodes.sort(key=lambda n: f"{n.type} {n.id}")
+            new_hirc.extend(n for n in nodes)
+
+        # Usually the actions follow the event referencing them, but this is much easier
+        events.sort(key=lambda n: n.id)
+        new_hirc.extend(n for n in events)
+
+        actions.sort(key=lambda n: n.id)
+        new_hirc.extend(n for n in actions)
+
+        self._hirc = new_hirc
+
+        logger.info(f"Solved structure for {len(g)} nodes ({len(events)} events)")
+        self._regenerate_index_table()
+
     def verify(self) -> int:
         severity = 0
         discovered_ids = set([0])
 
         logger.info(f"Verifying {self}...")
+        self.solve()
 
         for node in self._hirc:
             node_id = node.id
@@ -518,7 +518,7 @@ class Soundbank:
                 if node_id in discovered_ids:
                     logger.error(f"{node}: ID {node_id} has been defined before")
                     severity = max(severity, 2)
-                
+
                 discovered_ids.add(node_id)
 
             parent_id = node.parent
@@ -529,14 +529,29 @@ class Soundbank:
                 elif parent_id in discovered_ids:
                     logger.error(f"{node}: defined after its parent {parent_id}")
                     severity = max(severity, 2)
+                elif parent_id not in self:
+                    logger.error(f"{node}: parent {parent_id} does not exist")
+                    severity = max(severity, 2)
+                else:
+                    parent = self[parent_id]
+                    if hasattr(parent, "children"):
+                        if node.id not in parent.children:
+                            logger.error(
+                                f"{node}: parent {parent_id} does not include node in its children"
+                            )
+                            severity = max(severity, 2)
 
             children = getattr(node, "children", [])
             prev = -1
-            for child in children:
-                if child < prev:
+            for child_id in children:
+                if child_id < prev:
                     logger.error(f"{node}: children are not sorted")
                     severity = max(severity, 2)
                     break
+                # Non-existing children are actually pretty okay here
+                # if child_id not in self:
+                #     logger.warning(f"{node}: child {child_id} does not exist")
+                #     severity = max(severity, 1)
 
         if severity == 0:
             logger.info("Seems surprisingly fine - yay!")

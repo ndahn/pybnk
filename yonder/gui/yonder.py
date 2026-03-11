@@ -276,8 +276,9 @@ class BanksOfYonder:
                 with dpg.tab_bar():
                     with dpg.tab(label="Events"):
                         dpg.add_input_text(
-                            hint="Filter...",
+                            hint="Search on enter",
                             width=-1,
+                            on_enter=True,
                             callback=self._regenerate_events_list,
                             tag=f"{tag}_events_filter",
                         )
@@ -293,8 +294,9 @@ class BanksOfYonder:
                             dpg.add_table_column(label="Node", width_stretch=True)
                     with dpg.tab(label="Globals"):
                         dpg.add_input_text(
-                            hint="Filter...",
+                            hint="Search on enter",
                             width=-1,
+                            on_enter=True,
                             callback=self._regenerate_globals_list,
                             tag=f"{tag}_globals_filter",
                         )

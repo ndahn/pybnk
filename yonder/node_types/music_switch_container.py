@@ -79,7 +79,7 @@ class MusicSwitchContainer(WwiseNode):
 
     @property
     def continue_playback(self) -> bool:
-        """Get or set whether to continue playback across switches.
+        """Continue playback across switches.
 
         Returns
         -------
@@ -94,7 +94,7 @@ class MusicSwitchContainer(WwiseNode):
 
     @property
     def tree_depth(self) -> int:
-        """Get or set the decision tree depth.
+        """Number of decision variables.
 
         Returns
         -------
@@ -105,7 +105,7 @@ class MusicSwitchContainer(WwiseNode):
 
     @property
     def tree_mode(self) -> str:
-        """Get or set the tree mode.
+        """How the decision tree is resolved in case multiple rules apply.
 
         Returns
         -------
@@ -220,7 +220,7 @@ class MusicSwitchContainer(WwiseNode):
             branch = {
                 "key": key,
                 "node_id": 0,
-                "first_child_index": 0,
+                "first_child_index": 0,  # calculated by rewwise
                 "child_count": 0,
                 "weight": 50,
                 "probability": 100,
@@ -237,8 +237,9 @@ class MusicSwitchContainer(WwiseNode):
 
         # Set the node ID on the leaf child
         branch["node_id"] = node_id
-        self._rebuild_tree_indices()
-        self._update_children_list()
+        if node_id > 0:
+            self.children.append(node_id)
+            self.children.sort()
 
     def add_transition_rule(
         self,
@@ -341,56 +342,3 @@ class MusicSwitchContainer(WwiseNode):
             )
 
         return refs
-
-    def _rebuild_tree_indices(self) -> int:
-        """Recalculate the first_child_index attributes for tree nodes, which represents
-        their indices within a flattened list representation."""
-
-        def delve(tree_node: dict, offset: int) -> int:
-            children = tree_node["children"]
-            tree_node["child_count"] = len(children)
-            
-            if children:
-                tree_node["first_child_index"] = offset
-                offset += len(children)
-                
-                # Next sibling idx will come after all descendants
-                for child in tree_node["children"]:
-                    offset = delve(child, offset)
-            else:
-                # Leaf node
-                tree_node["first_child_index"] = 0
-
-            return offset
-
-        total = delve(self.decision_tree, 1)
-        return total
-
-    def _update_children_list(self) -> None:
-        """Update children list from all sources.
-
-        Collects segment IDs from:
-        1. Tree leaf nodes
-        2. Transition rule source_ids
-        3. Transition rule destination_ids
-        4. Transition object segment_id
-
-        Ensures children are unique and sorted ascending.
-        """
-        children_set = set()
-
-        def _collect_from_tree(node: dict, children_set: set) -> None:
-            node_id = node.get("node_id", 0)
-            if node_id > 0:
-                children_set.add(node_id)
-
-            for child in node.get("children", []):
-                _collect_from_tree(child, children_set)
-
-        _collect_from_tree(self["tree"], children_set)
-
-        # Update the children list
-        children = self.music_params["children/items"]
-        children.clear()
-        children.extend(sorted(c for c in children_set if c > 0))
-        self.music_params["children/count"] = len(children)
