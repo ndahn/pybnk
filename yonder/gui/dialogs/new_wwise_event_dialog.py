@@ -72,8 +72,10 @@ def new_wwise_event_dialog(
             return
 
         bnk.add_nodes(new_nodes)
+
         callback(new_nodes)
         show_message("Yay!", color=style.blue)
+        dpg.set_item_label(f"{tag}_button_okay", "Again?")
 
     with dpg.window(
         label=title,
@@ -116,8 +118,4 @@ def new_wwise_event_dialog(
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
-            dpg.add_button(
-                label="Cancel",
-                callback=lambda: dpg.delete_item(window),
-            )
+            dpg.add_button(label="Chop chop!", callback=on_okay, tag=f"{tag}_button_okay")

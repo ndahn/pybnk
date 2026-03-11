@@ -118,6 +118,7 @@ def convert_wavs_dialog(
             callback(out_files)
 
         show_message("Yay!", color=style.blue)
+        dpg.set_item_label(f"{tag}_button_okay", "Again?")
 
     with dpg.window(
         label=title,
@@ -202,8 +203,4 @@ def convert_wavs_dialog(
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
-            dpg.add_button(
-                label="Cancel",
-                callback=lambda: dpg.delete_item(window),
-            )
+            dpg.add_button(label="Beat it!", callback=on_okay, tag=f"{tag}_button_okay")

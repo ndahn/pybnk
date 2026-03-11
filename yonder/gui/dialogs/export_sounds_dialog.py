@@ -84,6 +84,7 @@ def export_sounds_dialog(
                     shutil.copy(w, output_dir)
 
             show_message("Yay!", color=style.blue)
+            dpg.set_item_label(f"{tag}_button_okay", "Again?")
         finally:
             dpg.delete_item(loading)
 
@@ -126,8 +127,4 @@ def export_sounds_dialog(
         dpg.add_text(show=False, tag=f"{tag}_notification", color=style.red)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Export!", callback=on_okay, tag=f"{tag}_button_okay")
-            dpg.add_button(
-                label="Cancel",
-                callback=lambda: dpg.delete_item(window),
-            )
+            dpg.add_button(label="Yoink!", callback=on_okay, tag=f"{tag}_button_okay")

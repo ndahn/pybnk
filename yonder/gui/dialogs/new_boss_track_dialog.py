@@ -157,6 +157,7 @@ def new_boss_track_dialog(
         # TODO loop markers, transition rules
         create_boss_bgm(bnk, msc, current_state_path, bgm_tracks)
         show_message("Yay!", color=style.blue)
+        dpg.set_item_label(f"{tag}_button_okay", "Again?")
 
     with dpg.window(
         label=title,
@@ -228,8 +229,4 @@ def new_boss_track_dialog(
         dpg.add_spacer(height=5)
 
         with dpg.group(horizontal=True):
-            dpg.add_button(label="Okay", callback=on_okay, tag=f"{tag}_button_okay")
-            dpg.add_button(
-                label="Cancel",
-                callback=lambda: dpg.delete_item(window),
-            )
+            dpg.add_button(label="Bring the heat!", callback=on_okay, tag=f"{tag}_button_okay")

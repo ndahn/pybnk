@@ -208,7 +208,7 @@ Transfer event structures from one soundbank to another. Usually you'll enter a 
 
         with dpg.group(horizontal=True):
             dpg.add_button(
-                label="Transfer!", callback=on_okay, tag=f"{tag}_button_okay"
+                label="Scotty, beam them!", callback=on_okay, tag=f"{tag}_button_okay"
             )
 
     return tag

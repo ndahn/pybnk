@@ -582,6 +582,7 @@ class BanksOfYonder:
 
         loading = loading_indicator("Repacking...")
         try:
+            logger.info("Repacking soundbank")
             bnk2json = self.config.locate_bnk2json()
             repack_soundbank(bnk2json, self.bnk.bnk_dir)
         except subprocess.CalledProcessError as e:
