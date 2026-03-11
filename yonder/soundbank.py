@@ -460,6 +460,8 @@ class Soundbank:
         return extras
 
     def solve(self) -> None:
+        from yonder.node_types import Event
+
         g = self.get_full_tree()
         new_hirc = []
 
@@ -467,8 +469,7 @@ class Soundbank:
             logger.warning("HIRC is not acyclic")
 
         # These will be appended at the very end
-        events: list[Node] = []
-        actions: list[Node] = []
+        events: list[Event] = []
 
         # Reverse g so we get the children before their parents. This means that any objects
         # with no references to other nodes (like Attenuations) will come at the very beginning.
@@ -482,7 +483,8 @@ class Soundbank:
                 if node.type == "Event":
                     events.append(node)
                 elif node.type == "Action":
-                    actions.append(node)
+                    # Will be placed later
+                    pass
                 else:
                     nodes.append(node)
 
@@ -490,12 +492,21 @@ class Soundbank:
             nodes.sort(key=lambda n: f"{n.type} {n.id}")
             new_hirc.extend(n for n in nodes)
 
-        # Usually the actions follow the event referencing them, but this is much easier
+        # Actions are usually placed immediately before their events
         events.sort(key=lambda n: n.id)
-        new_hirc.extend(n for n in events)
+        placed_actions = set()
 
-        actions.sort(key=lambda n: n.id)
-        new_hirc.extend(n for n in actions)
+        for evt in events:
+            for aid in sorted(evt.actions):
+                if aid in placed_actions:
+                    continue
+
+                action = self.get(aid)
+                if action:
+                    new_hirc.append(action)
+                    placed_actions.add(aid)
+            
+            new_hirc.append(evt)
 
         self._hirc = new_hirc
 
@@ -509,7 +520,6 @@ class Soundbank:
         discovered_ids = set([0])
 
         logger.info(f"Verifying {self}...")
-        self.solve()
 
         for node in self._hirc:
             node = node.cast()
@@ -545,27 +555,42 @@ class Soundbank:
                             severity = max(severity, 2)
 
             children = getattr(node, "children", [])
-            prev = -1
-            for child_id in children:
-                if child_id < prev:
-                    logger.error(f"{node}: children are not sorted")
-                    severity = max(severity, 2)
-                    break
-                # Non-existing children are actually pretty okay here
-                # if child_id not in self:
-                #     logger.warning(f"{node}: child {child_id} does not exist")
-                #     severity = max(severity, 1)
+            prev_child_id = -1
+            wrong_order = False
 
+            if not isinstance(node, (Event, Action)):
+                for child_id in children:
+                    if not wrong_order and child_id < prev_child_id:
+                        logger.error(f"{node}: children are not sorted")
+                        severity = max(severity, 2)
+                        wrong_order = True
+                    
+                    prev_child_id = child_id
+
+                    # Non-existing children are actually pretty okay here
+                    # if child_id not in self:
+                    #     logger.warning(f"{node}: child {child_id} does not exist")
+                    #     severity = max(severity, 1)
+                    if child_id in self:
+                        child = self[child_id]
+                        if child.parent is not None and child.parent > 0 and child.parent != node.id:
+                            logger.error(
+                                f"{node}: child {child_id} has different parent {child.parent}"
+                            )
+                            severity = max(severity, 2)
+
+            # Events must appear after their actions
             if isinstance(node, Event):
                 for aid in node.actions:
-                    if aid in discovered_ids:
-                        logger.warning(f"{node}: defined after referenced action {aid}")
-                        severity = max(severity, 1)
+                    if aid in self and aid not in discovered_ids:
+                        logger.error(f"{node}: defined before referenced action {aid}")
+                        severity = max(severity, 2)
+            # Actions must appear after their targets
             elif isinstance(node, Action):
                 tid = node.target_id
                 if tid in self and tid not in discovered_ids:
                     logger.error(f"{node}: defined before target {tid}")
-                    severity = max(severity, 1)
+                    severity = max(severity, 2)
 
         if severity == 0:
             logger.info("Seems surprisingly fine - yay!")

@@ -82,7 +82,7 @@ class BanksOfYonder:
         class LogHandler(logging.Handler):
             def emit(this, record: logging.LogRecord):
                 this.format(record)
-                
+
                 if record.levelno >= logging.ERROR:
                     color = style.red
                 elif record.levelno >= logging.WARNING:
@@ -145,15 +145,17 @@ class BanksOfYonder:
                     callback=self._create_empty_soundbank,
                 )
 
-            with dpg.menu(label="Edit", tag=f"{self.tag}_menu_edit"):
+            dpg.add_separator()
+            with dpg.menu(label="Bank", tag=f"{self.tag}_menu_bank"):
                 dpg.add_menu_item(
-                    label="Verify soundbank",
-                    callback=self._bank_verify,
-                    tag=f"{self.tag}_menu_verify",
+                    label="Solve HIRC",
+                    callback=self._bank_solve_hirc,
                 )
-                with dpg.menu(
-                    label="Advanced", tag=f"{self.tag}_menu_advanced", enabled=False
-                ):
+                dpg.add_menu_item(
+                    label="Verify",
+                    callback=self._bank_verify,
+                )
+                with dpg.menu(label="Advanced"):
                     dpg.add_menu_item(
                         label="Delete unused wems",
                         callback=self._bank_remove_unused_wems,
@@ -162,18 +164,8 @@ class BanksOfYonder:
                         label="Delete orphans",
                         callback=self._bank_delete_orphans,
                     )
-                dpg.add_separator()
-                dpg.add_menu_item(
-                    label="Settings",
-                    callback=self._open_settings_dialog,
-                )
 
             with dpg.menu(label="Create", tag=f"{self.tag}_menu_create"):
-                dpg.add_menu_item(
-                    label="New Wwise Event",
-                    callback=self._open_new_wwise_event_dialog,
-                )
-                dpg.add_separator()
                 dpg.add_menu_item(
                     label="Simple Sound",
                     callback=self._open_simple_sound_dialog,
@@ -186,6 +178,11 @@ class BanksOfYonder:
                     label="Ambience Track",
                     callback=self._open_ambience_track_dialog,
                     enabled=False,  # TODO
+                )
+                dpg.add_separator()
+                dpg.add_menu_item(
+                    label="New Wwise Event",
+                    callback=self._open_new_wwise_event_dialog,
                 )
 
             with dpg.menu(label="Tools"):
@@ -206,6 +203,13 @@ class BanksOfYonder:
                     callback=self._open_convert_wavs_dialog,
                 )
 
+            dpg.add_separator()
+            dpg.add_menu_item(
+                label="Settings",
+                callback=self._open_settings_dialog,
+            )
+
+            dpg.add_separator()
             with dpg.menu(label="Help"):
                 with dpg.menu(label="dearpygui"):
                     dpg.add_menu_item(
@@ -253,8 +257,7 @@ class BanksOfYonder:
             "_menu_file_save",
             "_menu_file_save_as",
             "_menu_file_repack",
-            "_menu_verify",
-            "_menu_advanced",
+            "_menu_bank",
             "_menu_create",
         ]:
             if enabled:
@@ -312,9 +315,9 @@ class BanksOfYonder:
                             dpg.add_table_column(label="Node", width_stretch=True)
 
             dpg.add_child_window(
-                autosize_y=True,
                 width=400,
                 resizable_x=True,
+                autosize_y=True,
                 border=True,
                 tag=f"{tag}_attributes",
             )
@@ -340,6 +343,10 @@ class BanksOfYonder:
                     dpg.add_button(
                         label="Reset",
                         callback=self.node_reset_json,
+                    )
+                    dpg.add_button(
+                        label="Reload",
+                        callback=self.update_json_panel,
                     )
 
         # Shown now, but will be positioned properly by the welcome message
@@ -528,15 +535,15 @@ class BanksOfYonder:
     def show_notification(
         self, msg: str, color: tuple[int, int, int, int] = style.red
     ) -> None:
-        w = dpg.get_viewport_width() - 8
+        w = dpg.get_viewport_width()
         h = (
             dpg.get_viewport_height()
             - dpg.get_item_height(f"{self.tag}_notification_window")
-            - 4
+            - 32
         )
         # Note: since this is a popup there's no need for a timer to hide it
         dpg.configure_item(
-            f"{self.tag}_notification_window", show=True, pos=(4, h), min_size=(w, 10)
+            f"{self.tag}_notification_window", show=True, pos=(0, h), min_size=(w, 10)
         )
         dpg.configure_item(
             f"{self.tag}_notification_text", default_value=msg, color=color
@@ -861,6 +868,13 @@ class BanksOfYonder:
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)
+
+    def _bank_solve_hirc(self) -> None:
+        loading = loading_indicator("Solving...")
+        try:
+            self.bnk.solve()
+        finally:
+            dpg.delete_item(loading)
 
     def _bank_verify(self) -> None:
         loading = loading_indicator("Verifying...")
