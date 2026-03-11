@@ -503,6 +503,8 @@ class Soundbank:
         self._regenerate_index_table()
 
     def verify(self) -> int:
+        from yonder.node_types import Event, Action
+
         severity = 0
         discovered_ids = set([0])
 
@@ -510,6 +512,7 @@ class Soundbank:
         self.solve()
 
         for node in self._hirc:
+            node = node.cast()
             node_id = node.id
 
             if node_id <= 0:
@@ -552,6 +555,17 @@ class Soundbank:
                 # if child_id not in self:
                 #     logger.warning(f"{node}: child {child_id} does not exist")
                 #     severity = max(severity, 1)
+
+            if isinstance(node, Event):
+                for aid in node.actions:
+                    if aid in discovered_ids:
+                        logger.warning(f"{node}: defined after referenced action {aid}")
+                        severity = max(severity, 1)
+            elif isinstance(node, Action):
+                tid = node.target_id
+                if tid in self and tid not in discovered_ids:
+                    logger.error(f"{node}: defined before target {tid}")
+                    severity = max(severity, 1)
 
         if severity == 0:
             logger.info("Seems surprisingly fine - yay!")
