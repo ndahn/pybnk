@@ -191,7 +191,7 @@ class Soundbank:
 
     def new_id(self) -> int:
         while True:
-            id = randrange(100_000_000, 1_000_000_000)
+            id = randrange(2**24, 2**32 - 1)
             if id not in self._id2index:
                 return id
 
@@ -526,13 +526,13 @@ class Soundbank:
             node_id = node.id
 
             if node_id <= 0:
-                logger.error(f"Invalid node ID {node_id}")
-            else:
-                if node_id in discovered_ids:
-                    logger.error(f"{node}: ID {node_id} has been defined before")
-                    severity = max(severity, 2)
+                logger.error(f"{node}: invalid node ID {node_id}")
+            elif node_id in discovered_ids:
+                logger.error(f"{node}: ID {node_id} has been defined before")
+                severity = max(severity, 2)
+                continue
 
-                discovered_ids.add(node_id)
+            discovered_ids.add(node_id)
 
             parent_id = node.parent
             if parent_id is not None:
@@ -542,23 +542,38 @@ class Soundbank:
                 elif parent_id in discovered_ids:
                     logger.error(f"{node}: defined after its parent {parent_id}")
                     severity = max(severity, 2)
-                elif parent_id not in self:
-                    logger.error(f"{node}: parent {parent_id} does not exist")
-                    severity = max(severity, 2)
-                else:
+                elif parent_id in self:
                     parent = self[parent_id]
                     if hasattr(parent, "children"):
-                        if node.id not in parent.children:
+                        if node_id not in parent.children:
                             logger.error(
                                 f"{node}: parent {parent_id} does not include node in its children"
                             )
                             severity = max(severity, 2)
+                else:
+                    logger.error(f"{node}: parent {parent_id} does not exist")
+                    severity = max(severity, 2)
 
             children = getattr(node, "children", [])
-            prev_child_id = -1
-            wrong_order = False
 
-            if not isinstance(node, (Event, Action)):
+            # Events must appear after their actions, but their actions 
+            # can be in any order
+            if isinstance(node, Event):
+                for aid in node.actions:
+                    if aid in self and aid not in discovered_ids:
+                        logger.error(f"{node}: defined before referenced action {aid}")
+                        severity = max(severity, 2)
+            # Actions must appear after their targets, but don't have a 
+            # parent-child relationship with them
+            elif isinstance(node, Action):
+                tid = node.target_id
+                if tid in self and tid not in discovered_ids:
+                    logger.error(f"{node}: defined before target {tid}")
+                    severity = max(severity, 2)
+            else:
+                prev_child_id = -1
+                wrong_order = False
+                
                 for child_id in children:
                     if not wrong_order and child_id < prev_child_id:
                         logger.error(f"{node}: children are not sorted")
@@ -578,19 +593,6 @@ class Soundbank:
                                 f"{node}: child {child_id} has different parent {child.parent}"
                             )
                             severity = max(severity, 2)
-
-            # Events must appear after their actions
-            if isinstance(node, Event):
-                for aid in node.actions:
-                    if aid in self and aid not in discovered_ids:
-                        logger.error(f"{node}: defined before referenced action {aid}")
-                        severity = max(severity, 2)
-            # Actions must appear after their targets
-            elif isinstance(node, Action):
-                tid = node.target_id
-                if tid in self and tid not in discovered_ids:
-                    logger.error(f"{node}: defined before target {tid}")
-                    severity = max(severity, 2)
 
         if severity == 0:
             logger.info("Seems surprisingly fine - yay!")
