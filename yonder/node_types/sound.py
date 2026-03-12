@@ -176,13 +176,3 @@ class Sound(WwiseNode):
         self.base_params["positioning_params/three_dimensional_spatialization_mode"] = (
             value
         )
-
-    def set_streaming(self, streamed: bool = True) -> None:
-        """Configures whether audio loads into memory or streams from disk.
-
-        Parameters
-        ----------
-        streamed : bool, default=True
-            If True, set to streamed; if False, set to embedded.
-        """
-        self.source_type = "Streamed" if streamed else "Embedded"

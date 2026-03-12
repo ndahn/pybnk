@@ -1,9 +1,10 @@
 from yonder.node import Node
 from yonder.util import logger
 from .wwise_node import WwiseNode
+from .mixins import ContainerMixin
 
 
-class ActorMixer(WwiseNode):
+class ActorMixer(WwiseNode, ContainerMixin):
     """A hierarchical container that groups sounds and other mixers.
 
     Used to organize audio assets and apply shared processing/routing through the mixer hierarchy.
@@ -63,61 +64,3 @@ class ActorMixer(WwiseNode):
             value = value.id
 
         self.base_params["override_bus_id"] = value
-
-    @property
-    def children(self) -> list[int]:
-        """Child nodes organized under this mixer for shared processing.
-
-        Returns
-        -------
-        list[int]
-            List of child node hash IDs.
-        """
-        return self["children/items"]
-
-    def add_child(self, child_id: int | Node) -> None:
-        """Associates a child node with this mixer for hierarchical organization.
-
-        Parameters
-        ----------
-        child_id : int | Node
-            Child node ID or Node instance.
-        """
-        if isinstance(child_id, Node):
-            if child_id.parent > 0 and child_id.parent != self.id:
-                logger.warning(f"Adding already adopted child {child_id} to {self}")
-
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id not in children:
-            children.append(child_id)
-            self["children/count"] = len(children)
-
-    def remove_child(self, child_id: int | Node) -> bool:
-        """Disassociates a child node from this mixer.
-
-        Parameters
-        ----------
-        child_id : int | Node
-            Child node ID or Node instance to remove.
-
-        Returns
-        -------
-        bool
-            True if child was removed, False if not found.
-        """
-        if isinstance(child_id, Node):
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id in children:
-            children.remove(child_id)
-            self["children/count"] = len(children)
-            return True
-        return False
-
-    def clear_children(self) -> None:
-        """Disassociates all children from this mixer."""
-        self["children/items"] = []
-        self["children/count"] = 0

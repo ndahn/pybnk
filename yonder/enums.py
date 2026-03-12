@@ -34,7 +34,7 @@ class ActionType(IntFlag):
     RESET_BUS_LPFM = 3842
 
 
-RtcpType: TypeAlias = Literal["GameParameter"]
+RtpcType: TypeAlias = Literal["GameParameter"]
 AccumulationType: TypeAlias = Literal["Additive"]
 ScalingType: TypeAlias = Literal["DB", "Linear", "None"]
 CurveType: TypeAlias = Literal[

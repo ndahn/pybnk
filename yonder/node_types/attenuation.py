@@ -1,13 +1,15 @@
 from yonder.node import Node
-from yonder.enums import RtcpType, AccumulationType, ScalingType, CurveType
+from yonder.enums import ScalingType, CurveType
 from yonder.util import logger
+from .mixins import RtpcMixin
 
 
-class Attenuation(Node):
+class Attenuation(Node, RtpcMixin):
     """Attenuation object defining distance-based audio falloff curves.
 
     Controls how sound volume, low-pass filter, high-pass filter, and spread change over distance. Also manages cone-based directional attenuation for focused sound sources.
     """
+
 
     @classmethod
     def new(cls, nid: int) -> "Attenuation":
@@ -161,73 +163,3 @@ class Attenuation(Node):
         """Removes all distance-based curves from this attenuation."""
         self["curves"] = []
         self["curve_count"] = 0
-
-    @property
-    def rtpcs(self) -> list[dict]:
-        """Real-time parameter controls for dynamic audio property adjustments.
-
-        Returns
-        -------
-        list[dict]
-            List of RTPC dictionaries.
-        """
-        return self["initial_rtpc/rtpcs"]
-
-    def add_rtpc(
-        self,
-        rtpc_id: int,
-        param_id: int,
-        curve_id: int | Node,
-        graph_points: list[tuple[float, float, CurveType]] = None,
-        rtpc_type: RtcpType = "GameParameter",
-        rtpc_accum: AccumulationType = "Additive",
-        curve_scaling: ScalingType = "DB",
-    ) -> None:
-        """Associates a game parameter with an audio property for runtime control.
-
-        Parameters
-        ----------
-        rtpc_id : int
-            RTPC identifier (game parameter ID).
-        param_id : int
-            Parameter to control (0=Volume, 2=LPF, 3=Pitch, 5=BusVolume, etc.).
-        curve_id : int | Node
-            Curve identifier for this RTPC.
-        graph_points : list[tuple[float, float, CurveType]], optional
-            List of (from, to, interpolation) tuples for the curve.
-            Defaults to a linear 0->-1, 1->0 curve if not provided.
-        rtpc_type : RtcpType, default="GameParameter"
-            RTPC type.
-        rtpc_accum : AccumulationType, default="Additive"
-            Accumulation mode.
-        curve_scaling : ScalingType, default="DB"
-            Curve scaling type ('DB', 'Linear', 'None').
-        """
-        if isinstance(curve_id, Node):
-            curve_id = curve_id.id
-
-        if graph_points is None:
-            graph_points = [(0.0, -1.0, "Linear"), (1.0, 0.0, "Linear")]
-
-        rtpc = {
-            "id": rtpc_id,
-            "rtpc_type": rtpc_type,
-            "rtpc_accum": rtpc_accum,
-            "param_id": param_id,
-            "curve_id": curve_id,
-            "curve_scaling": curve_scaling,
-            "graph_point_count": len(graph_points),
-            "graph_points": [
-                {"from": from_val, "to": to_val, "interpolation": interp}
-                for from_val, to_val, interp in graph_points
-            ],
-        }
-
-        rtpcs = self["initial_rtpc/rtpcs"]
-        rtpcs.append(rtpc)
-        self["initial_rtpc/count"] = len(rtpcs)
-
-    def clear_rtpcs(self) -> None:
-        """Removes all real-time parameter controls from this attenuation."""
-        self["initial_rtpc/rtpcs"] = []
-        self["initial_rtpc/count"] = 0

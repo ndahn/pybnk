@@ -1,8 +1,9 @@
 from yonder.util import logger
 from .wwise_node import WwiseNode
+from .mixins import ContainerMixin
 
 
-class SwitchContainer(WwiseNode):
+class SwitchContainer(WwiseNode, ContainerMixin):
     """Specialized node for SwitchContainer type.
 
     Switch containers select which child to play based on game state variables (switches). Each switch value maps to a specific child or set of children, enabling dynamic audio selection based on gameplay conditions.
@@ -101,17 +102,6 @@ class SwitchContainer(WwiseNode):
     @continuous_validation.setter
     def continuous_validation(self, value: bool) -> None:
         self["continuous_validation"] = int(value)
-
-    @property
-    def children(self) -> list[int]:
-        """Get list of child node IDs.
-
-        Returns
-        -------
-        list[int]
-            List of child node hash IDs.
-        """
-        return self["children/items"]
 
     @property
     def switch_mappings(self) -> dict[int, list[int]]:

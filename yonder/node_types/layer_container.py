@@ -1,9 +1,10 @@
 from yonder.node import Node
 from yonder.util import logger
 from .wwise_node import WwiseNode
+from .mixins import ContainerMixin
 
 
-class LayerContainer(WwiseNode):
+class LayerContainer(WwiseNode, ContainerMixin):
     """Plays multiple child sounds simultaneously as layers.
 
     Useful for layered sound design where different components play together (e.g., engine loop + transmission sounds).
@@ -60,64 +61,6 @@ class LayerContainer(WwiseNode):
     @continuous_validation.setter
     def continuous_validation(self, value: bool) -> None:
         self["is_continuous_validation"] = int(value)
-
-    @property
-    def children(self) -> list[int]:
-        """Child nodes that play as layers within this container.
-
-        Returns
-        -------
-        list[int]
-            List of child node hash IDs.
-        """
-        return self["children/items"]
-
-    def add_child(self, child_id: int | Node) -> None:
-        """Associates a child node as a layer within this container.
-
-        Parameters
-        ----------
-        child_id : int | Node
-            Child node ID or Node instance.
-        """
-        if isinstance(child_id, Node):
-            if child_id.parent > 0 and child_id.parent != self.id:
-                logger.warning(f"Adding already adopted child {child_id} to {self}")
-
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id not in children:
-            children.append(child_id)
-            self["children/count"] = len(children)
-
-    def remove_child(self, child_id: int | Node) -> bool:
-        """Disassociates a child node from this container.
-
-        Parameters
-        ----------
-        child_id : int | Node
-            Child node ID or Node instance to remove.
-
-        Returns
-        -------
-        bool
-            True if child was removed, False if not found.
-        """
-        if isinstance(child_id, Node):
-            child_id = child_id.id
-
-        children = self["children/items"]
-        if child_id in children:
-            children.remove(child_id)
-            self["children/count"] = len(children)
-            return True
-        return False
-
-    def clear_children(self) -> None:
-        """Disassociates all children from this container."""
-        self["children/items"] = []
-        self["children/count"] = 0
 
     # NOTE Seems to not be used in ER/NR, so no clue what would go here
     def add_layer(self, layer: dict) -> None:

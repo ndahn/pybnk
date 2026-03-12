@@ -1,14 +1,14 @@
 from yonder.node import Node
 from yonder.util import logger
-from yonder.enums import RtcpType, AccumulationType, ScalingType, CurveType
+from .mixins import RtpcMixin
 
 
-class Bus(Node):
+class Bus(Node, RtpcMixin):
     """Audio bus for routing and mixing multiple sounds together.
 
     Buses serve as mixing points in the audio hierarchy, allowing shared processing (effects, ducking, HDR) and routing to output devices or parent buses. Supports voice ducking and real-time parameter control.
     """
-
+    
     @classmethod
     def new(cls, nid: int, parent_bus_id: int | Node = 0) -> "Bus":
         """Create a new Bus node.
@@ -285,76 +285,6 @@ class Bus(Node):
         """
         return self["initial_values/ducks"]
 
-    @property
-    def rtpcs(self) -> list[dict]:
-        """Real-time parameter controls for dynamic audio adjustments.
-
-        Returns
-        -------
-        list[dict]
-            List of RTPC dictionaries.
-        """
-        return self["initial_values/initial_rtpc/rtpcs"]
-
-    def add_rtpc(
-        self,
-        rtpc_id: int,
-        param_id: int,
-        curve_id: int | Node,
-        graph_points: list[tuple[float, float, CurveType]] = None,
-        rtpc_type: RtcpType = "GameParameter",
-        rtpc_accum: AccumulationType = "Additive",
-        curve_scaling: ScalingType = "DB",
-    ) -> None:
-        """Associates a game parameter with a bus property for runtime control.
-
-        Parameters
-        ----------
-        rtpc_id : int
-            RTPC identifier (game parameter ID).
-        param_id : int
-            Parameter to control (0=Volume, 2=LPF, 3=Pitch, 5=BusVolume, etc.).
-        curve_id : int | Node
-            Curve identifier for this RTPC.
-        graph_points : list[tuple[float, float, CurveType]], optional
-            List of (from, to, interpolation) tuples for the curve.
-            Defaults to a linear 0->-1, 1->0 curve if not provided.
-        rtpc_type : RtcpType, default="GameParameter"
-            RTPC type.
-        rtpc_accum : AccumulationType, default="Additive"
-            Accumulation mode.
-        curve_scaling : ScalingType, default="DB"
-            Curve scaling type.
-        """
-        if isinstance(curve_id, Node):
-            curve_id = curve_id.id
-
-        if graph_points is None:
-            graph_points = [(0.0, -1.0, "Linear"), (1.0, 0.0, "Linear")]
-
-        rtpc = {
-            "id": rtpc_id,
-            "rtpc_type": rtpc_type,
-            "rtpc_accum": rtpc_accum,
-            "param_id": param_id,
-            "curve_id": curve_id,
-            "curve_scaling": curve_scaling,
-            "graph_point_count": len(graph_points),
-            "graph_points": [
-                {"from": from_val, "to": to_val, "interpolation": interp}
-                for from_val, to_val, interp in graph_points
-            ],
-        }
-
-        rtpcs = self["initial_values/initial_rtpc/rtpcs"]
-        rtpcs.append(rtpc)
-        self["initial_values/initial_rtpc/count"] = len(rtpcs)
-
-    def clear_rtpcs(self) -> None:
-        """Removes all real-time parameter controls from this bus."""
-        self["initial_values/initial_rtpc/rtpcs"] = []
-        self["initial_values/initial_rtpc/count"] = 0
-
     def add_duck(
         self,
         target_bus_id: int | Node,
@@ -457,6 +387,8 @@ class Bus(Node):
         self[f"initial_values/bus_initial_params/aux_params/aux{index}"] = bus_id
 
     def get_references(self) -> list[tuple[str, int]]:
+        refs = super().get_references()
+
         paths = (
             "initial_values/override_bus_id",
             "initial_values/bus_initial_params/aux_params/aux1",
@@ -464,4 +396,17 @@ class Bus(Node):
             "initial_values/bus_initial_params/aux_params/aux3",
             "initial_values/bus_initial_params/aux_params/aux4",
         )
-        return [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+        refs.extend([(p, r) for p in paths if (r := self.get(p, 0)) > 0])
+
+        group_chunks = self["initial_values/state_chunk/state_group_chunks"]
+        for i, chunk in enumerate(group_chunks):
+            for j, state in enumerate(chunk["states"]):
+                refs.append(
+                    (
+                        "initial_values/state_chunk/"
+                        f"state_group_chunks:{i}/states:{j}/state_instance_id",
+                        state["state_instance_id"],
+                    )
+                )
+
+        return refs

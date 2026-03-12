@@ -1,23 +1,21 @@
 from yonder.node import Node, NodeLike
-from yonder.enums import (
-    RtcpType,
-    AccumulationType,
-    ScalingType,
-    CurveType,
-    VirtualQueueBehavior,
-)
+from yonder.enums import VirtualQueueBehavior
 from yonder.util import logger, PathDict
+from .mixins import RtpcMixin
 
 
-class WwiseNode(Node):
+class WwiseNode(Node, RtpcMixin):
     """Base class for nodes with common node_base_params functionality.
 
     Provides convenient access to shared parameters like aux sends, virtual voice behavior, and state management.
     """
+    base_params_path = "node_base_params"
+    rtpcs_path = "node_base_params/inital_rtpc"
+    
 
     @property
     def base_params(self) -> PathDict:
-        return PathDict(self["node_base_params"])
+        return PathDict(self[self.base_params_path])
 
     @property
     def parent(self) -> int:
@@ -208,77 +206,15 @@ class WwiseNode(Node):
             raise ValueError("Aux index must be between 1 and 4")
         self.base_params["aux_params/aux{index}"] = bus_id
 
-    def add_rtpc(
-        self,
-        rtpc_id: int,
-        param_id: int,
-        curve_id: int | Node,
-        graph_points: list[tuple[float, float, CurveType]] = None,
-        rtpc_type: RtcpType = "GameParameter",
-        rtpc_accum: AccumulationType = "Additive",
-        curve_scaling: ScalingType = "DB",
-    ) -> None:
-        """Add an RTPC (Real-Time Parameter Control) entry.
-
-        Parameters
-        ----------
-        rtpc_id : int
-            RTPC identifier (game parameter ID).
-        param_id : int
-            Parameter to control (0=Volume, 2=LPF, 3=Pitch, 5=BusVolume, etc.).
-        curve_id : int | Node
-            Curve identifier for this RTPC.
-        graph_points : list[tuple[float, float, CurveType]], optional
-            List of (from, to, interpolation) tuples for the curve.
-            Defaults to a linear 0->-1, 1->0 curve if not provided.
-        rtpc_type : RtcpType, default="GameParameter"
-            RTPC type.
-        rtpc_accum : AccumulationType, default="Additive"
-            Accumulation mode.
-        curve_scaling : ScalingType, default="DB"
-            Curve scaling type ('DB', 'Linear', 'None').
-        """
-        if isinstance(curve_id, Node):
-            curve_id = curve_id.id
-
-        if graph_points is None:
-            graph_points = [(0.0, -1.0, "Linear"), (1.0, 0.0, "Linear")]
-
-        rtpc = {
-            "id": rtpc_id,
-            "rtpc_type": rtpc_type,
-            "rtpc_accum": rtpc_accum,
-            "param_id": param_id,
-            "curve_id": curve_id,
-            "curve_scaling": curve_scaling,
-            "graph_point_count": len(graph_points),
-            "graph_points": [
-                {"from": from_val, "to": to_val, "interpolation": interp}
-                for from_val, to_val, interp in graph_points
-            ],
-        }
-
-        rtpcs = self.base_params["initial_rtpc/rtpcs"]
-        rtpcs.append(rtpc)
-        self.base_params["initial_rtpc/count"] = len(rtpcs)
-
-    def clear_rtpcs(self) -> None:
-        """Remove all RTPC entries."""
-        self.base_params["initial_rtpc/rtpcs"] = []
-        self.base_params["initial_rtpc/count"] = 0
-
     def get_references(self) -> list[int]:
+        refs = super().get_references()
+
         paths = (
-            "node_base_params/override_bus_id",
-            "node_base_params/aux_params/aux1",
-            "node_base_params/aux_params/aux2",
-            "node_base_params/aux_params/aux3",
-            "node_base_params/aux_params/aux4",
+            f"{self.base_params_path}/override_bus_id",
+            f"{self.base_params_path}/aux_params/aux1",
+            f"{self.base_params_path}/aux_params/aux2",
+            f"{self.base_params_path}/aux_params/aux3",
+            f"{self.base_params_path}/aux_params/aux4",
         )
-        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
-
-        children = self.get("children/items", [])
-        for i, child_id in enumerate(children):
-            refs.append((f"children/items:{i}", child_id))
-
+        refs.extend([(p, r) for p in paths if (r := self.get(p, 0)) > 0])
         return refs

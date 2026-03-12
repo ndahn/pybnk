@@ -3,15 +3,21 @@ from yonder.hash import calc_hash
 from yonder.util import logger, PathDict
 from yonder.enums import CurveType
 from .wwise_node import WwiseNode
+from .mixins import ContainerMixin
 
 
-class MusicSwitchContainer(WwiseNode):
+class MusicSwitchContainer(WwiseNode, ContainerMixin):
     """Specialized node for MusicSwitchContainer type.
 
     Music switch containers select which music segment to play based on game
     state using a decision tree. Supports complex transition rules between
     segments and multi-dimensional state-based selection.
     """
+
+    base_params_path = "music_trans_node_params/music_node_params/node_base_params"
+    rtpcs_path = "music_trans_node_params/music_node_params/node_base_params/initial_rtpc"
+    children_path = "music_trans_node_params/music_node_params/children"
+
 
     @staticmethod
     def parse_state_path(state_path: list[str]) -> list[int]:
@@ -66,12 +72,6 @@ class MusicSwitchContainer(WwiseNode):
 
         logger.info(f"Created new node {container}")
         return container
-
-    @property
-    def base_params(self) -> PathDict:
-        return PathDict(
-            self["music_trans_node_params/music_node_params/node_base_params"]
-        )
 
     @property
     def music_params(self) -> PathDict:
@@ -169,17 +169,6 @@ class MusicSwitchContainer(WwiseNode):
         """
         return self["music_trans_node_params/transition_rules"]
 
-    @property
-    def children(self) -> list[int]:
-        """Get list of child segment IDs.
-
-        Returns
-        -------
-        list[int]
-            List of child segment hash IDs.
-        """
-        return self.music_params["children/items"]
-
     def add_argument(self, group_id: int, group_type: str = "State") -> None:
         """Add a state group argument dimension.
 
@@ -238,8 +227,7 @@ class MusicSwitchContainer(WwiseNode):
         # Set the node ID on the leaf child
         branch["node_id"] = node_id
         if node_id > 0:
-            self.children.append(node_id)
-            self.children.sort()
+            self.add_child(node_id)
 
     def add_transition_rule(
         self,
@@ -322,23 +310,22 @@ class MusicSwitchContainer(WwiseNode):
 
         return rule
 
-    def get_references(self) -> list[tuple[str, int]]:
-        paths = (
-            "music_trans_node_params/music_node_params/node_base_params/override_bus_id",
-            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux1",
-            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux2",
-            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux3",
-            "music_trans_node_params/music_node_params/node_base_params/aux_params/aux4",
-        )
-        refs = [(p, r) for p in paths if (r := self.get(p, 0)) > 0]
+    @property
+    def rtpcs(self) -> list[dict]:
+        return self.base_params["initial_rtpc/rtpcs"]
 
-        children = self["music_trans_node_params/music_node_params/children/items"]
-        for i, child_id in enumerate(children):
-            refs.append(
-                (
-                    f"music_trans_node_params/music_node_params/children/items:{i}",
-                    child_id,
+    def get_references(self) -> list[tuple[str, int]]:
+        refs = super().get_references()
+
+        group_chunks = self.base_params["state_chunk/state_group_chunks"]
+        for i, chunk in enumerate(group_chunks):
+            for j, state in enumerate(chunk["states"]):
+                refs.append(
+                    (
+                        "music_trans_node_params/music_node_params/"
+                        f"state_chunk/state_group_chunks:{i}/states:{j}/state_instance_id",
+                        state["state_instance_id"],
+                    )
                 )
-            )
 
         return refs

@@ -19,7 +19,7 @@ class Soundbank:
     def load(cls, bnk_path: Path | str) -> "Soundbank":
         """Load a soundbank and return a more manageable representation."""
         # Resolve the path to the unpacked soundbank
-        bnk_path: Path = Path(bnk_path).absolute().resolve()
+        bnk_path: Path = Path(bnk_path).resolve()
         if bnk_path.name == "soundbank.json":
             json_path = bnk_path
             bnk_path = bnk_path.parent
@@ -163,17 +163,17 @@ class Soundbank:
 
         return bnk
 
-    def save(self, path: Path = None, backup: bool = True) -> None:
+    def save(self, path: Path | str = None, backup: bool = True) -> None:
         logger.info(f"Saving {self}")
 
         # Solve the dependency graph
-        okay = self.verify()
-        if not okay:
-            logger.warning("Some issues were found in your soundbank. Check the log!")
-
+        self.solve()
+        self.verify()
         self._apply_hirc_to_json()
 
-        if not path:
+        if path:
+            path = Path(path).resolve()
+        else:
             path = self.bnk_dir
 
         if path.name != "soundbank.json":
@@ -191,7 +191,9 @@ class Soundbank:
 
     def new_id(self) -> int:
         while True:
-            id = randrange(2**24, 2**32 - 1)
+            # IDs should be signed 32bit integers, although in practice
+            # I've rarely seen any below 1000000 (expected I guess?)
+            id = randrange(2**24, 2**31 - 1)
             if id not in self._id2index:
                 return id
 
@@ -480,6 +482,9 @@ class Soundbank:
 
             for nid in generation:
                 node = self[nid]
+                if type(node) is Node:
+                    logger.error(f"Uncast node {node}")
+
                 if node.type == "Event":
                     events.append(node)
                 elif node.type == "Action":
@@ -505,7 +510,7 @@ class Soundbank:
                 if action:
                     new_hirc.append(action)
                     placed_actions.add(aid)
-            
+
             new_hirc.append(evt)
 
         self._hirc = new_hirc
@@ -554,16 +559,16 @@ class Soundbank:
                     logger.error(f"{node}: parent {parent_id} does not exist")
                     severity = max(severity, 2)
 
-            children = getattr(node, "children", [])
+            references = [r[1] for r in node.get_references()]
 
-            # Events must appear after their actions, but their actions 
+            # Events must appear after their actions, but their actions
             # can be in any order
             if isinstance(node, Event):
                 for aid in node.actions:
                     if aid in self and aid not in discovered_ids:
                         logger.error(f"{node}: defined before referenced action {aid}")
                         severity = max(severity, 2)
-            # Actions must appear after their targets, but don't have a 
+            # Actions must appear after their targets, but don't have a
             # parent-child relationship with them
             elif isinstance(node, Action):
                 tid = node.target_id
@@ -573,13 +578,13 @@ class Soundbank:
             else:
                 prev_child_id = -1
                 wrong_order = False
-                
-                for child_id in children:
+
+                for child_id in references:
                     if not wrong_order and child_id < prev_child_id:
                         logger.error(f"{node}: children are not sorted")
                         severity = max(severity, 2)
                         wrong_order = True
-                    
+
                     prev_child_id = child_id
 
                     # Non-existing children are actually pretty okay here
@@ -588,7 +593,11 @@ class Soundbank:
                     #     severity = max(severity, 1)
                     if child_id in self:
                         child = self[child_id]
-                        if child.parent is not None and child.parent > 0 and child.parent != node.id:
+                        if (
+                            child.parent is not None
+                            and child.parent > 0
+                            and child.parent != node.id
+                        ):
                             logger.error(
                                 f"{node}: child {child_id} has different parent {child.parent}"
                             )

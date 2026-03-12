@@ -96,12 +96,14 @@ class Event(Node):
         self["actions"] = []
         self["action_count"] = 0
 
-    @property
-    def children(self) -> list[int]:
-        return self.actions
-
     def get_references(self) -> list[tuple[str, int]]:
-        return [(f"actions:{i}", act) for i, act in enumerate(self.actions) if act > 0]
+        refs = super().get_references()
+        
+        for i, act in enumerate(self.actions):
+            if act > 0:
+                refs.append((f"actions:{i}", act))
+                
+        return refs
 
     def __str__(self):
         return f"{self.lookup_name('<?>')} ({self.id})"
