@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 class RtpcMixin:
     rtpcs_path = "initial_rtpc"
 
-
     @property
     def rtpcs(self) -> list[dict]:
         """Real-time parameter controls for dynamic audio property adjustments.
@@ -85,8 +84,10 @@ class RtpcMixin:
 
         for i, rtpc in enumerate(self.rtpcs):
             refs.append(
-                f"{self.rtpcs_path}/rtpcs:{i}/id",
-                rtpc["id"],
+                (
+                    f"{self.rtpcs_path}/rtpcs:{i}/id",
+                    rtpc["id"],
+                )
             )
             if rtpc["curve_id"] > 0:
                 refs.append(

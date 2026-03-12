@@ -21,7 +21,7 @@ class ContainerMixin:
         """
         return self[f"{self.children_path}/items"]
 
-    def add_child(self, child_id: int | Node) -> None:
+    def add_child(self, child_id: "int | Node") -> None:
         """Associates a child node for random or sequential playback.
 
         Parameters
@@ -29,7 +29,7 @@ class ContainerMixin:
         child_id : int | Node
             Child node ID or Node instance.
         """
-        if isinstance(child_id, Node):
+        if isinstance(child_id, "Node"):
             if child_id.parent > 0 and child_id.parent != self.id:
                 logger.warning(f"Adding already adopted child {child_id} to {self}")
 
@@ -41,7 +41,7 @@ class ContainerMixin:
             self[f"{self.children_path}/count"] = len(children)
             children.sort()
 
-    def remove_child(self, child_id: int | Node) -> bool:
+    def remove_child(self, child_id: "int | Node") -> bool:
         """Disassociates a child node from this container.
 
         Parameters
@@ -54,7 +54,7 @@ class ContainerMixin:
         bool
             True if child was removed, False if not found.
         """
-        if isinstance(child_id, Node):
+        if isinstance(child_id, "Node"):
             child_id = child_id.id
 
         children = self[f"{self.children_path}/items"]

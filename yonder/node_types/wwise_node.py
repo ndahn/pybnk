@@ -4,13 +4,13 @@ from yonder.util import logger, PathDict
 from .mixins import RtpcMixin
 
 
-class WwiseNode(Node, RtpcMixin):
+class WwiseNode(RtpcMixin, Node):
     """Base class for nodes with common node_base_params functionality.
 
     Provides convenient access to shared parameters like aux sends, virtual voice behavior, and state management.
     """
     base_params_path = "node_base_params"
-    rtpcs_path = "node_base_params/inital_rtpc"
+    rtpcs_path = "node_base_params/initial_rtpc"
     
 
     @property

@@ -4,7 +4,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class MusicSegment(WwiseNode, ContainerMixin):
+class MusicSegment(ContainerMixin, WwiseNode):
     """A timed piece of interactive music with tempo, time signature, and markers.
 
     Contains music tracks and defines the musical structure for adaptive music systems.

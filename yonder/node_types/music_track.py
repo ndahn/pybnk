@@ -17,6 +17,7 @@ class MusicTrack(WwiseNode):
     Contains the actual audio sources and defines when/how they play within the segment timeline.
     """
 
+
     @classmethod
     def new(
         cls,

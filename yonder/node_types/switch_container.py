@@ -3,7 +3,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class SwitchContainer(WwiseNode, ContainerMixin):
+class SwitchContainer(ContainerMixin, WwiseNode):
     """Specialized node for SwitchContainer type.
 
     Switch containers select which child to play based on game state variables (switches). Each switch value maps to a specific child or set of children, enabling dynamic audio selection based on gameplay conditions.

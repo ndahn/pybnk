@@ -6,7 +6,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class MusicSwitchContainer(WwiseNode, ContainerMixin):
+class MusicSwitchContainer(ContainerMixin, WwiseNode):
     """Specialized node for MusicSwitchContainer type.
 
     Music switch containers select which music segment to play based on game

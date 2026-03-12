@@ -3,7 +3,7 @@ from yonder.util import logger
 from .mixins import RtpcMixin
 
 
-class Bus(Node, RtpcMixin):
+class Bus(RtpcMixin, Node):
     """Audio bus for routing and mixing multiple sounds together.
 
     Buses serve as mixing points in the audio hierarchy, allowing shared processing (effects, ducking, HDR) and routing to output devices or parent buses. Supports voice ducking and real-time parameter control.

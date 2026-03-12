@@ -4,7 +4,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class RandomSequenceContainer(WwiseNode, ContainerMixin):
+class RandomSequenceContainer(ContainerMixin, WwiseNode):
     """Plays its children either randomly or in sequence.
 
     Supports looping, transition timing, and avoiding recent repeats. Used for variations (footsteps, gunshots, voice lines).

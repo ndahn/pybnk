@@ -4,7 +4,7 @@ from yonder.util import logger
 from .mixins import RtpcMixin
 
 
-class Attenuation(Node, RtpcMixin):
+class Attenuation(RtpcMixin, Node):
     """Attenuation object defining distance-based audio falloff curves.
 
     Controls how sound volume, low-pass filter, high-pass filter, and spread change over distance. Also manages cone-based directional attenuation for focused sound sources.

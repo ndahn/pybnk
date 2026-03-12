@@ -5,7 +5,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class MusicRandomSequenceContainer(WwiseNode, ContainerMixin):
+class MusicRandomSequenceContainer(ContainerMixin, WwiseNode):
     """Interactive music playlist that randomly or sequentially plays music segments.
 
     Includes transition rules for smooth musical transitions and weighted selection for segments.

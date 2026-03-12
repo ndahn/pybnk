@@ -520,6 +520,7 @@ class Soundbank:
 
     def verify(self) -> int:
         from yonder.node_types import Event, Action
+        from yonder.node_types.mixins import ContainerMixin
 
         severity = 0
         discovered_ids = set([0])
@@ -559,30 +560,20 @@ class Soundbank:
                     logger.error(f"{node}: parent {parent_id} does not exist")
                     severity = max(severity, 2)
 
-            references = [r[1] for r in node.get_references()]
-
-            # Events must appear after their actions, but their actions
-            # can be in any order
-            if isinstance(node, Event):
-                for aid in node.actions:
-                    if aid in self and aid not in discovered_ids:
-                        logger.error(f"{node}: defined before referenced action {aid}")
-                        severity = max(severity, 2)
-            # Actions must appear after their targets, but don't have a
-            # parent-child relationship with them
-            elif isinstance(node, Action):
-                tid = node.target_id
-                if tid in self and tid not in discovered_ids:
-                    logger.error(f"{node}: defined before target {tid}")
+            for ref in node.get_references():
+                if ref in self and ref not in discovered_ids:
+                    logger.error(f"{node}: defined before referenced node {ref}")
                     severity = max(severity, 2)
-            else:
+
+            if isinstance(node, ContainerMixin):
                 prev_child_id = -1
                 wrong_order = False
 
-                for child_id in references:
+                for child_id in node.children:
                     if not wrong_order and child_id < prev_child_id:
                         logger.error(f"{node}: children are not sorted")
                         severity = max(severity, 2)
+                        # log only once
                         wrong_order = True
 
                     prev_child_id = child_id
@@ -595,7 +586,6 @@ class Soundbank:
                         child = self[child_id]
                         if (
                             child.parent is not None
-                            and child.parent > 0
                             and child.parent != node.id
                         ):
                             logger.error(

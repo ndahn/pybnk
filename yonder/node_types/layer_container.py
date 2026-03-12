@@ -4,7 +4,7 @@ from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
 
 
-class LayerContainer(WwiseNode, ContainerMixin):
+class LayerContainer(ContainerMixin, WwiseNode):
     """Plays multiple child sounds simultaneously as layers.
 
     Useful for layered sound design where different components play together (e.g., engine loop + transmission sounds).
