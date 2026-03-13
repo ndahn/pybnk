@@ -17,7 +17,6 @@ class MusicTrack(WwiseNode):
     Contains the actual audio sources and defines when/how they play within the segment timeline.
     """
 
-
     @classmethod
     def new(
         cls,
@@ -225,3 +224,18 @@ class MusicTrack(WwiseNode):
         """Clears the track timeline, removing all scheduled playback items."""
         self["playlist"] = []
         self["playlist_item_count"] = 0
+
+    def get_references(self) -> list[tuple[str, int]]:
+        refs = super().get_references()
+
+        # Refers to the wem filename, but it seems like there can ALSO be
+        # CustomEffects with a matching ID that would apply to it
+        for i, source in enumerate(self.sources):
+            refs.append(
+                (
+                    f"sources:{i}/media_information/source_id",
+                    source["media_information"]["source_id"],
+                )
+            )
+            
+        return refs

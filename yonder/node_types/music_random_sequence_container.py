@@ -11,7 +11,6 @@ class MusicRandomSequenceContainer(ContainerMixin, WwiseNode):
     Includes transition rules for smooth musical transitions and weighted selection for segments.
     """
     base_params_path = "music_trans_node_params/music_node_params/node_base_params"
-    rtpcs_path = "music_trans_node_params/music_node_params/node_base_params/initial_rtpc"
     children_path = "music_trans_node_params/music_node_params/children"
     
 

@@ -9,6 +9,7 @@ class Attenuation(RtpcMixin, Node):
 
     Controls how sound volume, low-pass filter, high-pass filter, and spread change over distance. Also manages cone-based directional attenuation for focused sound sources.
     """
+    base_params_path = ""
 
 
     @classmethod

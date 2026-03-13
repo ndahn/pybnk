@@ -6,8 +6,6 @@ if TYPE_CHECKING:
 
 
 class RtpcMixin:
-    rtpcs_path = "initial_rtpc"
-
     @property
     def rtpcs(self) -> list[dict]:
         """Real-time parameter controls for dynamic audio property adjustments.
@@ -17,7 +15,7 @@ class RtpcMixin:
         list[dict]
             List of RTPC dictionaries.
         """
-        return self[f"{self.rtpcs_path}/rtpcs"]
+        return self[f"{self.base_params_path}/initial_rtpc/rtpcs"]
 
     def add_rtpc(
         self,
@@ -72,12 +70,12 @@ class RtpcMixin:
         }
 
         self.rtpcs.append(rtpc)
-        self[f"{self.rtpcs_path}/count"] = len(self.rtpcs)
+        self[f"{self.base_params_path}/initial_rtpc/count"] = len(self.rtpcs)
 
     def clear_rtpcs(self) -> None:
         """Remove all RTPC entries."""
         self.rtpcs.clear()
-        self[f"{self.rtpcs_path}/count"] = 0
+        self[f"{self.base_params_path}/initial_rtpc/count"] = 0
 
     def get_references(self) -> list[tuple[str, int]]:
         refs = super().get_references()
@@ -85,14 +83,14 @@ class RtpcMixin:
         for i, rtpc in enumerate(self.rtpcs):
             refs.append(
                 (
-                    f"{self.rtpcs_path}/rtpcs:{i}/id",
+                    f"{self.base_params_path}/initial_rtpc/rtpcs:{i}/id",
                     rtpc["id"],
                 )
             )
             if rtpc["curve_id"] > 0:
                 refs.append(
                     (
-                        f"{self.rtpcs_path}/rtpcs:{i}/curve_id",
+                        f"{self.base_params_path}/initial_rtpc/rtpcs:{i}/curve_id",
                         rtpc["curve_id"],
                     )
                 )

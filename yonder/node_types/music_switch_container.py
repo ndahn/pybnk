@@ -15,7 +15,6 @@ class MusicSwitchContainer(ContainerMixin, WwiseNode):
     """
 
     base_params_path = "music_trans_node_params/music_node_params/node_base_params"
-    rtpcs_path = "music_trans_node_params/music_node_params/node_base_params/initial_rtpc"
     children_path = "music_trans_node_params/music_node_params/children"
 
 
@@ -309,23 +308,3 @@ class MusicSwitchContainer(ContainerMixin, WwiseNode):
         )
 
         return rule
-
-    @property
-    def rtpcs(self) -> list[dict]:
-        return self.base_params["initial_rtpc/rtpcs"]
-
-    def get_references(self) -> list[tuple[str, int]]:
-        refs = super().get_references()
-
-        group_chunks = self.base_params["state_chunk/state_group_chunks"]
-        for i, chunk in enumerate(group_chunks):
-            for j, state in enumerate(chunk["states"]):
-                refs.append(
-                    (
-                        "music_trans_node_params/music_node_params/"
-                        f"state_chunk/state_group_chunks:{i}/states:{j}/state_instance_id",
-                        state["state_instance_id"],
-                    )
-                )
-
-        return refs

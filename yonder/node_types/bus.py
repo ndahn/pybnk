@@ -1,13 +1,16 @@
 from yonder.node import Node
 from yonder.util import logger
-from .mixins import RtpcMixin
+from .mixins import RtpcMixin, StateChunkMixin
 
 
-class Bus(RtpcMixin, Node):
+# TODO needs the PropertiesMixin, but has a slightly different path
+class Bus(RtpcMixin, StateChunkMixin, Node):
     """Audio bus for routing and mixing multiple sounds together.
 
     Buses serve as mixing points in the audio hierarchy, allowing shared processing (effects, ducking, HDR) and routing to output devices or parent buses. Supports voice ducking and real-time parameter control.
     """
+    base_params_path = "initial_values"
+    
     
     @classmethod
     def new(cls, nid: int, parent_bus_id: int | Node = 0) -> "Bus":
@@ -397,16 +400,5 @@ class Bus(RtpcMixin, Node):
             "initial_values/bus_initial_params/aux_params/aux4",
         )
         refs.extend([(p, r) for p in paths if (r := self.get(p, 0)) > 0])
-
-        group_chunks = self["initial_values/state_chunk/state_group_chunks"]
-        for i, chunk in enumerate(group_chunks):
-            for j, state in enumerate(chunk["states"]):
-                refs.append(
-                    (
-                        "initial_values/state_chunk/"
-                        f"state_group_chunks:{i}/states:{j}/state_instance_id",
-                        state["state_instance_id"],
-                    )
-                )
 
         return refs

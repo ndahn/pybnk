@@ -176,3 +176,11 @@ class Sound(WwiseNode):
         self.base_params["positioning_params/three_dimensional_spatialization_mode"] = (
             value
         )
+
+    def get_references(self) -> list[tuple[str, int]]:
+        refs = super().get_references()
+
+        # Refers to the wem filename, but it seems like there can ALSO be 
+        # CustomEffects with a matching ID that would apply to it
+        refs.append(("bank_source_data/media_information/source_id", self.source_id))
+        return refs

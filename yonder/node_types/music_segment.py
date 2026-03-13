@@ -10,7 +10,6 @@ class MusicSegment(ContainerMixin, WwiseNode):
     Contains music tracks and defines the musical structure for adaptive music systems.
     """
     base_params_path = "music_node_params/node_base_params"
-    rtpcs_path = "music_node_params/node_base_params/initial_rtpc"
     children_path = "music_node_params/children"
     
 

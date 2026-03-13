@@ -491,7 +491,7 @@ class Soundbank:
             for nid in generation:
                 node = self[nid]
                 if type(node) is Node:
-                    logger.error(f"Uncast node {node}")
+                    logger.debug(f"Uncast node {node}")
 
                 if node.type == "Event":
                     events.append(node)
@@ -502,7 +502,7 @@ class Soundbank:
                     nodes.append(node)
 
             # Sort by type first, then ID
-            nodes.sort(key=lambda n: f"{n.type} {n.id}")
+            nodes.sort(key=lambda n: f"{n.type} {n.id:010d}")
             new_hirc.extend(n for n in nodes)
 
         # Actions are usually placed immediately before their events
@@ -567,7 +567,7 @@ class Soundbank:
                     logger.error(f"{node}: parent {parent_id} does not exist")
                     severity = max(severity, 2)
 
-            for ref in node.get_references():
+            for _, ref in node.get_references():
                 if ref in self and ref not in discovered_ids:
                     logger.error(f"{node}: defined before referenced node {ref}")
                     severity = max(severity, 2)

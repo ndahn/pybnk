@@ -169,7 +169,7 @@ class Node:
         except KeyError:
             if create:
                 obj: dict = self.body
-                parts = path.split("/")
+                parts = path.strip("/").split("/")
                 for p in parts[:-1]:
                     obj = obj.setdefault(p, {})
                     if not isinstance(obj, dict):
@@ -188,7 +188,7 @@ class Node:
         if not path:
             raise ValueError("Empty path")
 
-        parts = path.split("/")
+        parts = path.strip("/").split("/")
 
         def bfs_search(
             data: dict, target_key: str
@@ -296,6 +296,8 @@ class Node:
         return []
 
     def __eq__(self, value: "Node") -> bool:
+        if not isinstance(value, Node):
+            return False
         return self.id == value.id
 
     def __lt__(self, other: "Node") -> bool:
@@ -312,7 +314,7 @@ class Node:
             raise ValueError("Empty path")
 
         # TODO not required anymore when using PathDict
-        parts = path.split("/")
+        parts = path.strip("/").split("/")
         value = self.body
 
         for key in parts:
@@ -323,7 +325,7 @@ class Node:
     def __setitem__(self, path: str, val: Any) -> None:
         try:
             # TODO not required anymore when using PathDict
-            parts = path.split("/")
+            parts = path.strip("/").split("/")
             attr = self.body
 
             for sub in parts[:-1]:
