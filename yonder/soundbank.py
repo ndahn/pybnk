@@ -123,15 +123,23 @@ class Soundbank:
         elif source_type == "Streaming":
             streaming_dir = self.bnk_dir.parent / "wem" / wem.stem[:2]
             streaming_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(wem, streaming_dir)
-            return streaming_dir / f"{wem.stem}.wem"
+            
+            target_file = streaming_dir / f"{wem.stem}.wem"
+            if not target_file.is_file():
+                shutil.copy(wem, streaming_dir)
+
+            return target_file
 
         elif source_type == "PrefetchStreaming":
             # Sounds in cs_smain are all <= 20kB
             if wem.stat().st_size > 20000:
                 raise ValueError("Wem is too large for a prefetch snippet")
-            shutil.copy(wem, self.bnk_dir)
-            return self.bnk_dir / f"{wem.stem}.wem"
+            
+            target_file = self.bnk_dir / f"{wem.stem}.wem"
+            if not target_file.is_file():
+                shutil.copy(wem, self.bnk_dir)
+                
+            return target_file
 
         else:
             raise ValueError(f"Unknown source type {source_type}")
@@ -519,7 +527,6 @@ class Soundbank:
         self._regenerate_index_table()
 
     def verify(self) -> int:
-        from yonder.node_types import Event, Action
         from yonder.node_types.mixins import ContainerMixin
 
         severity = 0
@@ -584,10 +591,7 @@ class Soundbank:
                     #     severity = max(severity, 1)
                     if child_id in self:
                         child = self[child_id]
-                        if (
-                            child.parent is not None
-                            and child.parent != node.id
-                        ):
+                        if child.parent is not None and child.parent != node.id:
                             logger.error(
                                 f"{node}: child {child_id} has different parent {child.parent}"
                             )
@@ -601,6 +605,37 @@ class Soundbank:
             logger.error("Severe issues found, soundbank will most likely be broken")
 
         return severity
+
+    def verify_raw(self) -> None:
+        # Experimental, treats everything that looks remotely like an ID as a reference,
+        # only checks order
+        discovered_ids = set([0])
+        for node in self._hirc:
+            references = set()
+
+            def delve(d: dict) -> None:
+                for k, v in d.items():
+                    if isinstance(v, dict):
+                        delve(v)
+                    elif isinstance(v, list):
+                        sub = {i: s for i, s in enumerate(v)}
+                        delve(sub)
+                    elif k in (
+                        "Hash",
+                        "String",
+                        "direct_parent_id",
+                        "source_id",
+                        "in_memory_media_size",
+                        "bank_id",
+                    ):
+                        continue
+                    elif isinstance(v, int) and 10**6 <= v <= 10**10:
+                        references.add(v)
+
+            delve(node.body)
+            for ref in references:
+                if ref in self and ref not in discovered_ids:
+                    logger.error(f"{node}: defined before its reference {ref}")
 
     def __iter__(self) -> Iterator[Node]:
         yield from self._hirc

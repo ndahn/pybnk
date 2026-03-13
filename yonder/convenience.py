@@ -174,20 +174,20 @@ def create_boss_bgm(
         # Setup the segment and music track
         phase_seg = MusicSegment.new(bnk.new_id(), parent=phase_mrs)
         phase_track = MusicTrack.new_from_wem(bnk.new_id(), bgm, parent=phase_seg)
-        track_duration = phase_track.playlist[0]["source_duration"]
+        track_duration_ms = phase_track.playlist[0]["source_duration"]
         phase_seg.add_child(phase_track)
-        phase_seg.duration = track_duration
+        phase_seg.duration = track_duration_ms
 
         # Add markers for looping
         if track_markers and track_markers[i]:
             loop_start, loop_end = track_markers[i]
         else:
             loop_start = 0.0
-            loop_end = track_duration
+            loop_end = track_duration_ms / 1000
 
         phase_seg.add_marker(43573010, loop_start * 1000)
         # According to Shion this is probably just for testing
-        phase_seg.add_marker(3898567437, (track_duration - 3) * 1000, "LoopCheck")
+        phase_seg.add_marker(3898567437, track_duration_ms - 3000, "LoopCheck")
         phase_seg.add_marker(1539036744, loop_end * 1000)
 
         # Add the segment to the music container's playlist

@@ -29,7 +29,9 @@ class ContainerMixin:
         child_id : int | Node
             Child node ID or Node instance.
         """
-        if isinstance(child_id, "Node"):
+        from yonder.node import Node
+        
+        if isinstance(child_id, Node):
             if child_id.parent > 0 and child_id.parent != self.id:
                 logger.warning(f"Adding already adopted child {child_id} to {self}")
 
