@@ -3,7 +3,6 @@ from yonder.util import logger
 from .mixins import RtpcMixin, StateChunkMixin
 
 
-# TODO needs the PropertiesMixin, but has a slightly different path
 class Bus(RtpcMixin, StateChunkMixin, Node):
     """Audio bus for routing and mixing multiple sounds together.
 
@@ -39,6 +38,7 @@ class Bus(RtpcMixin, StateChunkMixin, Node):
         logger.info(f"Created new node {bus}")
         return bus
 
+    # Buses have a special set of prop_bundle different from WwiseNode
     @property
     def prop_bundle(self) -> list[dict]:
         """Bus property values.
