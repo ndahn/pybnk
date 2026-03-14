@@ -188,7 +188,7 @@ def get_sound_path(bnk: Soundbank, source: dict) -> Path:
 
     # Find the largest external wem (if any)
     ext_wem = max(
-        get_config().find_external_sounds(source_id),
+        get_config().find_external_sounds(source_id, bnk),
         key=lambda p: p.stat().st_size,
         default=None,
     )

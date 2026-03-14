@@ -2,52 +2,71 @@ from typing import Any, Callable
 from pathlib import Path
 import tempfile
 import atexit
+import wave
+import numpy as np
+
 from dearpygui import dearpygui as dpg
 
 from yonder.util import logger
 from yonder.gui.config import get_config
 from yonder.wem import wem2wav
 from yonder.player import WavPlayer
+from yonder.gui import style
 
 
-_wav_tmp_dir = tempfile.TemporaryDirectory("_player", "yonder_")
-atexit.register(_wav_tmp_dir.cleanup)
+# TODO move to config for general tmp folder
+_player_tmp_dir = tempfile.TemporaryDirectory("_player", "yonder_")
+atexit.register(_player_tmp_dir.cleanup)
+logger.info(f"Temporary files will be stored in {_player_tmp_dir}")
 
 
 def add_wav_player(
-    get_sound: Callable[[], Path],
+    get_audio_path: Callable[[], Path],
+    markers: list[tuple[str, float, tuple[int, int, int]]] = None,
+    on_marker_changed: Callable[[str, tuple[str, float], Any], None] = None,
+    on_loop_changed: Callable[[str, tuple[float, float, bool], Any], None] = None,
     *,
+    max_points: int = 5000,
     tag: str = 0,
+    parent: str = 0,
+    user_data: Any = None,
 ) -> str:
-    if tag in (None, 0, ""):
+    if not tag:
         tag = dpg.generate_uuid()
 
     last_path: Path = None
     player: WavPlayer = None
 
-    def create_player(audio: Path) -> WavPlayer:
+    def get_wav_path() -> Path:
+        audio = get_audio_path()
+
         if audio is None or not audio.is_file():
             logger.error(f"Audio {audio} does not exist")
             return None
 
         if audio.name.endswith(".wem"):
-            wav = Path(_wav_tmp_dir.name) / (audio.stem + ".wav")
+            wav = Path(_player_tmp_dir.name) / (audio.stem + ".wav")
             if not wav.is_file():
                 vgmstream = get_config().locate_vgmstream()
                 logger.info(f"Converting {audio} to wav for playback")
-                wav = wem2wav(Path(vgmstream), [audio], Path(_wav_tmp_dir.name))[0]
+                wav = wem2wav(Path(vgmstream), audio, Path(_player_tmp_dir.name))[0]
+            return wav
+
         elif audio.name.endswith(".wav"):
-            wav = audio
+            return audio
+
         else:
             logger.error(f"Audio must be a wav or wem file ({audio})")
             return None
 
-        player = WavPlayer(str(wav))
-        return player
+    def create_player(wav: Path) -> WavPlayer:
+        if wav:
+            player = WavPlayer(str(wav))
+            return player
 
     def on_play_pause() -> None:
         nonlocal player, last_path
-        audio = get_sound()
+        audio = get_wav_path()
 
         if player and last_path != audio:
             # Audio changed
@@ -59,8 +78,9 @@ def add_wav_player(
             if not player:
                 return
 
-            dpg.set_value(f"{tag}_total", f"{player.duration:.2f}")
+            dpg.configure_item(f"{tag}_progress", default_value=0.0, label="0.000")
             last_path = audio
+            regenerate(audio)
 
         if player.playing:
             player.pause()
@@ -71,40 +91,270 @@ def add_wav_player(
             player.play()
             progress_update()
 
-    def on_progress_changed(sender: str, progress: float, user_data: Any) -> None:
+    def on_progress_update(sender: str) -> None:
         if player:
-            player.seek(progress)
+            player.seek(dpg.get_value(sender))
 
     def progress_update() -> None:
         if not player or not player.playing:
             return
 
+        # In case the player widget got destroyed
         if not dpg.does_item_exist(f"{tag}_progress"):
             player.stop()
             return
 
+        pos = player.position
+        loop_start, loop_end, loop_active = get_loop_state()
+        if loop_active and pos >= loop_end:
+            player.seek(loop_start)
+            pos = loop_start
+
         dpg.configure_item(
-            f"{tag}_progress", default_value=player.position, max_value=player.duration
+            f"{tag}_progress",
+            default_value=pos,
+            label=f"{pos:.03f}",
         )
         dpg.set_frame_callback(dpg.get_frame_count() + 2, progress_update)
 
-    with dpg.group(horizontal=True, tag=tag):
-        dpg.add_button(
-            arrow=True,
-            direction=dpg.mvDir_Right,
-            callback=on_play_pause,
-            tag=f"{tag}_play_pause",
-        )
+    def get_loop_state() -> tuple[float, float, bool]:
+        start = dpg.get_value(f"{tag}_loop_start")
+        end = dpg.get_value(f"{tag}_loop_end")
+        active = dpg.get_value(f"{tag}_loop_enabled")
+        return (start, end, active)
 
-        dpg.add_slider_float(
-            min_value=0.0,
-            max_value=1.0,
-            clamped=True,
-            no_input=True,
-            callback=on_progress_changed,
-            tag=f"{tag}_progress",
-        )
-        dpg.add_text(
-            "0.00",
-            tag=f"{tag}_total",
-        )
+    def set_loop_marker_pos(sender: str, pos: float, loop_marker: str) -> None:
+        dpg.set_value(f"{tag}_{loop_marker}", pos)
+        if on_loop_changed:
+            on_loop_changed(tag, get_loop_state(), user_data)
+
+    def on_loop_marker_moved() -> None:
+        loop_start, loop_end, active = get_loop_state()
+
+        # Loop start must be before loop end and vv
+        loop_start = max(0.0, min(loop_start, loop_end))
+        dpg.set_value(f"{tag}_loop_start", loop_start)
+        dpg.set_value(f"{tag}_loop_start_value", loop_start)
+
+        dur = player.duration if player else np.finfo(np.float32).max
+        loop_end = min(dur, max(loop_end, loop_start))
+        dpg.set_value(f"{tag}_loop_end_value", loop_end)
+
+        if on_loop_changed:
+            on_loop_changed(tag, (loop_start, loop_end, active), user_data)
+
+    def set_user_marker_pos(sender: str, pos: float, marker: str) -> None:
+        dpg.set_value(f"{tag}_marker_{marker}", pos)
+        if on_marker_changed:
+            on_marker_changed(tag, (marker, pos), user_data)
+
+    def on_user_marker_moved(sender: str) -> None:
+        if not player:
+            return
+
+        pos = dpg.get_value(sender)
+        pos = max(0.0, min(pos, player.duration))
+        dpg.set_value(sender, pos)
+
+        marker = dpg.get_item_label(sender)
+        dpg.set_value(f"{tag}_marker_{marker}_value", pos)
+        if on_marker_changed:
+            on_marker_changed(tag, (marker, pos), user_data)
+
+    def minmax_envelope(
+        signal: np.ndarray, time: np.ndarray, n_buckets: int
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Downsample by splitting into n_buckets and keeping min+max per bucket.
+        Returns (t, y) where len == 2*n_buckets, ready to plot as a filled waveform.
+        """
+        # Trim to a multiple of n_buckets for clean reshaping
+        trim = (len(signal) // n_buckets) * n_buckets
+        sig_buckets = signal[:trim].reshape(n_buckets, -1)
+        t_buckets = time[:trim].reshape(n_buckets, -1)
+
+        mins = sig_buckets.min(axis=1)
+        maxs = sig_buckets.max(axis=1)
+        # Use the midpoint time of each bucket
+        t_mid = t_buckets.mean(axis=1)
+
+        # Interleave: for each bucket emit (t, max) then (t, min)
+        # This gives a continuous line that traces the envelope
+        t_out = np.empty(2 * n_buckets)
+        y_out = np.empty(2 * n_buckets)
+        t_out[0::2] = t_mid
+        t_out[1::2] = t_mid
+        y_out[0::2] = maxs
+        y_out[1::2] = mins
+
+        return t_out, y_out
+
+    def regenerate(audio: Path) -> None:
+        dpg.delete_item(f"{tag}_axis_y", children_only=True)
+
+        with wave.open(str(audio), "r") as f:
+            n_channels = f.getnchannels()
+            framerate = f.getframerate()
+            frames = np.frombuffer(f.readframes(-1), dtype=np.int16)
+
+        # Deinterleave channels in one reshape — no Python loop
+        # frames is [L, R, L, R, ...] → shape (n_frames, n_channels)
+        samples = frames.reshape(-1, n_channels)
+
+        n_frames = samples.shape[0]
+        duration = n_frames / framerate
+        time = np.linspace(0, duration, num=n_frames)
+
+        factors = [1, -1]
+        colors = [style.themes.plot_blue, style.themes.plot_red]
+
+        # If there are multiple channels we only want the first two (usually FL and FR)
+        for i in range(min(n_channels, 2)):
+            signal = samples[:, i].astype(np.float32)
+            t_env, y_env = minmax_envelope(signal, time, n_buckets=max_points // 2)
+            y_env = factors[i % 2] * np.abs(y_env)
+
+            dpg.add_line_series(
+                t_env.tolist(),
+                y_env.tolist(),
+                shaded=True,
+                tag=f"{tag}_channel_{i}",
+                label=f"Ch{i}",
+                parent=f"{tag}_axis_y",
+            )
+            dpg.bind_item_theme(f"{tag}_channel_{i}", colors[i])
+
+        dpg.set_value(f"{tag}_duration", f"{duration:.3f}")
+
+        loop_start, loop_end, _ = get_loop_state()
+        dpg.set_value(f"{tag}_loop_start", min(loop_start, 1.0))
+        dpg.set_value(f"{tag}_loop_end", min(loop_end, duration - 1.0))
+
+        dpg.set_axis_limits_constraints(f"{tag}_axis_x", 0.0, duration)
+        dpg.fit_axis_data(f"{tag}_axis_x")
+        dpg.fit_axis_data(f"{tag}_axis_y")
+
+    with dpg.group():
+        with dpg.plot(
+            height=100,
+            width=-1,
+            no_title=True,
+            no_menus=True,
+            no_mouse_pos=True,
+            tag=tag,
+            parent=parent,
+        ):
+            dpg.add_plot_axis(
+                dpg.mvXAxis,
+                label="x",
+                no_label=True,
+                no_highlight=True,
+                tag=f"{tag}_axis_x",
+            )
+            dpg.add_plot_axis(
+                dpg.mvYAxis,
+                label="y",
+                no_label=True,
+                no_highlight=True,
+                no_tick_labels=True,
+                no_tick_marks=True,
+                auto_fit=True,
+                tag=f"{tag}_axis_y",
+            )
+
+            # Playback marker
+            dpg.add_drag_line(
+                show_label=False,
+                thickness=2,
+                color=style.red,
+                callback=on_progress_update,
+                tag=f"{tag}_progress",
+            )
+
+            # Loop markers
+            dpg.add_drag_line(
+                label="loop_start",
+                color=style.green,
+                default_value=1.0,
+                tag=f"{tag}_loop_start",
+                callback=on_loop_marker_moved,
+            )
+            dpg.add_drag_line(
+                label="loop_end",
+                color=style.light_green,
+                default_value=np.finfo(np.float32).max,
+                tag=f"{tag}_loop_end",
+                callback=on_loop_marker_moved,
+            )
+
+            # User markers
+            if markers:
+                for label, pos, color in markers:
+                    dpg.add_drag_line(
+                        label=label,
+                        color=color,
+                        default_value=pos,
+                        callback=on_user_marker_moved,
+                    )
+
+        with dpg.group(horizontal=True):
+            dpg.add_button(
+                arrow=True,
+                direction=dpg.mvDir_Right,
+                callback=on_play_pause,
+            )
+
+            dpg.add_text("|")
+            dpg.add_button(
+                label="Markers",
+                callback=lambda s, a, u: dpg.show_item(f"{tag}_markers_popup"),
+            )
+            dpg.add_checkbox(
+                label="Loop",
+                default_value=True,
+                tag=f"{tag}_loop_enabled",
+                callback=on_loop_marker_moved,
+            )
+            dpg.add_text("|")
+
+            dpg.add_text("0.000", tag=f"{tag}_duration")
+
+        with dpg.window(
+            popup=True,
+            no_move=True,
+            no_title_bar=True,
+            no_resize=True,
+            tag=f"{tag}_markers_popup",
+            show=False,
+        ):
+            # TODO min/max
+            dpg.add_input_float(
+                label="loop_start",
+                default_value=1.0,
+                width=100,
+                callback=set_loop_marker_pos,
+                user_data="loop_start",
+                tag=f"{tag}_loop_start_value",
+            )
+            dpg.add_input_float(
+                label="loop_end",
+                default_value=1.0,
+                width=100,
+                callback=set_loop_marker_pos,
+                user_data="loop_end",
+                tag=f"{tag}_loop_end_value",
+            )
+            if markers:
+                dpg.add_separator()
+                for marker, pos, _ in markers:
+                    dpg.add_input_float(
+                        label=marker,
+                        default_value=pos,
+                        width=100,
+                        callback=set_user_marker_pos,
+                        user_data=marker,
+                        tag=f"{tag}_marker_{marker}_value",
+                    )
+
+    regenerate(get_wav_path())
+    return tag

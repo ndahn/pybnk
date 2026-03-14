@@ -28,6 +28,8 @@ class themes:
     item_blue = None
     link_button = None
     no_padding = None
+    plot_blue = None
+    plot_red = None
 
 
 def init_themes():
@@ -147,6 +149,14 @@ def init_themes():
             dpg.add_theme_style(
                 dpg.mvStyleVar_FramePadding, 0, 0, category=dpg.mvThemeCat_Core
             )
+
+    with dpg.theme() as themes.plot_blue:
+        with dpg.theme_component(dpg.mvLineSeries):
+            dpg.add_theme_color(dpg.mvPlotCol_Line, blue, category=dpg.mvThemeCat_Plots)
+    
+    with dpg.theme() as themes.plot_red:
+        with dpg.theme_component(dpg.mvLineSeries):
+            dpg.add_theme_color(dpg.mvPlotCol_Line, orange, category=dpg.mvThemeCat_Plots)
 
 
 class HighContrastColorGenerator:

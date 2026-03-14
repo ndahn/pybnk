@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Generator, TYPE_CHECKING
 import sys
 import yaml
 import inspect
@@ -8,6 +8,9 @@ from dataclasses import dataclass, field, asdict
 from yonder.hash import global_hash_dict, load_lookup_table
 from yonder.util import logger
 from yonder.gui.dialogs.file_dialog import open_file_dialog
+
+if TYPE_CHECKING:
+    from yonder.soundbank import Soundbank
 
 
 @dataclass
@@ -91,14 +94,19 @@ class Config:
             else:
                 global_hash_dict.update(load_lookup_table(path))
 
-    def find_external_sounds(self, source_id: int) -> Generator[Path, None, None]:
-        for path in self.bankdirs:
-            path: Path = Path(path)
+    def find_external_sounds(self, source_id: int, bnk: "Soundbank" = None) -> Generator[Path, None, None]:
+        bnkdirs = list(self.bankdirs)
+        if bnk:
+            # Soundbanks unpacked in the game folder
+            bnkdirs.insert(0, bnk.bnk_dir.parent)
 
-            # For game folders
+        # For game folders
+        for path in bnkdirs:
             if path.name != "sd" and (path / "sd").is_dir():
-                path = path.parent / "sd"
+                bnkdirs.append(path / "sd")
 
+        for path in bnkdirs:
+            path: Path = Path(path)
             stream_path = f"wem/{str(source_id)[:2]}/{source_id}.wem"
 
             # Check locations for streaming sounds first before searching the entire directory
