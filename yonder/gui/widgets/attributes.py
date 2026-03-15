@@ -240,7 +240,16 @@ def _create_type_specific_attributes(
             user_data=user_data,
         )
     elif isinstance(node, MusicSegment):
-        pass
+        _create_attributes_music_segment(
+            bnk,
+            node,
+            properties,
+            on_node_changed,
+            on_node_selected,
+            tag=tag,
+            parent=parent,
+            user_data=user_data,
+        )
     elif isinstance(node, MusicSwitchContainer):
         _create_attributes_music_switch_container(
             bnk,
@@ -260,7 +269,7 @@ def _create_type_specific_attributes(
             on_node_changed,
             on_node_selected,
             tag=tag,
-            parent=parent,
+            segment=parent,
             user_data=user_data,
         )
     elif isinstance(node, RandomSequenceContainer):
@@ -406,6 +415,21 @@ def _create_attributes_music_switch_container(
     dpg.add_spacer(height=3)
 
 
+def _create_attributes_music_segment(
+    bnk: Soundbank,
+    node: MusicSegment,
+    properties: dict[str, property],
+    on_node_changed: Callable[[str, Node, Any], None],
+    on_node_selected: Callable[[str, Node, Any], None],
+    *,
+    tag: str = 0,
+    parent: str = 0,
+    user_data: Any = None,
+) -> None:
+    # TODO make filepaths table more generic
+    dpg.add_text("Markers should be edited on the MusicTrack instead", color=style.yellow)
+
+
 def _create_attributes_music_track(
     bnk: Soundbank,
     node: MusicTrack,
@@ -414,7 +438,7 @@ def _create_attributes_music_track(
     on_node_selected: Callable[[str, Node, Any], None],
     *,
     tag: str = 0,
-    parent: str = 0,
+    segment: str = 0,
     user_data: Any = None,
 ) -> None:
     def on_wem_selected(
@@ -432,12 +456,18 @@ def _create_attributes_music_track(
     def on_loop_changed(
         sender: str,
         loop_info: tuple[float, float, bool],
-        user_data: tuple[int, MusicTrack],
+        user_data: Any,
     ) -> None:
+        # TODO not sure where to enable or disable looping
         loop_start, loop_end, loop_enabled = loop_info
-        source_index, track = user_data
-        # TODO update track loop markers
+        segment.set_marker(MusicSegment.loop_start_id, loop_start)
+        segment.set_marker(MusicSegment.loop_end_id, loop_end)
 
+    segment: MusicSegment = bnk.get(node.parent)
+    markers_enabled = bool(isinstance(segment, MusicSegment))
+
+    # Not sure why music tracks can have several sources or what to do 
+    # with loop info if that happens, but so far I didn't se that
     for i, source in enumerate(node.sources):
         add_generic_widget(
             Path,
@@ -451,7 +481,7 @@ def _create_attributes_music_track(
 
         add_wav_player(
             lambda idx=i: get_sound_path(bnk, node.sources[idx]),
-            loop_markers_enabled=True,
+            loop_markers_enabled=markers_enabled,
             on_loop_changed=on_loop_changed,
             user_data=(i, node),
         )

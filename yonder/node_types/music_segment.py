@@ -1,4 +1,5 @@
 from yonder.node import Node
+from yonder.hash import calc_hash
 from yonder.util import PathDict, logger
 from .wwise_node import WwiseNode
 from .mixins import ContainerMixin
@@ -11,6 +12,10 @@ class MusicSegment(ContainerMixin, WwiseNode):
     """
     base_params_path = "music_node_params/node_base_params"
     children_path = "music_node_params/children"
+
+    # Marker IDs, we don't know the string values of these
+    loop_start_id = 43573010
+    loop_end_id = 1539036744
     
 
     @classmethod
@@ -77,33 +82,47 @@ class MusicSegment(ContainerMixin, WwiseNode):
         """
         return self["markers"]
 
-    def add_marker(self, marker_id: int, position: float, name: str = "") -> None:
+    def set_marker(self, marker_id: str | int, position: float) -> int:
         """Places a timing marker at a specific position within the segment.
 
         Parameters
         ----------
-        marker_id : int
+        marker_id : str | int
             Unique marker ID.
         position : float
             Position in milliseconds.
         name : str, default=""
             Optional marker name.
         """
-        marker = {
-            "id": marker_id,
-            "position": position,
-            "string_length": len(name) + 1 if name else 0,
-            "string": name,
-        }
-        self["markers"].append(marker)
-        self["marker_count"] = len(self["markers"])
+        name = ""
+        if isinstance(marker_id, str):
+            name = marker_id
+            marker_id = calc_hash(marker_id)
 
-    def remove_marker(self, marker_id: int) -> bool:
+        for m in self.markers:
+            if m["id"] == marker_id:
+                m["position"] = position
+                break
+        else:
+            marker = {
+                "id": marker_id,
+                "position": position,
+                "string_length": len(name) + 1 if name else 0,
+                "string": name,
+            }
+            self["markers"].append(marker)
+            self["marker_count"] = len(self["markers"])
+
+        # Not sure if it's required, but just in case keep markers sorted by position
+        self["markers"].sort(key=lambda m: m["position"])
+        return marker_id
+
+    def remove_marker(self, marker_id: str | int) -> bool:
         """Removes a timing marker from the segment.
 
         Parameters
         ----------
-        marker_id : int
+        marker_id : str | int
             Marker ID to remove.
 
         Returns
@@ -111,6 +130,9 @@ class MusicSegment(ContainerMixin, WwiseNode):
         bool
             True if marker was removed, False if not found.
         """
+        if isinstance(marker_id, str):
+            marker_id = calc_hash(marker_id)
+
         markers = self["markers"]
         for i, marker in enumerate(markers):
             if marker["id"] == marker_id:
