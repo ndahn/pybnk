@@ -146,7 +146,7 @@ def create_simple_sound_dialog(
         add_filepaths_table(
             wem_paths,
             on_wems_changed,
-            title="WEMs",
+            label="WEMs",
             filetypes={"Wwise Audio (.wem)": "*.wem"},
         )
 

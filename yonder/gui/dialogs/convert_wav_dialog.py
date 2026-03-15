@@ -132,7 +132,7 @@ def convert_wavs_dialog(
         add_filepaths_table(
             [],
             on_wavs_changed,
-            title="Wave files",
+            label="Wave files",
             filetypes={"Wave (.wav)": "*.wav"},
             tag=f"{tag}_wavs_table",
         )

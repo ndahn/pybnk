@@ -426,8 +426,8 @@ def _create_attributes_music_segment(
     parent: str = 0,
     user_data: Any = None,
 ) -> None:
-    # TODO make filepaths table more generic
-    dpg.add_text("Markers should be edited on the MusicTrack instead", color=style.yellow)
+    # TODO add a table here
+    dpg.add_text("Edit markers on the MusicTrack for now", color=style.yellow)
 
 
 def _create_attributes_music_track(
@@ -466,7 +466,7 @@ def _create_attributes_music_track(
     segment: MusicSegment = bnk.get(node.parent)
     markers_enabled = bool(isinstance(segment, MusicSegment))
 
-    # Not sure why music tracks can have several sources or what to do 
+    # Not sure why music tracks can have several sources or what to do
     # with loop info if that happens, but so far I didn't se that
     for i, source in enumerate(node.sources):
         add_generic_widget(

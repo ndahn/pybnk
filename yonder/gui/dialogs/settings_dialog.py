@@ -92,7 +92,7 @@ def settings_dialog(
                 config.bankdirs,
                 on_bankdirs_changed,
                 folders=True,
-                title="Soundbank folders",
+                label="Soundbank folders",
             )
             with dpg.tooltip(w):
                 dpg.add_text("Used to locate external sounds", color=style.light_blue)
@@ -102,7 +102,7 @@ def settings_dialog(
             w = add_filepaths_table(
                 config.hash_dicts,
                 on_hashdicts_changed,
-                title="Hash dictionaries",
+                label="Hash dictionaries",
                 filetypes={"Text files (.txt)": "*.txt"},
             )
             with dpg.tooltip(w):
