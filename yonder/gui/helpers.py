@@ -1,8 +1,16 @@
 from pathlib import Path
+import tempfile
+import atexit
 from dearpygui import dearpygui as dpg
+
+from yonder.util import logger
 
 
 url_regex = r"https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)"
+
+tmp_dir = tempfile.TemporaryDirectory(prefix="yonder_")
+atexit.register(tmp_dir.cleanup)
+logger.info(f"Temporary files will be stored in {tmp_dir}")
 
 
 def estimate_drawn_text_size(

@@ -83,6 +83,7 @@ def edit_transition_dialog(
             )
 
     def on_okay():
+        # Other fields are update by the widgets directly
         rule["source_transition_rule_count"] = len(rule["source_ids"])
         rule["destination_transition_rule_count"] = len(rule["destination_ids"])
 
@@ -92,8 +93,8 @@ def edit_transition_dialog(
         dpg.delete_item(window)
 
     rule = deepcopy(base_rule)
-    src_rule: dict = dict(rule.get("source_transition_rule", {}))
-    dst_rule: dict = dict(rule.get("destination_transition_rule", {}))
+    src_rule: dict = rule.setdefault("source_transition_rule", {})
+    dst_rule: dict = rule.setdefault("destination_transition_rule", {})
 
     with dpg.window(
         label=f"Edit Transition ({node.id})",
@@ -112,6 +113,8 @@ def edit_transition_dialog(
             default_value=src_rule["transition_time"],
             min_value=0,
             max_value=60000,
+            step=500,
+            step_fast=1000,
             min_clamped=True,
             max_clamped=True,
             tag=f"{tag}_src_transition_time",
@@ -122,6 +125,8 @@ def edit_transition_dialog(
             default_value=src_rule.get("fade_offet", 0),
             min_value=-60000,
             max_value=60000,
+            step=500,
+            step_fast=1000,
             min_clamped=True,
             max_clamped=True,
             tag=f"{tag}_src_fade_offset",
@@ -144,6 +149,8 @@ def edit_transition_dialog(
             default_value=dst_rule["transition_time"],
             min_value=0,
             max_value=60000,
+            step=500,
+            step_fast=1000,
             min_clamped=True,
             max_clamped=True,
             tag=f"{tag}_dst_transition_time",

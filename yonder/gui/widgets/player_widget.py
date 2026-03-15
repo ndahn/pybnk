@@ -1,7 +1,5 @@
 from typing import Any, Callable
 from pathlib import Path
-import tempfile
-import atexit
 import wave
 import numpy as np
 
@@ -12,12 +10,7 @@ from yonder.gui.config import get_config
 from yonder.wem import wem2wav
 from yonder.player import WavPlayer
 from yonder.gui import style
-
-
-# TODO move to config for general tmp folder
-_player_tmp_dir = tempfile.TemporaryDirectory("_player", "yonder_")
-atexit.register(_player_tmp_dir.cleanup)
-logger.info(f"Temporary files will be stored in {_player_tmp_dir}")
+from yonder.gui.helpers import tmp_dir
 
 
 def add_wav_player(
@@ -45,11 +38,11 @@ def add_wav_player(
             return None
 
         if audio.name.endswith(".wem"):
-            wav = Path(_player_tmp_dir.name) / (audio.stem + ".wav")
+            wav = Path(tmp_dir.name) / (audio.stem + ".wav")
             if not wav.is_file():
                 vgmstream = get_config().locate_vgmstream()
                 logger.info(f"Converting {audio} to wav for playback")
-                wav = wem2wav(Path(vgmstream), audio, Path(_player_tmp_dir.name))[0]
+                wav = wem2wav(Path(vgmstream), audio, Path(tmp_dir.name))[0]
             return wav
 
         elif audio.name.endswith(".wav"):
@@ -107,8 +100,13 @@ def add_wav_player(
         pos = player.position
         loop_start, loop_end, loop_active = get_loop_state()
         if loop_active and pos >= loop_end:
-            player.seek(loop_start)
             pos = loop_start
+            player.seek(pos)
+
+        # Only repeat the part around the loop point for testing
+        if dpg.get_value(f"{tag}_loop_test") and pos >= loop_start + 2:
+            pos = loop_end - 2.0
+            player.seek(pos)
 
         dpg.configure_item(
             f"{tag}_progress",
@@ -224,11 +222,30 @@ def add_wav_player(
             )
             dpg.bind_item_theme(f"{tag}_channel_{i}", colors[i])
 
-        dpg.set_value(f"{tag}_duration", f"{duration:.3f}")
-
         loop_start, loop_end, _ = get_loop_state()
-        dpg.set_value(f"{tag}_loop_start", min(loop_start, 1.0))
-        dpg.set_value(f"{tag}_loop_end", min(loop_end, duration - 1.0))
+        loop_start = min(loop_start, duration * 0.05)
+        loop_end = min(loop_end, duration * 0.95)
+
+        dpg.set_value(f"{tag}_duration", f"{duration:.3f}")
+        dpg.set_value(f"{tag}_loop_start", loop_start)
+        dpg.configure_item(
+            f"{tag}_loop_start_value", default_value=loop_start, max_value=duration
+        )
+        dpg.set_value(f"{tag}_loop_end", loop_end)
+        dpg.configure_item(
+            f"{tag}_loop_end_value", default_value=loop_end, max_value=duration
+        )
+
+        if markers:
+            for marker, _, _ in markers:
+                mpos = dpg.get_value(f"{tag}_marker_{marker}")
+                mpos = min(mpos, duration)
+                dpg.set_value(f"{tag}_marker_{marker}", mpos)
+                dpg.configure_item(
+                    f"{tag}_marker_{marker}_value",
+                    default_value=mpos,
+                    max_value=duration,
+                )
 
         dpg.set_axis_limits_constraints(f"{tag}_axis_x", 0.0, duration)
         dpg.fit_axis_data(f"{tag}_axis_x")
@@ -289,11 +306,12 @@ def add_wav_player(
 
             # User markers
             if markers:
-                for label, pos, color in markers:
+                for marker, pos, color in markers:
                     dpg.add_drag_line(
-                        label=label,
+                        label=marker,
                         color=color,
                         default_value=pos,
+                        tag=f"{tag}_marker_{marker}",
                         callback=on_user_marker_moved,
                     )
 
@@ -315,6 +333,11 @@ def add_wav_player(
                 tag=f"{tag}_loop_enabled",
                 callback=on_loop_marker_moved,
             )
+            dpg.add_checkbox(
+                label="Test",
+                default_value=True,
+                tag=f"{tag}_loop_test",
+            )
             dpg.add_text("|")
 
             dpg.add_text("0.000", tag=f"{tag}_duration")
@@ -327,7 +350,6 @@ def add_wav_player(
             tag=f"{tag}_markers_popup",
             show=False,
         ):
-            # TODO min/max
             dpg.add_input_float(
                 label="loop_start",
                 default_value=1.0,
