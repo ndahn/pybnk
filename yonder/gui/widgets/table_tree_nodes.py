@@ -20,7 +20,7 @@ class RowDescriptor:
     user_data: Any = None
 
 
-def _get_descriptor(row: str) -> RowDescriptor:
+def get_foldable_row_descriptor(row: str) -> RowDescriptor:
     if not dpg.does_item_exist(row):
         return None
     data = dpg.get_item_user_data(row)
@@ -28,21 +28,21 @@ def _get_descriptor(row: str) -> RowDescriptor:
 
 
 def is_foldable_row(row: str) -> bool:
-    return _get_descriptor(row) is not None
+    return get_foldable_row_descriptor(row) is not None
 
 
 def is_foldable_row_leaf(row: str) -> bool:
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     return desc is not None and desc.button is None
 
 
 def is_lazy_foldable(row: str) -> bool:
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     return desc is not None and desc.is_lazy
 
 
 def is_foldable_row_expanded(row: str) -> bool:
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     return (
         desc is not None
         and desc.button is not None
@@ -51,7 +51,7 @@ def is_foldable_row_expanded(row: str) -> bool:
 
 
 def get_row_level(row: str, default: int = 0) -> int:
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     return desc.level if desc else default
 
 
@@ -61,7 +61,7 @@ def is_row_index_visible(table, row_level: int, row_idx: int = -1) -> bool:
         rows = rows[:row_idx]
 
     for parent in reversed(rows):
-        desc = _get_descriptor(parent)
+        desc = get_foldable_row_descriptor(parent)
         if not desc:
             return True
 
@@ -75,7 +75,7 @@ def is_row_visible(table: str, row: str | int) -> bool:
     if not is_foldable_row(row):
         return True
 
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     rows = dpg.get_item_children(table, slot=1)
     row_idx = rows.index(row)
     return is_row_index_visible(table, desc.level, row_idx)
@@ -163,7 +163,7 @@ def apply_row_indent(
             if until != 0 and child_row == until:
                 break
 
-            desc = _get_descriptor(child_row)
+            desc = get_foldable_row_descriptor(child_row)
             if desc:
                 child_level = desc.level + indent_level
                 desc.level = child_level
@@ -182,7 +182,7 @@ def set_foldable_row_status(row: str, expanded: bool) -> None:
     if is_foldable_row_expanded(row) == expanded:
         return
 
-    desc = _get_descriptor(row)
+    desc = get_foldable_row_descriptor(row)
     if not desc:
         return
 
@@ -369,7 +369,7 @@ def _on_row_clicked(sender: str, value: Any, desc: RowDescriptor):
         hide_level = 10000 if is_expanded else desc.level
 
         for child_row in get_foldable_child_rows(table, row):
-            child_desc = _get_descriptor(child_row)
+            child_desc = get_foldable_row_descriptor(child_row)
             if not child_desc:
                 # Not a foldable row, stop here
                 break

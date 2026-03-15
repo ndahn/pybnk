@@ -123,7 +123,7 @@ class Soundbank:
         elif source_type == "Streaming":
             streaming_dir = self.bnk_dir.parent / "wem" / wem.stem[:2]
             streaming_dir.mkdir(parents=True, exist_ok=True)
-            
+
             target_file = streaming_dir / f"{wem.stem}.wem"
             if not target_file.is_file():
                 shutil.copy(wem, streaming_dir)
@@ -134,11 +134,11 @@ class Soundbank:
             # Sounds in cs_smain are all <= 20kB
             if wem.stat().st_size > 20000:
                 raise ValueError("Wem is too large for a prefetch snippet")
-            
+
             target_file = self.bnk_dir / f"{wem.stem}.wem"
             if not target_file.is_file():
                 shutil.copy(wem, self.bnk_dir)
-                
+
             return target_file
 
         else:
@@ -331,10 +331,9 @@ class Soundbank:
         for node in self._hirc:
             g.add_node(node.id, type=node.type)
             references = node.get_references()
-            if references:
-                for _, ref in references:
-                    if not valid_only or ref in self:
-                        g.add_edge(node.id, ref)
+            for _, ref in references:
+                if not valid_only or ref in self:
+                    g.add_edge(node.id, ref)
 
         return g
 
@@ -425,9 +424,24 @@ class Soundbank:
         for evt in events:
             for aid in evt["actions"]:
                 action = self[aid]
-                if event_type in action.get("params", {}):
+                if not event_type or event_type == action.type:
                     yield evt
                     break
+
+    def find_event_subgraphs_for(
+        self, node: int | Node
+    ) -> Generator[tuple[Node, nx.DiGraph], None, None]:
+        if isinstance(node, Node):
+            node = node.id
+
+        # TODO cache nodes by type
+        # TODO cache full graph
+        events = list(self.query("type=Event"))
+        g = self.get_full_tree()
+        for evt in events:
+            desc = nx.descendants(g, evt.id)
+            if node in desc:
+                yield evt, g.subgraph({evt.id} | desc)
 
     def find_related_objects(self, object_ids: list[int]) -> set[int]:
         """Recursively collect any values of attributes that look like they could be a reference to another object, e.g. a bus."""

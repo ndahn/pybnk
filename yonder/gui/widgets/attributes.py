@@ -429,6 +429,15 @@ def _create_attributes_music_track(
         dpg.set_value(sender, wem_path.stem)
         on_node_changed(tag, track, user_data)
 
+    def on_loop_changed(
+        sender: str,
+        loop_info: tuple[float, float, bool],
+        user_data: tuple[int, MusicTrack],
+    ) -> None:
+        loop_start, loop_end, loop_enabled = loop_info
+        source_index, track = user_data
+        # TODO update track loop markers
+
     for i, source in enumerate(node.sources):
         add_generic_widget(
             Path,
@@ -440,7 +449,12 @@ def _create_attributes_music_track(
             user_data=(i, node),
         )
 
-        add_wav_player(lambda idx=i: get_sound_path(bnk, node.sources[idx]))
+        add_wav_player(
+            lambda idx=i: get_sound_path(bnk, node.sources[idx]),
+            loop_markers_enabled=True,
+            on_loop_changed=on_loop_changed,
+            user_data=(i, node),
+        )
 
     dpg.add_spacer(height=3)
     dpg.add_separator()

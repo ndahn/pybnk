@@ -26,6 +26,8 @@ from yonder.gui.widgets import (
     table_tree_node,
     add_lazy_table_tree_node,
     set_foldable_row_status,
+    get_foldable_row_descriptor,
+    is_row_visible,
 )
 from yonder.gui import style
 from yonder.gui.style import themes
@@ -681,22 +683,27 @@ class BanksOfYonder:
             sender: str, anchor: str, entrypoint: Node
         ) -> None:
             def delve(node: Node) -> None:
-                sub_tag = f"{table}_node_{node.id}"
-                while dpg.does_alias_exist(sub_tag):
-                    sub_tag += "_1"
-
                 references = node.get_references()
+                seen = set()
 
                 # TODO children of first lazy node are expanded if last lazy node is expanded
                 # Test withcs_c3671
                 for _, ref_id in references:
+                    if ref_id in seen:
+                        continue
+
+                    sub_tag = f"{self.tag}_node_{ref_id}"
+                    while dpg.does_item_exist(sub_tag):
+                        sub_tag += "_1"
+
+                    seen.add(ref_id)
                     child = bnk.get(ref_id)
                     if child:
                         with table_tree_node(
                             str(child),
                             on_click_callback=self._on_node_selected,
                             table=table,
-                            # tag=sub_tag,
+                            tag=sub_tag,
                             before=anchor,
                             user_data=child,
                         ) as row:
@@ -713,7 +720,7 @@ class BanksOfYonder:
             lazy_load_event_structure,
             on_click_callback=self._on_node_selected,
             table=table,
-            tag=f"{table}_node_{node.id}",
+            tag=f"{self.tag}_node_{node.id}",
             user_data=node,
         )
         register_context_menu(root_row.selectable, node)
@@ -830,7 +837,14 @@ class BanksOfYonder:
         dpg.show_item(f"{self.tag}_context_menu")
 
     def select_node(self, node: int | Node) -> None:
-        self._on_node_selected(None, None, node)
+        sender = None
+        if node:
+            node_id = node.id if isinstance(node, Node) else node
+            row = f"{self.tag}_node_{node_id}"
+            desc = get_foldable_row_descriptor(row)
+            sender = desc.selectable
+
+        self._on_node_selected(sender, None, node)
 
     def _on_node_selected(self, sender: str, app_data: Any, node: int | Node) -> None:
         # Deselect previous selectable
@@ -861,10 +875,48 @@ class BanksOfYonder:
                 self.bnk,
                 node,
                 lambda s, a, u: self.update_json_panel(),
-                lambda s, a, u: self.select_node(a),
+                lambda s, a, u: self.jump_to(a),
                 tag=f"{self.tag}_attributes_",
                 parent=f"{self.tag}_attributes",
             )
+
+    def jump_to(self, node: int | Node) -> None:
+        for evt, sub in self.bnk.find_event_subgraphs_for(node):
+            if not self._selected_node or self._selected_node.id in sub:
+                break
+        else:
+            logger.error(f"Could not find an event subgraph containing node {node}")
+            return
+
+        node_id = node.id if isinstance(node, Node) else node
+        path = nx.shortest_path(sub, evt.id, node_id)
+
+        for n in path:
+            if n == node_id:
+                break
+
+            row = f"{self.tag}_node_{n}"
+            set_foldable_row_status(row, True)
+
+        self.select_node(node)
+        self._scroll_to_item(f"{self.tag}_events_table", node)
+
+    def _scroll_to_item(self, table: str, node: int | Node) -> None:
+        node_id = node.id if isinstance(node, Node) else node
+        num_visible = 0
+        
+        for row in dpg.get_item_children(table, slot=1):
+            if not is_row_visible(table, row):
+                continue
+
+            num_visible += 1
+            if dpg.get_item_alias(row) == f"{self.tag}_node_{node_id}":
+                desc = get_foldable_row_descriptor(row)
+                _, row_height = dpg.get_item_rect_size(desc.selectable)
+                dpg.set_y_scroll(table, row_height * num_visible)
+                break
+        else:
+            logger.error(f"Could not locate root item row for node {node} in {table}")
 
     def regenerate_attributes(self) -> None:
         self._on_node_selected(self._selected_root, True, self._selected_node)

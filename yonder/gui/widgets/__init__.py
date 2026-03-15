@@ -12,5 +12,8 @@ from .table_tree_nodes import (
     table_tree_leaf,
     add_lazy_table_tree_node,
     set_foldable_row_status,
+    is_foldable_row_expanded,
+    get_foldable_row_descriptor,
+    is_row_visible,
 )
 from .transition_matrix import add_transition_matrix
