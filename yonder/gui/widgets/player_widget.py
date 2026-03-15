@@ -15,10 +15,11 @@ from yonder.gui.helpers import tmp_dir
 
 def add_wav_player(
     get_audio_path: Callable[[], Path],
-    markers: list[tuple[str, float, tuple[int, int, int]]] = None,
-    on_marker_changed: Callable[[str, tuple[str, float], Any], None] = None,
-    on_loop_changed: Callable[[str, tuple[float, float, bool], Any], None] = None,
     *,
+    user_markers: list[tuple[str, float, tuple[int, int, int]]] = None,
+    on_user_marker_changed: Callable[[str, tuple[str, float], Any], None] = None,
+    loop_markers_enabled: bool = False,
+    on_loop_changed: Callable[[str, tuple[float, float, bool], Any], None] = None,
     max_points: int = 5000,
     tag: str = 0,
     parent: str = 0,
@@ -71,7 +72,7 @@ def add_wav_player(
             if not player:
                 return
 
-            dpg.configure_item(f"{tag}_progress", default_value=0.0, label="0.000")
+            dpg.set_value(f"{tag}_progress", 0.0)
             last_path = audio
             regenerate(audio)
 
@@ -108,11 +109,8 @@ def add_wav_player(
             pos = loop_end - 2.0
             player.seek(pos)
 
-        dpg.configure_item(
-            f"{tag}_progress",
-            default_value=pos,
-            label=f"{pos:.03f}",
-        )
+        dpg.set_value(f"{tag}_progress", pos)
+        dpg.set_value(f"{tag}_progress_value", f"{pos:.03f} / {player.duration:.3f}")
         dpg.set_frame_callback(dpg.get_frame_count() + 2, progress_update)
 
     def get_loop_state() -> tuple[float, float, bool]:
@@ -143,8 +141,8 @@ def add_wav_player(
 
     def set_user_marker_pos(sender: str, pos: float, marker: str) -> None:
         dpg.set_value(f"{tag}_marker_{marker}", pos)
-        if on_marker_changed:
-            on_marker_changed(tag, (marker, pos), user_data)
+        if on_user_marker_changed:
+            on_user_marker_changed(tag, (marker, pos), user_data)
 
     def on_user_marker_moved(sender: str) -> None:
         if not player:
@@ -156,8 +154,8 @@ def add_wav_player(
 
         marker = dpg.get_item_label(sender)
         dpg.set_value(f"{tag}_marker_{marker}_value", pos)
-        if on_marker_changed:
-            on_marker_changed(tag, (marker, pos), user_data)
+        if on_user_marker_changed:
+            on_user_marker_changed(tag, (marker, pos), user_data)
 
     def minmax_envelope(
         signal: np.ndarray, time: np.ndarray, n_buckets: int
@@ -226,7 +224,7 @@ def add_wav_player(
         loop_start = min(loop_start, duration * 0.05)
         loop_end = min(loop_end, duration * 0.95)
 
-        dpg.set_value(f"{tag}_duration", f"{duration:.3f}")
+        dpg.set_value(f"{tag}_progress_value", f"0.000 / {duration:.3f}")
         dpg.set_value(f"{tag}_loop_start", loop_start)
         dpg.configure_item(
             f"{tag}_loop_start_value", default_value=loop_start, max_value=duration
@@ -236,8 +234,8 @@ def add_wav_player(
             f"{tag}_loop_end_value", default_value=loop_end, max_value=duration
         )
 
-        if markers:
-            for marker, _, _ in markers:
+        if user_markers:
+            for marker, _, _ in user_markers:
                 mpos = dpg.get_value(f"{tag}_marker_{marker}")
                 mpos = min(mpos, duration)
                 dpg.set_value(f"{tag}_marker_{marker}", mpos)
@@ -305,8 +303,8 @@ def add_wav_player(
             )
 
             # User markers
-            if markers:
-                for marker, pos, color in markers:
+            if user_markers:
+                for marker, pos, color in user_markers:
                     dpg.add_drag_line(
                         label=marker,
                         color=color,
@@ -322,25 +320,27 @@ def add_wav_player(
                 callback=on_play_pause,
             )
 
-            dpg.add_text("|")
-            dpg.add_button(
-                label="Markers",
-                callback=lambda s, a, u: dpg.show_item(f"{tag}_markers_popup"),
-            )
-            dpg.add_checkbox(
-                label="Loop",
-                default_value=True,
-                tag=f"{tag}_loop_enabled",
-                callback=on_loop_marker_moved,
-            )
-            dpg.add_checkbox(
-                label="Test",
-                default_value=True,
-                tag=f"{tag}_loop_test",
-            )
-            dpg.add_text("|")
+            if loop_markers_enabled or user_markers:
+                dpg.add_text("|")
+                dpg.add_button(
+                    label="Markers",
+                    callback=lambda s, a, u: dpg.show_item(f"{tag}_markers_popup"),
+                )
+                if loop_markers_enabled:
+                    dpg.add_checkbox(
+                        label="Loop",
+                        default_value=True,
+                        tag=f"{tag}_loop_enabled",
+                        callback=on_loop_marker_moved,
+                    )
+                    dpg.add_checkbox(
+                        label="Test",
+                        default_value=True,
+                        tag=f"{tag}_loop_test",
+                    )
 
-            dpg.add_text("0.000", tag=f"{tag}_duration")
+            dpg.add_text("|")
+            dpg.add_text("0.000 / 0.000", tag=f"{tag}_progress_value")
 
         with dpg.window(
             popup=True,
@@ -350,25 +350,28 @@ def add_wav_player(
             tag=f"{tag}_markers_popup",
             show=False,
         ):
-            dpg.add_input_float(
-                label="loop_start",
-                default_value=1.0,
-                width=100,
-                callback=set_loop_marker_pos,
-                user_data="loop_start",
-                tag=f"{tag}_loop_start_value",
-            )
-            dpg.add_input_float(
-                label="loop_end",
-                default_value=1.0,
-                width=100,
-                callback=set_loop_marker_pos,
-                user_data="loop_end",
-                tag=f"{tag}_loop_end_value",
-            )
-            if markers:
-                dpg.add_separator()
-                for marker, pos, _ in markers:
+            if loop_markers_enabled:
+                dpg.add_input_float(
+                    label="loop_start",
+                    default_value=1.0,
+                    width=100,
+                    callback=set_loop_marker_pos,
+                    user_data="loop_start",
+                    tag=f"{tag}_loop_start_value",
+                )
+                dpg.add_input_float(
+                    label="loop_end",
+                    default_value=1.0,
+                    width=100,
+                    callback=set_loop_marker_pos,
+                    user_data="loop_end",
+                    tag=f"{tag}_loop_end_value",
+                )
+                if user_markers:
+                    dpg.add_separator()
+
+            if user_markers:
+                for marker, pos, _ in user_markers:
                     dpg.add_input_float(
                         label=marker,
                         default_value=pos,
